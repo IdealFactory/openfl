@@ -100,13 +100,13 @@ class ShaderMacro
 
 		if (glVertexSource != null || glFragmentSource != null)
 		{
-			if (glFragmentSource != null && glFragmentHeader != null && glFragmentBody != null)
+			if (glFragmentSource != null && glFragmentHeader != "" && glFragmentBody != "")
 			{
 				glFragmentSource = StringTools.replace(glFragmentSource, "#pragma header", glFragmentHeader);
 				glFragmentSource = StringTools.replace(glFragmentSource, "#pragma body", glFragmentBody);
 			}
 
-			if (glVertexSource != null && glVertexHeader != null && glVertexBody != null)
+			if (glVertexSource != null && glVertexHeader != "" && glVertexBody != "")
 			{
 				glVertexSource = StringTools.replace(glVertexSource, "#pragma header", glVertexHeader);
 				glVertexSource = StringTools.replace(glVertexSource, "#pragma body", glVertexBody);
@@ -115,7 +115,7 @@ class ShaderMacro
 			var shaderDataFields = new Array<Field>();
 			var uniqueFields = [];
 
-			processFields(glVertexSource, "attribute", shaderDataFields, pos);
+			processFields(glVertexSource, #if glcoreprofile "in" #else "attribute" #end, shaderDataFields, pos);
 			processFields(glVertexSource, "uniform", shaderDataFields, pos);
 			processFields(glFragmentSource, "uniform", shaderDataFields, pos);
 
@@ -203,7 +203,7 @@ class ShaderMacro
 	{
 		if (source == null) return;
 
-		var lastMatch = 0, position, regex, field:Field, name, type;
+		var lastMatch = 0, position, regex = null, field:Field, name, type;
 
 		if (storageType == "uniform")
 		{
@@ -211,7 +211,11 @@ class ShaderMacro
 		}
 		else
 		{
+			#if glcoreprofile
+			regex = ~/in ([A-Za-z0-9]+) ([A-Za-z0-9_]+)/;
+			#else
 			regex = ~/attribute ([A-Za-z0-9]+) ([A-Za-z0-9_]+)/;
+			#end
 		}
 
 		var fieldAccess;

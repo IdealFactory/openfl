@@ -265,7 +265,7 @@ import lime.math.Vector2;
 	@:noCompletion private var __context:#if lime RenderContext #else Dynamic #end;
 	@:noCompletion private var __contextState:Context3DState;
 	@:noCompletion private var __renderStage3DProgram:Program3D;
-	@:noCompletion private var __enableErrorChecking:Bool;
+	@:noCompletion private var __enableErrorChecking:Bool = true;
 	@:noCompletion private var __fragmentConstants:Float32Array;
 	@:noCompletion private var __frontBufferTexture:RectangleTexture;
 	@:noCompletion private var __positionScale:Float32Array; // TODO: Better approach?
@@ -338,7 +338,7 @@ import lime.math.Vector2;
 		#if lime
 		if (__glDepthStencil == -1)
 		{
-			#if (js && html5)
+			#if ((js && html5) || heaps)
 			__glDepthStencil = gl.DEPTH_STENCIL;
 			#else
 			if (__context.type == OPENGLES && Std.parseFloat(__context.version) >= 3)
@@ -2309,7 +2309,7 @@ import lime.math.Vector2;
 					__bindGLTextureCubeMap(texture.__getTexture());
 				}
 
-				#if desktop
+				#if (desktop && !glcoreprofile)
 				// TODO: Cache?
 				gl.enable(gl.TEXTURE_2D);
 				#end

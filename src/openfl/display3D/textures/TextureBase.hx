@@ -15,6 +15,9 @@ import lime._internal.graphics.ImageCanvasUtil;
 import lime.graphics.Image;
 import lime.graphics.RenderContext;
 #end
+#if glcoreprofile
+import lime.graphics.opengl.GL;
+#end
 
 /**
 	The TextureBase class is the base class for Context3D texture objects.
@@ -79,6 +82,10 @@ class TextureBase extends EventDispatcher
 			if (bgraExtension == null) bgraExtension = gl.getExtension("APPLE_texture_format_BGRA8888");
 			#end
 
+			#if (glcoreprofile && !html5)
+			__supportsBGRA = true;
+			__textureFormat = GL.BGRA;
+			#else
 			if (bgraExtension != null)
 			{
 				__supportsBGRA = true;
@@ -96,6 +103,7 @@ class TextureBase extends EventDispatcher
 				__supportsBGRA = false;
 				__textureFormat = gl.RGBA;
 			}
+			#end
 
 			__compressedFormats = new Map();
 			__compressedFormatsAlpha = new Map();

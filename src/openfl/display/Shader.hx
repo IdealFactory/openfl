@@ -431,7 +431,7 @@ class Shader
 			textureCount++;
 		}
 
-		#if lime
+		#if (lime && !glcoreprofile)
 		if (__context.__context.type == OPENGL && textureCount > 0)
 		{
 			gl.enable(gl.TEXTURE_2D);
@@ -464,7 +464,7 @@ class Shader
 			__paramFloat = new Array();
 			__paramInt = new Array();
 
-			__processGLData(glVertexSource, "attribute");
+			__processGLData(glVertexSource, #if glcoreprofile "in" #else "attribute" #end);
 			__processGLData(glVertexSource, "uniform");
 			__processGLData(glFragmentSource, "uniform");
 		}
@@ -473,7 +473,15 @@ class Shader
 		{
 			var gl = __context.gl;
 
-			var prefix = "#ifdef GL_ES
+			#if glcoreprofile
+			var renderContext = __context.__context;
+			var glslVersion = "#version " + renderContext.shaderVersion + (renderContext.glES != null ? " es" : "") + "\n";
+			#else
+			var glslVersion = "";
+			#end
+
+			var prefix = glslVersion
+				+ "#ifdef GL_ES
 				"
 				+ (precisionHint == FULL ? "#ifdef GL_FRAGMENT_PRECISION_HIGH
 				precision highp float;
@@ -561,15 +569,19 @@ class Shader
 
 	@:noCompletion private function __processGLData(source:String, storageType:String):Void
 	{
-		var lastMatch = 0, position, regex, name, type;
+		var lastMatch = 0, position, regex = null, name, type;
 
 		if (storageType == "uniform")
 		{
 			regex = ~/uniform ([A-Za-z0-9]+) ([A-Za-z0-9_]+)/;
 		}
-		else
+		else if (storageType == "attribute")
 		{
 			regex = ~/attribute ([A-Za-z0-9]+) ([A-Za-z0-9_]+)/;
+		}
+		else if (storageType == "in")
+		{
+			regex = ~/in ([A-Za-z0-9]+) ([A-Za-z0-9_]+)/;
 		}
 
 		while (regex.matchSub(source, lastMatch))
