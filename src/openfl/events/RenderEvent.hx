@@ -128,8 +128,10 @@ import openfl.geom.Matrix;
 	**/
 	public var renderer(default, null):DisplayObjectRenderer;
 
+	#if !flash
 	@:noCompletion private static var __pool:ObjectPool<RenderEvent> = new ObjectPool<RenderEvent>(function() return new RenderEvent(null),
 	function(event) event.__init());
+	#end
 
 	/**
 		Creates an Event object that contains information about render events.
@@ -175,7 +177,6 @@ import openfl.geom.Matrix;
 	{
 		return __formatToString("RenderEvent", ["type", "bubbles", "cancelable"]);
 	}
-	#end
 
 	@:noCompletion private override function __init():Void
 	{
@@ -185,4 +186,5 @@ import openfl.geom.Matrix;
 		allowSmoothing = false;
 		renderer = null;
 	}
+	#end
 }

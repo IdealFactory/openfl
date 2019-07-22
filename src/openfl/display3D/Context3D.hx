@@ -2497,10 +2497,10 @@ import lime.math.Vector2;
 			if (__renderStage3DProgram == null)
 			{
 				var vertexAssembler = new AGALMiniAssembler();
-				vertexAssembler.assemble(Context3DProgramType.VERTEX, "m44 op, va0, vc0\n" + "mov v0, va1");
+				vertexAssembler.assemble(Context3DProgramType.VERTEX, "m44 op, va0, vc0\n" + "mov v0, va1" #if heaps, 2 #end);
 
 				var fragmentAssembler = new AGALMiniAssembler();
-				fragmentAssembler.assemble(Context3DProgramType.FRAGMENT, "tex ft1, v0, fs0 <2d,nearest,nomip>\n" + "mov oc, ft1");
+				fragmentAssembler.assemble(Context3DProgramType.FRAGMENT, "tex ft1, v0, fs0 <2d,nearest,nomip>\n" + "mov oc, ft1" #if heaps, 2 #end);
 
 				__renderStage3DProgram = createProgram();
 				__renderStage3DProgram.upload(vertexAssembler.agalcode, fragmentAssembler.agalcode);

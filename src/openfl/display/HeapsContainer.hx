@@ -1,6 +1,18 @@
 package openfl.display;
 
+#if flash
+import openfl._internal.renderer.flash.FlashRenderer;
+import openfl._internal.renderer.flash.FlashHeaps;
+import openfl.display3D.Program3D;
+import openfl.display3D.Context3D;
+import openfl.display3D.VertexBuffer3D;
+import openfl.display3D.IndexBuffer3D;
+import openfl.display3D.Context3DProgramType;
+import openfl.geom.Matrix3D;
+import openfl.utils.AGALMiniAssembler;
+#else
 import openfl._internal.renderer.context3D.Context3DHeaps;
+#end
 import openfl.display3D.textures.TextureBase;
 import openfl.events.Event;
 import openfl.events.MouseEvent;
@@ -18,10 +30,12 @@ import hxd.Event;
 @:access(openfl.display3D.Context3D)
 @:access(hxd.Window)
 @:access(h3d.impl.GlDriver)
-class HeapsContainer extends DisplayObject
+@:access(h3d.impl.Stage3dDriver)
+class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements IDisplayObject #end
 {
 	public static var heapsRenderTargets:Array<Texture> = [];
 
+	#if !flash
 	/**
 		Controls whether or not the Bitmap object is snapped to the nearest pixel.
 		This value is ignored in the native and HTML5 targets.
@@ -46,6 +60,7 @@ class HeapsContainer extends DisplayObject
 		`false`, the bitmap is not smoothed when scaled.
 	**/
 	public var smoothing:Bool;
+	#end
 
 	@:noCompletion private var __width:Int = 0;
 	@:noCompletion private var __height:Int = 0;
@@ -60,6 +75,16 @@ class HeapsContainer extends DisplayObject
 
 	@:noCompletion private var __mousePoint:Point = new Point();
 	@:noCompletion private var __localPoint:Point = new Point();
+	#if flash
+	@:noCompletion private var __heapsRenderbufferProgram:Program3D;
+	@:noCompletion private var __context3D:Context3D;
+	@:noCompletion private var __heapsRenderbufferTexture:openfl.display3D.textures.RectangleTexture;
+	@:noCompletion private var __vertexBufferData:Vector<Float> = new Vector<Float>([-1, -1, 0, 0, 1, -1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, -1, 0, 1, 1]);
+	@:noCompletion private var __indexBufferData:Vector<UInt> = new Vector<UInt>([0, 1, 2, 0, 2, 3]);
+	@:noCompletion private var __vertexBuffer:VertexBuffer3D;
+	@:noCompletion private var __indexBuffer:IndexBuffer3D;
+	@:noCompletion private var __transform:Matrix3D = new Matrix3D();
+	#end
 
 	public var __renderTarget:Texture;
 
@@ -115,46 +140,66 @@ class HeapsContainer extends DisplayObject
 		appInstance.setup();
 		__onResize(null);
 
+		#if flash
+		FlashRenderer.register(this);
+		#end
+
 		dispatchEvent(new openfl.events.Event(openfl.events.Event.COMPLETE));
 	}
 
-	@:noCompletion private override function __enterFrame(deltaTime:Int):Void
+	@:noCompletion #if !flash override #end private function __enterFrame(deltaTime:Int):Void
 	{
 		if (__engine != null)
 		{
 			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null && __renderTarget != null)
 			{
+				trace("############## Pushing renderTarget");
 				__engine.pushTarget(__renderTarget);
 
 				// Ensure all the cached render states are cleared for a new render
 				@:privateAccess __engine.needFlushTarget = true;
-				var glDriver:h3d.impl.GlDriver = cast __engine.driver;
-				glDriver.curColorMask = -1;
-				glDriver.curMatBits = -1;
-				glDriver.curIndexBuffer = null;
-				glDriver.curShader = null;
-				glDriver.curBuffer = null;
-				glDriver.curAttribs = [];
-
+				#if flash
+				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
+				driver.curAttributes = 0;
+				Lib.current.stage.stage3Ds[0].context3D.setCulling(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? "front" : "back");
+				#else
+				var driver:h3d.impl.GlDriver = cast __engine.driver;
+				driver.curIndexBuffer = null;
+				driver.curAttribs = [];
 				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
+				#end
+				driver.curColorMask = -1;
+				driver.curMatBits = -1;
+				driver.curShader = null;
+				driver.curBuffer = null;
 
 				__engine.driver.begin(hxd.Timer.frameCount);
 
+				trace("Clear-1 being called:");
 				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
 
+				trace("3d render called");
 				appInstance.s3d.render(__engine);
+				trace("2d render called");
 				appInstance.s2d.render(__engine);
 
 				__engine.popTarget();
+
+				trace("Clear-2 being called:");
+				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
 
 				#if (!js && !flash)
 				@:privateAccess System.mainLoop();
 				#end
 
+				#if !flash
 				// Modify the texture ID to point to the Heaps render target texture to bind it correctly
 				@:privateAccess __texture.__textureID = __renderTarget.t.t;
 
 				__setRenderDirty();
+				#else
+				@:privateAccess __heapsRenderbufferTexture = cast __renderTarget.t;
+				#end
 			}
 		}
 	}
@@ -175,21 +220,58 @@ class HeapsContainer extends DisplayObject
 		var w = __width;
 		var h = __height;
 		__renderTarget = new Texture(w, h, [TextureFlags.Target]);
+		#if !flash
 		__renderTarget.depthBuffer = new DepthBuffer(w, h);
+		#else
+		__renderTarget.depthBuffer = new DepthBuffer(-1, -1);
+		#end
 
 		heapsRenderTargets.push(__renderTarget);
 
 		// Create a fake OpenFl bitmap data to allow integrating the renderTarget texture into the OpenFL rendering pipeline.
 		__bitmapData = new BitmapData(w, h, true, 0x80ff0000);
+		#if !flash
 		__texture = __bitmapData.getTexture(stage.context3D);
+		#else
+		var vertexAssembler = new AGALMiniAssembler();
+		vertexAssembler.assemble(Context3DProgramType.VERTEX, "m44 op, va0, vc0\n" + "mov v0, va1" #if heaps, 2 #end);
+
+		var fragmentAssembler = new AGALMiniAssembler();
+		fragmentAssembler.assemble(Context3DProgramType.FRAGMENT, "tex ft0, v0, fs0 <2d,nearest,nomip>\n" + "mov oc, ft0.rgb" #if heaps, 2 #end);
+
+		var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
+		__context3D = driver.ctx;
+
+		__heapsRenderbufferTexture = __context3D.createRectangleTexture(__bitmapData.width, __bitmapData.height, 'bgra', true);
+		__heapsRenderbufferTexture.uploadFromBitmapData(__bitmapData);
+
+		__vertexBuffer = __context3D.createVertexBuffer(4, 5);
+		__vertexBuffer.uploadFromVector(__vertexBufferData, 0, 4);
+		__indexBuffer = __context3D.createIndexBuffer(6);
+		__indexBuffer.uploadFromVector(__indexBufferData, 0, 6);
+
+		__heapsRenderbufferProgram = __context3D.createProgram();
+		__heapsRenderbufferProgram.upload(vertexAssembler.agalcode, fragmentAssembler.agalcode);
+		#end
 	}
 
-	@:noCompletion private override function __renderGL(renderer:OpenGLRenderer):Void
+	#if flash
+	var ctr = 0;
+
+	@:noCompletion private function __renderFlash():Void
+	{
+		trace("__renderFlash called");
+		__enterFrame(ctr++);
+		FlashHeaps.render(this);
+	}
+	#else
+	@:noCompletion override private function __renderGL(renderer:OpenGLRenderer):Void
 	{
 		Context3DHeaps.render(this, renderer);
 
 		__renderEvent(renderer);
 	}
+	#end
 
 	@:keep @:noCompletion private function __onResize(e:openfl.events.Event)
 	{
@@ -256,29 +338,37 @@ class HeapsContainer extends DisplayObject
 		}
 	}
 
-	@:noCompletion private override function get_height():Float
+	@:getter(height)
+	@:noCompletion #if !flash override #end private function get_height():Float
 	{
 		return __height;
 	}
 
-	@:noCompletion private override function set_height(value:Float):Float
+	@:setter(height)
+	@:noCompletion #if !flash override #end private function set_height(value:Float)
 	{
 		__height = Std.int(value);
 		__onResize(null);
 
+		#if !flash
 		return value;
+		#end
 	}
 
-	@:noCompletion private override function get_width():Float
+	@:getter(width)
+	@:noCompletion #if !flash override #end private function get_width():Float
 	{
 		return __width;
 	}
 
-	@:noCompletion private override function set_width(value:Float):Float
+	@:setter(height)
+	@:noCompletion #if !flash override #end private function set_width(value:Float)
 	{
 		__width = Std.int(value);
 		__onResize(null);
 
+		#if !flash
 		return value;
+		#end
 	}
 }
