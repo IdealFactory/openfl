@@ -29,6 +29,7 @@ import hxd.Event;
 
 @:access(openfl.display3D.Context3D)
 @:access(hxd.Window)
+@:access(h3d.Engine)
 @:access(h3d.impl.GlDriver)
 @:access(h3d.impl.Stage3dDriver)
 class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements IDisplayObject #end
@@ -79,10 +80,11 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	@:noCompletion private var __heapsRenderbufferProgram:Program3D;
 	@:noCompletion private var __context3D:Context3D;
 	@:noCompletion private var __heapsRenderbufferTexture:openfl.display3D.textures.RectangleTexture;
-	@:noCompletion private var __vertexBufferData:Vector<Float> = new Vector<Float>([-1, -1, 0, 0, 1, -1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, -1, 0, 1, 1]);
+	@:noCompletion private var __vertexBufferData:Vector<Float> = new Vector<Float>([0, 600, 0, 0, 1, 0, 0, 0, 0, 0, 800, 0, 0, 1, 0, 800, 600, 0, 1, 1]);
 	@:noCompletion private var __indexBufferData:Vector<UInt> = new Vector<UInt>([0, 1, 2, 0, 2, 3]);
 	@:noCompletion private var __vertexBuffer:VertexBuffer3D;
 	@:noCompletion private var __indexBuffer:IndexBuffer3D;
+	@:noCompletion private var __projection:Matrix3D = new Matrix3D();
 	@:noCompletion private var __transform:Matrix3D = new Matrix3D();
 	#end
 
@@ -153,7 +155,6 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		{
 			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null && __renderTarget != null)
 			{
-				trace("############## Pushing renderTarget");
 				__engine.pushTarget(__renderTarget);
 
 				// Ensure all the cached render states are cleared for a new render
@@ -175,17 +176,13 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 				__engine.driver.begin(hxd.Timer.frameCount);
 
-				trace("Clear-1 being called:");
 				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
 
-				trace("3d render called");
 				appInstance.s3d.render(__engine);
-				trace("2d render called");
 				appInstance.s2d.render(__engine);
 
 				__engine.popTarget();
 
-				trace("Clear-2 being called:");
 				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
 
 				#if (!js && !flash)
@@ -233,6 +230,22 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		#if !flash
 		__texture = __bitmapData.getTexture(stage.context3D);
 		#else
+		__projection.identity();
+		var raw = __projection.rawData;
+		var st = Lib.current.stage;
+
+		var sx = 1.0 / st.stageWidth;
+		var sy = 1.0 / -st.stageHeight;
+		var sz = 1.0 / 2000;
+
+		raw[0] = 2 * sx;
+		raw[5] = 2 * sy;
+		raw[10] = -2 * sz;
+
+		raw[12] = -st.stageWidth * sx;
+		raw[13] = -st.stageHeight * sy;
+		__projection.rawData = raw;
+
 		var vertexAssembler = new AGALMiniAssembler();
 		vertexAssembler.assemble(Context3DProgramType.VERTEX, "m44 op, va0, vc0\n" + "mov v0, va1" #if heaps, 2 #end);
 
@@ -246,6 +259,8 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		__heapsRenderbufferTexture.uploadFromBitmapData(__bitmapData);
 
 		__vertexBuffer = __context3D.createVertexBuffer(4, 5);
+		__vertexBufferData[10] = __vertexBufferData[15] = __width;
+		__vertexBufferData[1] = __vertexBufferData[16] = __height;
 		__vertexBuffer.uploadFromVector(__vertexBufferData, 0, 4);
 		__indexBuffer = __context3D.createIndexBuffer(6);
 		__indexBuffer.uploadFromVector(__indexBufferData, 0, 6);
@@ -256,12 +271,9 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	}
 
 	#if flash
-	var ctr = 0;
-
 	@:noCompletion private function __renderFlash():Void
 	{
-		trace("__renderFlash called");
-		__enterFrame(ctr++);
+		__enterFrame(0);
 		FlashHeaps.render(this);
 	}
 	#else
@@ -282,10 +294,19 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		{
 			setupRenderTarget();
 
-			__engine.resize(__width, __height);
-			@:privateAccess __window.windowWidth = __width;
-			@:privateAccess __window.windowHeight = __height;
-			@:privateAccess __engine.onWindowResize();
+			__engine.width = __width;
+			__engine.height = __height;
+			#if flash
+			var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
+			@:privateAccess driver.ctx.configureBackBuffer(Std.int(Lib.current.stage.stageWidth), Std.int(Lib.current.stage.stageHeight), driver.antiAlias);
+			driver.width = __width;
+			driver.height = __height;
+			#else
+			__engine.driver.resize(__width, __height);
+			#end
+			__window.windowWidth = __width;
+			__window.windowHeight = __height;
+			__engine.onWindowResize();
 		}
 	}
 
@@ -306,7 +327,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
-			#if js
+			#if (js || flash)
 			@:privateAccess __window.openFLMouseX = __localPoint.x;
 			@:privateAccess __window.openFLMouseY = __localPoint.y;
 			#else
@@ -361,7 +382,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		return __width;
 	}
 
-	@:setter(height)
+	@:setter(width)
 	@:noCompletion #if !flash override #end private function set_width(value:Float)
 	{
 		__width = Std.int(value);
