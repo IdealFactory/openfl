@@ -1,7 +1,6 @@
 package openfl._internal.renderer.context3D;
 
 import openfl.display.Bitmap;
-import openfl.display.OpenGLRenderer;
 #if gl_stats
 import openfl._internal.renderer.context3D.stats.Context3DStats;
 import openfl._internal.renderer.context3D.stats.DrawCallContext;
@@ -21,13 +20,13 @@ import openfl._internal.renderer.context3D.stats.DrawCallContext;
 @SuppressWarnings("checkstyle:FieldDocComment")
 class Context3DBitmap
 {
-	public static function render(bitmap:Bitmap, renderer:OpenGLRenderer):Void
+	public static function render(bitmap:Bitmap, renderer:Context3DRenderer):Void
 	{
 		if (!bitmap.__renderable || bitmap.__worldAlpha <= 0) return;
 
 		if (bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid)
 		{
-			var context = renderer.__context3D;
+			var context = renderer.context3D;
 
 			renderer.__setBlendMode(bitmap.__worldBlendMode);
 			renderer.__pushMaskObject(bitmap);
@@ -58,11 +57,11 @@ class Context3DBitmap
 		}
 	}
 
-	public static function renderMask(bitmap:Bitmap, renderer:OpenGLRenderer):Void
+	public static function renderMask(bitmap:Bitmap, renderer:Context3DRenderer):Void
 	{
 		if (bitmap.__bitmapData != null && bitmap.__bitmapData.__isValid)
 		{
-			var context = renderer.__context3D;
+			var context = renderer.context3D;
 
 			var shader = renderer.__maskShader;
 			renderer.setShader(shader);
