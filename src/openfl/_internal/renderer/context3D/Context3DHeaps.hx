@@ -1,13 +1,14 @@
 package openfl._internal.renderer.context3D;
 
 import openfl.display.HeapsContainer;
-import openfl.display.OpenGLRenderer;
 #if gl_stats
 import openfl._internal.renderer.context3D.stats.Context3DStats;
 import openfl._internal.renderer.context3D.stats.DrawCallContext;
 #end
+#if heaps
 import hxd.System;
 import hxd.Window;
+#end
 
 #if !openfl_debug
 @:fileXml(' tags="haxe,release" ')
@@ -20,13 +21,13 @@ import hxd.Window;
 @SuppressWarnings("checkstyle:FieldDocComment")
 class Context3DHeaps
 {
-	public static function render(heaps:HeapsContainer, renderer:OpenGLRenderer):Void
+	public static function render(heaps:HeapsContainer, renderer:Context3DRenderer):Void
 	{
 		if (!heaps.__renderable || heaps.__worldAlpha <= 0) return;
 
 		if (heaps.__appClass != null && heaps.__bitmapData != null)
 		{
-			var context = renderer.__context3D;
+			var context = renderer.context3D;
 
 			renderer.__setBlendMode(heaps.__worldBlendMode);
 			renderer.__pushMaskObject(heaps);

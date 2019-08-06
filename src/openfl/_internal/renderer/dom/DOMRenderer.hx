@@ -185,6 +185,7 @@ class DOMRenderer extends DOMRendererAPI
 					__clearDOMElement(cast object);
 				case DISPLAY_OBJECT, SHAPE:
 					__clearShape(cast object);
+				case HEAPS_CONTAINER:
 				case SIMPLE_BUTTON:
 					__clearSimpleButton(cast object);
 				case TEXTFIELD:
@@ -437,6 +438,7 @@ class DOMRenderer extends DOMRendererAPI
 					__renderDOMElement(cast object);
 				case DISPLAY_OBJECT, SHAPE:
 					__renderShape(cast object);
+				case HEAPS_CONTAINER:
 				case SIMPLE_BUTTON:
 					__renderSimpleButton(cast object);
 				case TEXTFIELD:

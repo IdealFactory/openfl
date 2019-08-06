@@ -18,6 +18,7 @@ import openfl.display.DisplayObjectRenderer;
 import openfl.display.DisplayObjectShader;
 import openfl.display.Graphics;
 import openfl.display.GraphicsShader;
+import openfl.display.HeapsContainer;
 import openfl.display.IBitmapDrawable;
 import openfl.display.OpenGLRenderer as Context3DRendererAPI;
 import openfl.display.PixelSnapping;
@@ -995,6 +996,8 @@ class Context3DRenderer extends Context3DRendererAPI
 					__renderDisplayObjectContainer(cast object);
 				case DISPLAY_OBJECT, SHAPE:
 					__renderShape(cast object);
+				case HEAPS_CONTAINER:
+					__renderHeapsContainer(cast object);
 				case SIMPLE_BUTTON:
 					__renderSimpleButton(cast object);
 				case TEXTFIELD:
@@ -1123,6 +1126,36 @@ class Context3DRenderer extends Context3DRendererAPI
 		}
 
 		__clearShader();
+	}
+
+	private function __renderHeapsContainer(heaps:HeapsContainer):Void
+	{
+		if (heaps.__bitmapData != null)
+		{
+			__setBlendMode(NORMAL);
+
+			var shader = __defaultDisplayShader;
+			setShader(shader);
+			applyBitmapData(heaps.__bitmapData, __upscaled);
+			applyMatrix(__getMatrix(heaps.__renderTransform, AUTO));
+			applyAlpha(heaps.__worldAlpha);
+			applyColorTransform(heaps.__worldColorTransform);
+			updateShader();
+
+			// alpha == 1, __worldColorTransform
+
+			var vertexBuffer = heaps.__bitmapData.getVertexBuffer(context3D);
+			if (shader.__position != null) context3D.setVertexBufferAt(shader.__position.index, vertexBuffer, 0, FLOAT_3);
+			if (shader.__textureCoord != null) context3D.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, 3, FLOAT_2);
+			var indexBuffer = heaps.__bitmapData.getIndexBuffer(context3D);
+			context3D.drawTriangles(indexBuffer);
+
+			#if gl_stats
+			Context3DStats.incrementDrawCall(DrawCallContext.STAGE);
+			#end
+
+			__clearShader();
+		}
 	}
 
 	private function __renderMask(mask:DisplayObject):Void

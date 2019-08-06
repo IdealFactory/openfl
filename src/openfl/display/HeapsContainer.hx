@@ -19,6 +19,7 @@ import openfl.events.MouseEvent;
 import openfl.events.RenderEvent;
 import openfl.geom.Point;
 import openfl.Lib;
+#if (heaps && !macro)
 import h3d.Engine;
 import h3d.mat.Data;
 import h3d.mat.DepthBuffer;
@@ -97,6 +98,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		__appClass = appClass;
 
 		super();
+
+		#if !flash
+		__type = HEAPS_CONTAINER;
+		#end
 
 		Window.CURRENT = Lib.application;
 
@@ -276,13 +281,6 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		__enterFrame(0);
 		FlashHeaps.render(this);
 	}
-	#else
-	@:noCompletion override private function __renderGL(renderer:OpenGLRenderer):Void
-	{
-		Context3DHeaps.render(this, renderer);
-
-		__renderEvent(renderer);
-	}
 	#end
 
 	@:keep @:noCompletion private function __onResize(e:openfl.events.Event)
@@ -393,3 +391,18 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		#end
 	}
 }
+#else
+// Null Bitmap class when heaps is not defined
+
+@:access(flash.display.Bitmap)
+class HeapsContainer extends openfl.display.Bitmap
+{
+	@:noCompletion private var __appClass:Class<Dynamic>;
+
+	public function new(appClass:Class<Dynamic>)
+	{
+		super();
+		throw "Heaps library is not referenced in project.xml. Please add '<haxelib name=\"heaps\" />' and '<haxelib name=\"hxbit\" />'";
+	}
+}
+#end
