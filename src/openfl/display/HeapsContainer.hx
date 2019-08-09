@@ -124,11 +124,9 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 			{
 				stage.addEventListener(openfl.events.Event.RESIZE, __onResize);
 				stage.addEventListener(MouseEvent.MOUSE_MOVE, __onMouseMove);
-				#if !js
 				stage.addEventListener(MouseEvent.MOUSE_DOWN, __onMouseDown);
 				stage.addEventListener(MouseEvent.MOUSE_UP, __onMouseUp);
 				stage.addEventListener(MouseEvent.MOUSE_WHEEL, __onMouseWheel);
-				#end
 
 				__engine = appInstance.engine = @:privateAccess new h3d.Engine();
 				__window = Window.getInstance();
