@@ -42,6 +42,10 @@ import openfl._internal.renderer.canvas.CanvasRenderer;
 import lime.graphics.cairo.Cairo;
 import openfl._internal.renderer.cairo.CairoRenderer;
 #end
+#if gl_stats
+import openfl._internal.renderer.context3D.stats.Context3DStats;
+import openfl._internal.renderer.context3D.stats.DrawCallContext;
+#end
 
 #if !openfl_debug
 @:fileXml('tags="haxe,release"')
@@ -88,6 +92,7 @@ class Context3DRenderer extends Context3DRendererAPI
 
 	public var context3D:Context3D;
 
+	private var __alphaMaskShader:Context3DAlphaMaskShader;
 	private var __clipRects:Array<Rectangle>;
 	private var __context:RenderContext;
 	private var __currentDisplayShader:Shader;
@@ -172,6 +177,7 @@ class Context3DRenderer extends Context3DRendererAPI
 		__initShader(__defaultShader);
 
 		__scrollRectMasks = new ObjectPool<Shape>(function() return new Shape());
+		__alphaMaskShader = new Context3DAlphaMaskShader();
 		__maskShader = new Context3DMaskShader();
 
 		if (__childRendererPool == null)
@@ -1207,7 +1213,7 @@ class Context3DRenderer extends Context3DRendererAPI
 		}
 	}
 
-	private function __renderShape(shape:Shape):Void
+	private function __renderShape(shape:DisplayObject):Void
 	{
 		__updateCacheBitmap(shape, false);
 

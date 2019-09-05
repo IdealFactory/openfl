@@ -267,7 +267,7 @@ import lime.math.Vector2;
 	@:noCompletion private var __context:#if lime RenderContext #else Dynamic #end;
 	@:noCompletion private var __contextState:Context3DState;
 	@:noCompletion private var __renderStage3DProgram:Program3D;
-	@:noCompletion private var __enableErrorChecking:Bool = true;
+	@:noCompletion private var __enableErrorChecking:Bool;
 	@:noCompletion private var __fragmentConstants:Float32Array;
 	@:noCompletion private var __frontBufferTexture:RectangleTexture;
 	@:noCompletion private var __positionScale:Float32Array; // TODO: Better approach?
@@ -580,6 +580,9 @@ import lime.math.Vector2;
 		{
 			if (__backBufferTexture == null || backBufferWidth != width || backBufferHeight != height)
 			{
+				if (__backBufferTexture != null) __backBufferTexture.dispose();
+				if (__frontBufferTexture != null) __frontBufferTexture.dispose();
+
 				__backBufferTexture = createRectangleTexture(width, height, BGRA, true);
 				__frontBufferTexture = createRectangleTexture(width, height, BGRA, true);
 
@@ -2313,7 +2316,7 @@ import lime.math.Vector2;
 					__bindGLTextureCubeMap(texture.__getTexture());
 				}
 
-				#if (desktop && !glcoreprofile)
+				#if (desktop && !html5)
 				// TODO: Cache?
 				gl.enable(gl.TEXTURE_2D);
 				#end
@@ -2347,7 +2350,7 @@ import lime.math.Vector2;
 					texture.__alphaTexture.__setSamplerState(samplerState);
 					gl.uniform1i(__state.program.__agalAlphaSamplerEnabled[sampler].location, 1);
 
-					#if desktop
+					#if (desktop && !html5)
 					// TODO: Cache?
 					gl.enable(gl.TEXTURE_2D);
 					#end
