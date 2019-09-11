@@ -272,6 +272,7 @@ class ConvolutionFilter extends BitmapFilter
 #end
 private class ConvolutionShader extends BitmapFilterShader
 {
+	#if !glcoreprofile
 	@:glFragmentSource("varying vec2 vBlurCoords[9];
 
 		uniform sampler2D openfl_Texture;
@@ -343,6 +344,81 @@ private class ConvolutionShader extends BitmapFilterShader
 			gl_Position = openfl_Matrix * openfl_Position;
 
 		}")
+	#else
+	@:glFragmentSource("in vec2 vBlurCoords[9];
+
+		uniform sampler2D openfl_Texture;
+
+		uniform float uBias;
+		uniform mat3 uConvoMatrix;
+		uniform float uDivisor;
+		uniform bool uPreserveAlpha;
+
+		out vec4 fragColor;
+
+		void main(void) {
+
+			vec4 tc = texture (openfl_Texture, vBlurCoords[4]);
+			vec4 c = vec4 (0.0);
+
+			c += texture (openfl_Texture, vBlurCoords[0]) * uConvoMatrix[0][0];
+			c += texture (openfl_Texture, vBlurCoords[1]) * uConvoMatrix[0][1];
+			c += texture (openfl_Texture, vBlurCoords[2]) * uConvoMatrix[0][2];
+
+			c += texture (openfl_Texture, vBlurCoords[3]) * uConvoMatrix[1][0];
+			c += tc * uConvoMatrix[1][1];
+			c += texture (openfl_Texture, vBlurCoords[5]) * uConvoMatrix[1][2];
+
+			c += texture (openfl_Texture, vBlurCoords[6]) * uConvoMatrix[2][0];
+			c += texture (openfl_Texture, vBlurCoords[7]) * uConvoMatrix[2][1];
+			c += texture (openfl_Texture, vBlurCoords[8]) * uConvoMatrix[2][2];
+
+			if (uDivisor > 0.0) {
+
+				c /= vec4 (uDivisor, uDivisor, uDivisor, uDivisor);
+
+			}
+
+			c += vec4 (uBias, uBias, uBias, uBias);
+
+			if (uPreserveAlpha) {
+
+				c.a = tc.a;
+
+			}
+
+			gl_FragColor = c;
+
+		}")
+	@:glVertexSource("in vec4 openfl_Position;
+		in vec2 openfl_TextureCoord;
+
+		out vec2 vBlurCoords[9];
+
+		uniform mat4 openfl_Matrix;
+		uniform vec2 openfl_TextureSize;
+
+		void main(void) {
+
+			vec2 r = vec2 (1.0, 1.0) / openfl_TextureSize;
+			vec2 t = openfl_TextureCoord;
+
+			vBlurCoords[0] = t + r * vec2 (-1.0, -1.0);
+			vBlurCoords[1] = t + r * vec2 (0.0, -1.0);
+			vBlurCoords[2] = t + r * vec2 (1.0, -1.0);
+
+			vBlurCoords[3] = t + r * vec2 (-1.0, 0.0);
+			vBlurCoords[4] = t;
+			vBlurCoords[5] = t + r * vec2 (1.0, 0.0);
+
+			vBlurCoords[6] = t + r * vec2 (-1.0, 1.0);
+			vBlurCoords[7] = t + r * vec2 (0.0, 1.0);
+			vBlurCoords[8] = t + r * vec2 (1.0, 1.0);
+
+			gl_Position = openfl_Matrix * openfl_Position;
+
+		}")
+	#end
 	public function new()
 	{
 		super();

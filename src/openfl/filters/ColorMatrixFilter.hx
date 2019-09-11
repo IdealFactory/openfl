@@ -244,6 +244,7 @@ import lime.math.RGBA;
 @SuppressWarnings("checkstyle:FieldDocComment")
 private class ColorMatrixShader extends BitmapFilterShader
 {
+	#if !glcoreprofile
 	@:glFragmentSource("varying vec2 openfl_TextureCoordv;
 		uniform sampler2D openfl_Texture;
 
@@ -268,6 +269,34 @@ private class ColorMatrixShader extends BitmapFilterShader
 			}
 
 		}")
+	#else
+	@:glFragmentSource("in vec2 openfl_TextureCoordv;
+		uniform sampler2D openfl_Texture;
+
+		uniform mat4 uMultipliers;
+		uniform vec4 uOffsets;
+
+		out vec4 fragColor;
+
+		void main(void) {
+
+			vec4 color = texture (openfl_Texture, openfl_TextureCoordv);
+
+			if (color.a == 0.0) {
+
+				fragColor = vec4 (0.0, 0.0, 0.0, 0.0);
+
+			} else {
+
+				color = vec4 (color.rgb / color.a, color.a);
+				color = uOffsets + color * uMultipliers;
+
+				fragColor = vec4 (color.rgb * color.a, color.a);
+
+			}
+
+		}")
+	#end
 	public function new()
 	{
 		super();

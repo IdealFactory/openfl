@@ -8,6 +8,7 @@ import openfl.display.Shader;
 #end
 class Context3DAlphaMaskShader extends Shader
 {
+	#if !glcoreprofile
 	@:glFragmentSource("varying vec2 openfl_AlphaTextureCoordv;
 		varying vec2 openfl_TextureCoordv;
 
@@ -43,6 +44,45 @@ class Context3DAlphaMaskShader extends Shader
 
 			gl_Position = openfl_Matrix * openfl_Position;
 		}")
+	#else
+	@:glFragmentSource("in vec2 openfl_AlphaTextureCoordv;
+		in vec2 openfl_TextureCoordv;
+
+		uniform sampler2D openfl_AlphaTexture;
+		uniform sampler2D openfl_Texture;
+
+		out vec4 fragColor;
+
+		void main(void)
+		{
+			vec4 mask = texture (openfl_AlphaTexture, openfl_AlphaTextureCoordv);
+
+			if (mask.a == 0.0)
+			{
+				fragColor = vec4(0.0, 0.0, 0.0, 0.0);
+			}
+			else
+			{
+				vec4 color = texture (openfl_Texture, openfl_TextureCoordv);
+				fragColor = color * mask.a;
+			}
+		}")
+	@:glVertexSource("in vec4 openfl_Position;
+		in vec2 openfl_TextureCoord;
+		out vec2 openfl_AlphaTextureCoordv;
+		out vec2 openfl_TextureCoordv;
+
+		uniform mat4 openfl_AlphaTextureMatrix;
+		uniform mat4 openfl_Matrix;
+
+		void main(void)
+		{
+			openfl_TextureCoordv = openfl_TextureCoord;
+			openfl_AlphaTextureCoordv = vec2(vec4(openfl_TextureCoord, 0.0, 0.0) * openfl_AlphaTextureMatrix);
+
+			gl_Position = openfl_Matrix * openfl_Position;
+		}")
+	#end
 	public function new()
 	{
 		super();

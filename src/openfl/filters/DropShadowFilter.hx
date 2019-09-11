@@ -546,6 +546,7 @@ import lime._internal.graphics.ImageDataUtil; // TODO
 #end
 private class HideShader extends BitmapFilterShader
 {
+	#if !glcoreprofile
 	@:glFragmentSource("
 		uniform sampler2D openfl_Texture;
 		uniform sampler2D sourceBitmap;
@@ -570,6 +571,33 @@ private class HideShader extends BitmapFilterShader
 			textureCoords = vec4(openfl_TextureCoord, openfl_TextureCoord - offset / openfl_TextureSize);
 		}
 	")
+	#else
+	@:glFragmentSource("uniform sampler2D openfl_Texture;
+		uniform sampler2D sourceBitmap;
+		uniform float strength;
+		in vec4 textureCoords;
+
+		out vec4 fragColor;
+
+		void main(void) {
+			vec4 glow = texture (openfl_Texture, textureCoords.zw) * strength;
+
+			fragColor = glow;
+		}
+	")
+	@:glVertexSource("in vec4 openfl_Position;
+		in vec2 openfl_TextureCoord;
+		uniform mat4 openfl_Matrix;
+		uniform vec2 openfl_TextureSize;
+		uniform vec2 offset;
+		out vec4 textureCoords;
+
+		void main(void) {
+			gl_Position = openfl_Matrix * openfl_Position;
+			textureCoords = vec4(openfl_TextureCoord, openfl_TextureCoord - offset / openfl_TextureSize);
+		}
+	")
+	#end
 	public function new()
 	{
 		super();

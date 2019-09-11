@@ -1690,7 +1690,7 @@ abstract Vector<T>(IVector<T>)
 
 	public function get(index:Int):T
 	{
-		return __array[index];
+		return index < 0 ? null : __array[index];
 	}
 
 	public function indexOf(x:T, from:Int = 0):Int
