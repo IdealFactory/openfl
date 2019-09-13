@@ -11,7 +11,7 @@ import openfl.display3D.Context3DProgramType;
 import openfl.geom.Matrix3D;
 import openfl.utils.AGALMiniAssembler;
 #else
-import openfl._internal.renderer.context3D.Context3DHeaps;
+// import openfl._internal.renderer.context3D.Context3DHeaps;
 #end
 import openfl.display3D.textures.TextureBase;
 import openfl.events.Event;
@@ -349,7 +349,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 			if (me.delta != 0)
 			{
 				var e = new Event(EWheel, __localPoint.x, __localPoint.y);
-				e.wheelDelta = -me.delta #if js / 100 #end;
+				e.wheelDelta = me.delta;
 				appInstance.sevents.onEvent(e);
 			}
 		}

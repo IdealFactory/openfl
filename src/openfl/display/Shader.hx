@@ -403,7 +403,7 @@ class Shader
 
 		__context.__bindGLArrayBuffer(null);
 
-		#if lime
+		#if (lime && !glcoreprofile)
 		if (__context.__context.type == OPENGL)
 		{
 			gl.disable(gl.TEXTURE_2D);
