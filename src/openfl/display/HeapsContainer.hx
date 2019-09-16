@@ -158,10 +158,11 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		{
 			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null && __renderTarget != null)
 			{
-				__engine.pushTarget(__renderTarget);
-
 				// Ensure all the cached render states are cleared for a new render
 				@:privateAccess __engine.needFlushTarget = true;
+
+				__engine.pushTarget(__renderTarget);
+
 				#if flash
 				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
 				driver.curAttributes = 0;
@@ -171,6 +172,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				driver.curIndexBuffer = null;
 				driver.curAttribs = [];
 				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
+				@:privateAccess stage.context3D.__setGLBlend(false);
 				#end
 				driver.curColorMask = -1;
 				driver.curMatBits = -1;
@@ -181,16 +183,18 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
 
+				#if (!js && !flash)
+				@:privateAccess System.mainLoop();
+				#else
+				@:privateAccess System.loopFunc();
+				#end
+
 				appInstance.s3d.render(__engine);
 				appInstance.s2d.render(__engine);
 
 				__engine.popTarget();
 
 				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
-
-				#if (!js && !flash)
-				@:privateAccess System.mainLoop();
-				#end
 
 				#if !flash
 				// Modify the texture ID to point to the Heaps render target texture to bind it correctly
