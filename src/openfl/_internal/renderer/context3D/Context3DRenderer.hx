@@ -1138,7 +1138,7 @@ class Context3DRenderer extends Context3DRendererAPI
 	{
 		if (heaps.__bitmapData != null)
 		{
-			__setBlendMode(NORMAL);
+			context3D.__contextState.stateDirty = true;
 
 			var shader = __defaultDisplayShader;
 			setShader(shader);
@@ -1155,6 +1155,8 @@ class Context3DRenderer extends Context3DRendererAPI
 			if (shader.__textureCoord != null) context3D.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, 3, FLOAT_2);
 			var indexBuffer = heaps.__bitmapData.getIndexBuffer(context3D);
 			context3D.drawTriangles(indexBuffer);
+
+			context3D.__contextState.stateDirty = false;
 
 			#if gl_stats
 			Context3DStats.incrementDrawCall(DrawCallContext.STAGE);

@@ -13,6 +13,7 @@ import openfl.utils.AGALMiniAssembler;
 #else
 // import openfl._internal.renderer.context3D.Context3DHeaps;
 #end
+import openfl._internal.renderer.context3D.Context3DState;
 import openfl.display3D.textures.TextureBase;
 import openfl.events.Event;
 import openfl.events.MouseEvent;
@@ -74,6 +75,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	@:noCompletion private var __engine:Engine;
 	@:noCompletion private var __window:Window;
 	@:noCompletion private var __cullingState:Face = None;
+	@:noCompletion private var __stateStore:Context3DState;
 
 	@:noCompletion private var __mousePoint:Point = new Point();
 	@:noCompletion private var __localPoint:Point = new Point();
@@ -171,8 +173,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
 				driver.curIndexBuffer = null;
 				driver.curAttribs = [];
+				__stateStore = stage.context3D.__state.clone();
 				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
 				@:privateAccess stage.context3D.__setGLBlend(false);
+				@:privateAccess stage.context3D.__state.program.__flush();
 				#end
 				driver.curColorMask = -1;
 				driver.curMatBits = -1;
@@ -195,6 +199,8 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				__engine.popTarget();
 
 				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+
+				stage.context3D.__state.fromState(__stateStore);
 
 				#if !flash
 				// Modify the texture ID to point to the Heaps render target texture to bind it correctly
@@ -391,6 +397,14 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		#if !flash
 		return value;
 		#end
+	}
+
+	public static function toHeapsBitmapData(bmd:BitmapData):hxd.BitmapData
+	{
+		var clone = bmd.clone();
+		clone.image.buffer.format = #if js lime.graphics.PixelFormat.BGRA32 #else lime.graphics.PixelFormat.RGBA32 #end;
+		var heapsBmd = hxd.BitmapData.fromNative(clone.image);
+		return heapsBmd;
 	}
 }
 #else
