@@ -176,7 +176,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 					__stateStore = stage.context3D.__state.clone();
 					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
 					@:privateAccess stage.context3D.__setGLBlend(false);
-					@:privateAccess stage.context3D.__state.program.__flush();
+					if (@:privateAccess stage.context3D.__state.program != null) @:privateAccess stage.context3D.__state.program.__flush();
 				}
 				else
 				{
