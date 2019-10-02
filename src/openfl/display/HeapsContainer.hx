@@ -105,15 +105,13 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		__type = HEAPS_CONTAINER;
 		#end
 
+		var attributes = Lib.application.window.context.attributes;
+		h3d.Engine.ANTIALIASING = attributes.antialiasing;
+
 		Window.CURRENT = Lib.application;
 
 		if (__appClass != null) appInstance = cast Type.createEmptyInstance(__appClass);
 
-		addEventListener(openfl.events.Event.ADDED_TO_STAGE, __onAddedToStage);
-	}
-
-	private function __onAddedToStage(e:openfl.events.Event)
-	{
 		// Create instance of Heaps app on delay to avoid blocking
 		haxe.Timer.delay(initHeapsApp, 0);
 	}
@@ -173,10 +171,18 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
 				driver.curIndexBuffer = null;
 				driver.curAttribs = [];
-				__stateStore = stage.context3D.__state.clone();
-				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
-				@:privateAccess stage.context3D.__setGLBlend(false);
-				@:privateAccess stage.context3D.__state.program.__flush();
+				if (stage.context3D.__state != null)
+				{
+					__stateStore = stage.context3D.__state.clone();
+					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
+					@:privateAccess stage.context3D.__setGLBlend(false);
+					@:privateAccess stage.context3D.__state.program.__flush();
+				}
+				else
+				{
+					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
+					@:privateAccess stage.context3D.__setGLBlend(false);
+				}
 				#end
 				driver.curColorMask = -1;
 				driver.curMatBits = -1;
@@ -200,9 +206,9 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
 
-				stage.context3D.__state.fromState(__stateStore);
-
 				#if !flash
+				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
+
 				// Modify the texture ID to point to the Heaps render target texture to bind it correctly
 				@:privateAccess __texture.__textureID = __renderTarget.t.t;
 
@@ -401,10 +407,14 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 	public static function toHeapsBitmapData(bmd:BitmapData):hxd.BitmapData
 	{
+		#if !flash
 		var clone = bmd.clone();
 		clone.image.buffer.format = #if js lime.graphics.PixelFormat.BGRA32 #else lime.graphics.PixelFormat.RGBA32 #end;
 		var heapsBmd = hxd.BitmapData.fromNative(clone.image);
 		return heapsBmd;
+		#else
+		return hxd.BitmapData.fromNative(bmd);
+		#end
 	}
 }
 #else
