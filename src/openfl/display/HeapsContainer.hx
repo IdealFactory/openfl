@@ -365,7 +365,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 			if (me.delta != 0)
 			{
 				var e = new Event(EWheel, __localPoint.x, __localPoint.y);
-				e.wheelDelta = me.delta;
+				e.wheelDelta = -me.delta #if js / 120 #end; // Similar division as in Heaps hxd.Window.js.hx onMouseWheel method.
 				appInstance.sevents.onEvent(e);
 			}
 		}
