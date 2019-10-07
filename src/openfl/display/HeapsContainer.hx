@@ -407,14 +407,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 	public static function toHeapsBitmapData(bmd:BitmapData):hxd.BitmapData
 	{
-		#if !flash
-		var clone = bmd.clone();
-		clone.image.buffer.format = #if js lime.graphics.PixelFormat.BGRA32 #else lime.graphics.PixelFormat.RGBA32 #end;
-		var heapsBmd = hxd.BitmapData.fromNative(clone.image);
-		return heapsBmd;
-		#else
-		return hxd.BitmapData.fromNative(bmd);
-		#end
+		return hxd.BitmapData.fromNative(#if !flash bmd.image #else bmd #end);
 	}
 }
 #else
