@@ -28,6 +28,11 @@ import h3d.mat.Texture;
 import hxd.System;
 import hxd.Window;
 import hxd.Event;
+import format.png.Data;
+import format.png.Writer;
+import lime._internal.format.Zlib;
+import haxe.io.Bytes;
+import haxe.io.BytesOutput;
 
 @:access(openfl.display3D.Context3D)
 @:access(hxd.Window)
@@ -218,6 +223,108 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				#end
 			}
 		}
+	}
+
+	public function capture(w:Int, h:Int)
+	{
+		if (__engine != null)
+		{
+			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null)
+			{
+				// Ensure all the cached render states are cleared for a new render
+				@:privateAccess __engine.needFlushTarget = true;
+
+				var a = "var spector = new SPECTOR.Spector(); spector.displayUI(); var c = lime_graphics_opengl_GL.context; spector.startCapture( c, 9000 );";
+
+				var captureTarget:Texture;
+				captureTarget = new Texture(w, h, [TextureFlags.Target]#if !flash, hxd.PixelFormat.RGBA #end);
+				#if !flash
+				captureTarget.depthBuffer = new DepthBuffer(w, h);
+				#else
+				captureTarget.depthBuffer = new DepthBuffer(-1, -1);
+				#end
+				__engine.pushTarget(captureTarget);
+
+				#if flash
+				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
+				driver.curAttributes = 0;
+				Lib.current.stage.stage3Ds[0].context3D.setCulling(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? "front" : "back");
+				#else
+				var driver:h3d.impl.GlDriver = cast __engine.driver;
+				driver.curIndexBuffer = null;
+				driver.curAttribs = [];
+				if (stage.context3D.__state != null)
+				{
+					__stateStore = stage.context3D.__state.clone();
+					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
+					@:privateAccess stage.context3D.__setGLBlend(false);
+					if (@:privateAccess stage.context3D.__state.program != null) @:privateAccess stage.context3D.__state.program.__flush();
+				}
+				else
+				{
+					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
+					@:privateAccess stage.context3D.__setGLBlend(false);
+				}
+				#end
+				driver.curColorMask = -1;
+				driver.curMatBits = -1;
+				driver.curShader = null;
+				driver.curBuffer = null;
+
+				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+
+				appInstance.s3d.render(__engine);
+				appInstance.s2d.render(__engine);
+
+				__engine.popTarget();
+
+				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+
+				#if !flash
+				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
+				#end
+
+				var pixels = captureTarget.capturePixels();
+				var bmd = new hxd.BitmapData(pixels.width, pixels.height);
+				bmd.setPixels(pixels);
+				// trace("PNG\n" + toPNG(pixels.bytes));
+
+				return #if !flash BitmapData.fromImage(bmd.toNative(), true) #else bmd.toNative() #end;
+			}
+		}
+		return null;
+	}
+
+	function toPNG(w, h, sourceBytes):String
+	{
+		var bytes = Bytes.alloc(w * h * 4 + h);
+		var sourceIndex:Int, index:Int;
+
+		for (y in 0...h)
+		{
+			sourceIndex = y * w * 4;
+			index = y * w * 4 + y;
+
+			bytes.set(index, 0);
+			bytes.blit(index + 1, sourceBytes, sourceIndex, w * 4);
+		}
+
+		var data = new List();
+		data.add(CHeader({
+			width: w,
+			height: h,
+			colbits: 8,
+			color: ColTrue(true),
+			interlaced: false
+		}));
+		data.add(CData(Zlib.compress(bytes)));
+		data.add(CEnd);
+
+		var output = new BytesOutput();
+		var png = new Writer(output);
+		png.write(data);
+
+		return "data:image/png;base64," + lime._internal.format.Base64.encode(output.getBytes());
 	}
 
 	private function setupRenderTarget()
