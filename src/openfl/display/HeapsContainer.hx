@@ -18,7 +18,9 @@ import openfl.display3D.textures.TextureBase;
 import openfl.events.Event;
 import openfl.events.MouseEvent;
 import openfl.events.RenderEvent;
+import openfl.geom.Matrix;
 import openfl.geom.Point;
+import openfl.geom.Rectangle;
 import openfl.Lib;
 #if (heaps && !macro)
 import h3d.Engine;
@@ -35,6 +37,8 @@ import haxe.io.Bytes;
 import haxe.io.BytesOutput;
 
 @:access(openfl.display3D.Context3D)
+@:access(openfl.geom.Matrix)
+@:access(openfl.geom.Rectangle)
 @:access(hxd.Window)
 @:access(h3d.Engine)
 @:access(h3d.impl.GlDriver)
@@ -234,8 +238,6 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				// Ensure all the cached render states are cleared for a new render
 				@:privateAccess __engine.needFlushTarget = true;
 
-				var a = "var spector = new SPECTOR.Spector(); spector.displayUI(); var c = lime_graphics_opengl_GL.context; spector.startCapture( c, 9000 );";
-
 				var captureTarget:Texture;
 				captureTarget = new Texture(w, h, [TextureFlags.Target]#if !flash, hxd.PixelFormat.RGBA #end);
 				#if !flash
@@ -244,6 +246,18 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				captureTarget.depthBuffer = new DepthBuffer(-1, -1);
 				#end
 				__engine.pushTarget(captureTarget);
+
+				var oldW = __width;
+				var oldH = __height;
+				__engine.width = w;
+				__engine.height = h;
+				#if flash
+				var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
+				driver.width = w;
+				driver.height = h;
+				#else
+				__engine.driver.resize(w, h);
+				#end
 
 				#if flash
 				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
@@ -287,7 +301,16 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				var pixels = captureTarget.capturePixels();
 				var bmd = new hxd.BitmapData(pixels.width, pixels.height);
 				bmd.setPixels(pixels);
-				// trace("PNG\n" + toPNG(pixels.bytes));
+
+				__engine.width = oldW;
+				__engine.height = oldH;
+				#if flash
+				var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
+				driver.width = oldW;
+				driver.height = oldH;
+				#else
+				__engine.driver.resize(oldW, oldH);
+				#end
 
 				return #if !flash BitmapData.fromImage(bmd.toNative(), true) #else bmd.toNative() #end;
 			}
@@ -295,7 +318,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		return null;
 	}
 
-	function toPNG(w, h, sourceBytes):String
+	public function toPNG(w, h, sourceBytes):String
 	{
 		var bytes = Bytes.alloc(w * h * 4 + h);
 		var sourceIndex:Int, index:Int;
@@ -403,6 +426,54 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		FlashHeaps.render(this);
 	}
 	#end
+
+	@:noCompletion private override function __getBounds(rect:Rectangle, matrix:Matrix):Void
+	{
+		if (__bitmapData != null)
+		{
+			var bounds = Rectangle.__pool.get();
+			bounds.setTo(0, 0, __bitmapData.width, __bitmapData.height);
+			bounds.__transform(bounds, matrix);
+			rect.__expand(bounds.x, bounds.y, bounds.width, bounds.height);
+			Rectangle.__pool.release(bounds);
+		}
+	}
+
+	@:noCompletion private override function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
+			hitObject:DisplayObject):Bool
+	{
+		if (!hitObject.visible || __isMask || __bitmapData == null) return false;
+		if (mask != null && !mask.__hitTestMask(x, y)) return false;
+		__getRenderTransform();
+		var px = __renderTransform.__transformInverseX(x, y);
+		var py = __renderTransform.__transformInverseY(x, y);
+		if (px > 0 && py > 0 && px <= __bitmapData.width && py <= __bitmapData.height)
+		{
+			if (__scrollRect != null && !__scrollRect.contains(px, py))
+			{
+				return false;
+			}
+			if (stack != null && !interactiveOnly)
+			{
+				stack.push(hitObject);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	@:noCompletion private override function __hitTestMask(x:Float, y:Float):Bool
+	{
+		if (__bitmapData == null) return false;
+		__getRenderTransform();
+		var px = __renderTransform.__transformInverseX(x, y);
+		var py = __renderTransform.__transformInverseY(x, y);
+		if (px > 0 && py > 0 && px <= __bitmapData.width && py <= __bitmapData.height)
+		{
+			return true;
+		}
+		return false;
+	}
 
 	@:keep @:noCompletion private function __onResize(e:openfl.events.Event)
 	{
