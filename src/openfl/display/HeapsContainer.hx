@@ -318,7 +318,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		return null;
 	}
 
-	public function toPNG(w, h, sourceBytes):String
+	public static function toPNG(w, h, sourceBytes):String
 	{
 		var bytes = Bytes.alloc(w * h * 4 + h);
 		var sourceIndex:Int, index:Int;
