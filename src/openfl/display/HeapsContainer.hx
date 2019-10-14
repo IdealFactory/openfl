@@ -103,6 +103,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	public var __renderTarget:Texture;
 
 	public var appInstance:Dynamic;
+	public var backgroundColor:UInt = 0x0;
 
 	public function new(appClass:Class<Dynamic>)
 	{
@@ -200,7 +201,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 				__engine.driver.begin(hxd.Timer.frameCount);
 
-				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+				__engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
 
 				#if (!js && !flash)
 				@:privateAccess System.mainLoop();
@@ -213,7 +214,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 				__engine.popTarget();
 
-				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+				__engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
 
 				#if !flash
 				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
@@ -318,7 +319,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		return null;
 	}
 
-	public static function toPNG(w, h, sourceBytes):String
+	public static function toPNG(w, h, sourceBytes):Bytes
 	{
 		var bytes = Bytes.alloc(w * h * 4 + h);
 		var sourceIndex:Int, index:Int;
@@ -347,7 +348,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		var png = new Writer(output);
 		png.write(data);
 
-		return "data:image/png;base64," + lime._internal.format.Base64.encode(output.getBytes());
+		return output.getBytes();
 	}
 
 	private function setupRenderTarget()
