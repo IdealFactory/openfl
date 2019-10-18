@@ -17,6 +17,7 @@ import openfl._internal.renderer.context3D.Context3DState;
 import openfl.display3D.textures.TextureBase;
 import openfl.events.Event;
 import openfl.events.MouseEvent;
+import openfl.events.TouchEvent;
 import openfl.events.RenderEvent;
 import openfl.geom.Matrix;
 import openfl.geom.Point;
@@ -137,6 +138,9 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, __onMouseDown);
 				Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, __onMouseUp);
 				Lib.current.stage.addEventListener(MouseEvent.MOUSE_WHEEL, __onMouseWheel);
+				Lib.current.stage.addEventListener(TouchEvent.TOUCH_MOVE, __onTouchMove);
+				Lib.current.stage.addEventListener(TouchEvent.TOUCH_BEGIN, __onTouchBegin);
+				Lib.current.stage.addEventListener(TouchEvent.TOUCH_END, __onTouchEnd);
 
 				__engine = appInstance.engine = @:privateAccess new h3d.Engine();
 				__window = Window.getInstance();
@@ -173,7 +177,6 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 				__engine.pushTarget(__renderTarget);
 
-
 				#if flash
 				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
 				driver.curAttributes = 0;
@@ -184,7 +187,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				driver.curAttribs = [];
 				if (stage.context3D.__state != null)
 				{
-					stage.context3D.__contextState.stateDirty = true;
+					// stage.context3D.__contextState.stateDirty = true;
 
 					__stateStore = stage.context3D.__state.clone();
 					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
@@ -369,7 +372,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		// Create render target and depth buffer for Heaps rendering
 		var w = __width;
 		var h = __height;
-		trace("setupRenderTargets:"+w+"/"+h);
+		trace("setupRenderTargets:" + w + "/" + h);
 		__renderTarget = new Texture(w, h, [TextureFlags.Target]);
 		#if !flash
 		__renderTarget.depthBuffer = new DepthBuffer(w, h);
@@ -551,6 +554,46 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				e.wheelDelta = -me.delta #if js / 120 #end; // Similar division as in Heaps hxd.Window.js.hx onMouseWheel method.
 				appInstance.sevents.onEvent(e);
 			}
+		}
+	}
+
+	@:keep @:noCompletion private function __onTouchBegin(te:TouchEvent):Void
+	{
+		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		{
+			var e = new Event(EPush, __localPoint.x, __localPoint.y);
+			e.touchId = te.touchPointID;
+			appInstance.sevents.onEvent(e);
+		}
+	}
+
+	@:keep @:noCompletion private function __onTouchMove(te:TouchEvent)
+	{
+		__mousePoint.x = te.localX;
+		__mousePoint.y = te.localY;
+		__localPoint = globalToLocal(__mousePoint);
+
+		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		{
+			#if (js || flash)
+			@:privateAccess __window.openFLMouseX = __localPoint.x;
+			@:privateAccess __window.openFLMouseY = __localPoint.y;
+			#else
+			appInstance.sevents.setMousePos(__localPoint.x, __localPoint.y);
+			#end
+			var e = new Event(EMove, __localPoint.x, __localPoint.y);
+			e.touchId = te.touchPointID;
+			appInstance.sevents.onEvent(e);
+		}
+	}
+
+	@:keep @:noCompletion private function __onTouchEnd(te:TouchEvent):Void
+	{
+		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		{
+			var e = new Event(ERelease, __localPoint.x, __localPoint.y);
+			e.touchId = te.touchPointID;
+			appInstance.sevents.onEvent(e);
 		}
 	}
 
