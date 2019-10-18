@@ -546,7 +546,7 @@ import lime._internal.graphics.ImageDataUtil; // TODO
 #end
 private class HideShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("
 		uniform sampler2D openfl_Texture;
 		uniform sampler2D sourceBitmap;
