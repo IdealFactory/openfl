@@ -115,7 +115,7 @@ class ShaderMacro
 			var shaderDataFields = new Array<Field>();
 			var uniqueFields = [];
 
-			processFields(glVertexSource, #if glcoreprofile "in" #else "attribute" #end, shaderDataFields, pos);
+			processFields(glVertexSource, #if useGLSL300es "in" #else "attribute" #end, shaderDataFields, pos);
 			processFields(glVertexSource, "uniform", shaderDataFields, pos);
 			processFields(glFragmentSource, "uniform", shaderDataFields, pos);
 
@@ -211,7 +211,7 @@ class ShaderMacro
 		}
 		else
 		{
-			#if glcoreprofile
+			#if useGLSL300es
 			regex = ~/in ([A-Za-z0-9]+) ([A-Za-z0-9_]+)/;
 			#else
 			regex = ~/attribute ([A-Za-z0-9]+) ([A-Za-z0-9_]+)/;

@@ -11,7 +11,7 @@ class Context3DMaskShader extends Shader
 {
 	public static var opaqueBitmapData:BitmapData = new BitmapData(1, 1, false, 0);
 
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("varying vec2 openfl_TextureCoordv;
 
 		uniform sampler2D openfl_Texture;

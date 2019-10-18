@@ -467,7 +467,7 @@ import lime._internal.graphics.ImageDataUtil; // TODO
 #end
 private class InvertAlphaShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("
 		uniform sampler2D openfl_Texture;
 		varying vec2 vTexCoord;
@@ -524,7 +524,7 @@ private class InvertAlphaShader extends BitmapFilterShader
 #end
 private class BlurAlphaShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("
 		uniform sampler2D openfl_Texture;
 		uniform vec4 uColor;
@@ -653,7 +653,7 @@ private class BlurAlphaShader extends BitmapFilterShader
 #end
 private class CombineShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("
 		uniform sampler2D openfl_Texture;
 		uniform sampler2D sourceBitmap;
@@ -723,7 +723,7 @@ private class CombineShader extends BitmapFilterShader
 #end
 private class InnerCombineShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("
 		uniform sampler2D openfl_Texture;
 		uniform sampler2D sourceBitmap;
@@ -793,7 +793,7 @@ private class InnerCombineShader extends BitmapFilterShader
 #end
 private class CombineKnockoutShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("
 		uniform sampler2D openfl_Texture;
 		uniform sampler2D sourceBitmap;
@@ -863,7 +863,7 @@ private class CombineKnockoutShader extends BitmapFilterShader
 #end
 private class InnerCombineKnockoutShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("
 		uniform sampler2D openfl_Texture;
 		uniform sampler2D sourceBitmap;

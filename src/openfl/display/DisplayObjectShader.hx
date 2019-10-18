@@ -8,7 +8,7 @@ import openfl.utils.ByteArray;
 #end
 class DisplayObjectShader extends Shader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glVertexHeader("attribute float openfl_Alpha;
 		attribute vec4 openfl_ColorMultiplier;
 		attribute vec4 openfl_ColorOffset;

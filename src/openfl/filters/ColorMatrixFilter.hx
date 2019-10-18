@@ -244,7 +244,7 @@ import lime.math.RGBA;
 @SuppressWarnings("checkstyle:FieldDocComment")
 private class ColorMatrixShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("varying vec2 openfl_TextureCoordv;
 		uniform sampler2D openfl_Texture;
 

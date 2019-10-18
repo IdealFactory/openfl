@@ -15,7 +15,7 @@ import lime._internal.graphics.ImageCanvasUtil;
 import lime.graphics.Image;
 import lime.graphics.RenderContext;
 #end
-#if glcoreprofile
+#if useGLSL300es
 import lime.graphics.opengl.GL;
 #end
 
@@ -82,7 +82,7 @@ class TextureBase extends EventDispatcher
 			if (bgraExtension == null) bgraExtension = gl.getExtension("APPLE_texture_format_BGRA8888");
 			#end
 
-			#if (glcoreprofile && !html5)
+			#if (useGLSL300es && !html5)
 			__supportsBGRA = true;
 			__textureFormat = GL.BGRA;
 			#else

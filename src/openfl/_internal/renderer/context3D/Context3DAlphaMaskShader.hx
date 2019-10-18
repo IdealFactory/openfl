@@ -8,7 +8,7 @@ import openfl.display.Shader;
 #end
 class Context3DAlphaMaskShader extends Shader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("varying vec2 openfl_AlphaTextureCoordv;
 		varying vec2 openfl_TextureCoordv;
 

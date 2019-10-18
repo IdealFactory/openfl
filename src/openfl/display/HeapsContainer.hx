@@ -132,11 +132,11 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		{
 			hxd.System.start(function()
 			{
-				stage.addEventListener(openfl.events.Event.RESIZE, __onResize);
-				stage.addEventListener(MouseEvent.MOUSE_MOVE, __onMouseMove);
-				stage.addEventListener(MouseEvent.MOUSE_DOWN, __onMouseDown);
-				stage.addEventListener(MouseEvent.MOUSE_UP, __onMouseUp);
-				stage.addEventListener(MouseEvent.MOUSE_WHEEL, __onMouseWheel);
+				Lib.current.stage.addEventListener(openfl.events.Event.RESIZE, __onResize);
+				Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, __onMouseMove);
+				Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, __onMouseDown);
+				Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, __onMouseUp);
+				Lib.current.stage.addEventListener(MouseEvent.MOUSE_WHEEL, __onMouseWheel);
 
 				__engine = appInstance.engine = @:privateAccess new h3d.Engine();
 				__window = Window.getInstance();
@@ -164,7 +164,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 	@:noCompletion #if !flash override #end private function __enterFrame(deltaTime:Int):Void
 	{
-		if (__engine != null)
+		if (__engine != null && parent != null)
 		{
 			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null && __renderTarget != null)
 			{
@@ -172,6 +172,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				@:privateAccess __engine.needFlushTarget = true;
 
 				__engine.pushTarget(__renderTarget);
+
 
 				#if flash
 				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
@@ -183,6 +184,8 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				driver.curAttribs = [];
 				if (stage.context3D.__state != null)
 				{
+					stage.context3D.__contextState.stateDirty = true;
+
 					__stateStore = stage.context3D.__state.clone();
 					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
 					@:privateAccess stage.context3D.__setGLBlend(false);
@@ -366,6 +369,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		// Create render target and depth buffer for Heaps rendering
 		var w = __width;
 		var h = __height;
+		trace("setupRenderTargets:"+w+"/"+h);
 		__renderTarget = new Texture(w, h, [TextureFlags.Target]);
 		#if !flash
 		__renderTarget.depthBuffer = new DepthBuffer(w, h);
@@ -376,13 +380,13 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		heapsRenderTargets.push(__renderTarget);
 
 		// Create a fake OpenFl bitmap data to allow integrating the renderTarget texture into the OpenFL rendering pipeline.
+		var st = Lib.current.stage;
 		__bitmapData = new BitmapData(w, h, true, 0x80ff0000);
 		#if !flash
-		__texture = __bitmapData.getTexture(stage.context3D);
+		__texture = __bitmapData.getTexture(st.context3D);
 		#else
 		__projection.identity();
 		var raw = __projection.rawData;
-		var st = Lib.current.stage;
 
 		var sx = 1.0 / st.stageWidth;
 		var sy = 1.0 / -st.stageHeight;

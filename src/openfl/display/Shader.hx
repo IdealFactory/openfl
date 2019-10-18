@@ -403,7 +403,7 @@ class Shader
 
 		__context.__bindGLArrayBuffer(null);
 
-		#if (lime && !glcoreprofile)
+		#if (lime && !useGLSL300es)
 		if (__context.__context.type == OPENGL)
 		{
 			gl.disable(gl.TEXTURE_2D);
@@ -433,7 +433,7 @@ class Shader
 			textureCount++;
 		}
 
-		#if (lime && !glcoreprofile)
+		#if (lime && !useGLSL300es)
 		if (__context.__context.type == OPENGL && textureCount > 0)
 		{
 			gl.enable(gl.TEXTURE_2D);
@@ -466,7 +466,7 @@ class Shader
 			__paramFloat = new Array();
 			__paramInt = new Array();
 
-			__processGLData(glVertexSource, #if glcoreprofile "in" #else "attribute" #end);
+			__processGLData(glVertexSource, #if useGLSL300es "in" #else "attribute" #end);
 			__processGLData(glVertexSource, "uniform");
 			__processGLData(glFragmentSource, "uniform");
 		}
@@ -475,7 +475,7 @@ class Shader
 		{
 			var gl = __context.gl;
 
-			#if glcoreprofile
+			#if useGLSL300es
 			var renderContext = __context.__context;
 			var glslVersion = "#version " + renderContext.shaderVersion + (renderContext.glES != null ? " es" : "") + "\n";
 			#else

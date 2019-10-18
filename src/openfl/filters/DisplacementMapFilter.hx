@@ -392,7 +392,7 @@ import lime.math.Vector4;
 #end
 private class DisplacementMapShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("
 
 		uniform sampler2D openfl_Texture;

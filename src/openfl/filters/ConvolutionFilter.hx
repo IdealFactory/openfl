@@ -272,7 +272,7 @@ class ConvolutionFilter extends BitmapFilter
 #end
 private class ConvolutionShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("varying vec2 vBlurCoords[9];
 
 		uniform sampler2D openfl_Texture;

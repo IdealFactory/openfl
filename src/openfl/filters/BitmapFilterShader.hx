@@ -9,7 +9,7 @@ import openfl.utils.ByteArray;
 #end
 class BitmapFilterShader extends Shader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glVertexHeader("attribute vec4 openfl_Position;
 		attribute vec2 openfl_TextureCoord;
 

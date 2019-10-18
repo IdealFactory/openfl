@@ -268,7 +268,7 @@ import lime._internal.graphics.ImageDataUtil; // TODO
 #end
 private class BlurShader extends BitmapFilterShader
 {
-	#if !glcoreprofile
+	#if !useGLSL300es
 	@:glFragmentSource("uniform sampler2D openfl_Texture;
 
 		varying vec2 vBlurCoords[7];
