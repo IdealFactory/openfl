@@ -99,6 +99,9 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	@:noCompletion private var __indexBuffer:IndexBuffer3D;
 	@:noCompletion private var __projection:Matrix3D = new Matrix3D();
 	@:noCompletion private var __transform:Matrix3D = new Matrix3D();
+	@:noCompletion private var __tempMatrix = new Matrix();
+	@:noCompletion private var __tempMatrix2 = new Matrix();
+	@:noCompletion private var __tempRectangle = new Rectangle();
 	#end
 
 	public var __renderTarget:Texture;
@@ -435,29 +438,87 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	}
 	#end
 
-	@:noCompletion private override function __getBounds(rect:Rectangle, matrix:Matrix):Void
+	#if flash
+	public override function hitTestPoint(x:Float, y:Float, shapeFlag:Bool = false):Bool
 	{
-		if (__bitmapData != null)
+		if (stage != null)
 		{
-			var bounds = Rectangle.__pool.get();
-			bounds.setTo(0, 0, __bitmapData.width, __bitmapData.height);
-			bounds.__transform(bounds, matrix);
-			rect.__expand(bounds.x, bounds.y, bounds.width, bounds.height);
-			Rectangle.__pool.release(bounds);
+			return __hitTest(x, y, shapeFlag, null, false, this);
+		}
+		else
+		{
+			return false;
 		}
 	}
 
-	@:noCompletion private override function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
+	public override function getBounds(targetCoordinateSpace:DisplayObject):Rectangle
+	{
+		var matrix = __tempMatrix;
+
+		if (targetCoordinateSpace != null && targetCoordinateSpace != this)
+		{
+			matrix.copyFrom(this.transform.matrix);
+
+			var targetMatrix = __tempMatrix2;
+
+			targetMatrix.copyFrom(targetCoordinateSpace.transform.matrix);
+			targetMatrix.invert();
+
+			matrix.concat(targetMatrix);
+		}
+		else
+		{
+			matrix.identity();
+		}
+
+		var bounds = new Rectangle();
+		__getBounds(bounds, matrix);
+
+		return bounds;
+	}
+
+	#end
+
+	@:noCompletion private #if !flash override #end function __getBounds(rect:Rectangle, matrix:Matrix):Void
+	{
+		if (__bitmapData == null) return;
+
+		var bounds = #if flash __tempRectangle #else Rectangle.__pool.get() #end;
+		bounds.setTo(0, 0, __bitmapData.width, __bitmapData.height);
+
+		#if flash
+		__transformBounds(bounds, matrix);
+		bounds = bounds.union(rect);
+		rect.setTo(bounds.x, bounds.y, bounds.width, bounds.height);
+		#else
+		bounds.__transform(bounds, matrix);
+		rect.__expand(bounds.x, bounds.y, bounds.width, bounds.height);
+		Rectangle.__pool.release(bounds);
+		#end
+	}
+
+	@:noCompletion private #if !flash override #end function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
 			hitObject:DisplayObject):Bool
 	{
+		#if !flash
 		if (!hitObject.visible || __isMask || __bitmapData == null) return false;
 		if (mask != null && !mask.__hitTestMask(x, y)) return false;
 		__getRenderTransform();
 		var px = __renderTransform.__transformInverseX(x, y);
 		var py = __renderTransform.__transformInverseY(x, y);
+		#else
+		if (!hitObject.visible|| __bitmapData == null) return false;
+		if (mask != null && !mask.hitTestPoint (x, y)) return false;
+		var px = __transformInverseX(this.transform.matrix, x, y);
+		var py = __transformInverseY(this.transform.matrix, x, y);
+		#end
 		if (px > 0 && py > 0 && px <= __bitmapData.width && py <= __bitmapData.height)
 		{
+			#if !flash
 			if (__scrollRect != null && !__scrollRect.contains(px, py))
+			#else
+			if (scrollRect != null && !scrollRect.contains(px, py))
+			#end
 			{
 				return false;
 			}
@@ -470,18 +531,88 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		return false;
 	}
 
-	@:noCompletion private override function __hitTestMask(x:Float, y:Float):Bool
+	@:noCompletion private #if !flash override #end function __hitTestMask(x:Float, y:Float):Bool
 	{
 		if (__bitmapData == null) return false;
+
+		#if !flash
 		__getRenderTransform();
 		var px = __renderTransform.__transformInverseX(x, y);
 		var py = __renderTransform.__transformInverseY(x, y);
+		#else
+		var px = __transformInverseX(this.transform.matrix, x, y);
+		var py = __transformInverseY(this.transform.matrix,x, y);
+		#end
 		if (px > 0 && py > 0 && px <= __bitmapData.width && py <= __bitmapData.height)
 		{
 			return true;
 		}
 		return false;
 	}
+
+	#if flash
+	@:noCompletion private inline function __transformBounds(_rect:Rectangle, m:Matrix):Void
+		{
+			var tx0 = m.a * _rect.x + m.c * _rect.y;
+			var tx1 = tx0;
+			var ty0 = m.b * _rect.x + m.d * _rect.y;
+			var ty1 = ty0;
+
+			var tx = m.a * (_rect.x + _rect.width) + m.c * _rect.y;
+			var ty = m.b * (_rect.x + _rect.width) + m.d * _rect.y;
+
+			if (tx < tx0) tx0 = tx;
+			if (ty < ty0) ty0 = ty;
+			if (tx > tx1) tx1 = tx;
+			if (ty > ty1) ty1 = ty;
+
+			tx = m.a * (_rect.x + _rect.width) + m.c * (_rect.y + _rect.height);
+			ty = m.b * (_rect.x + _rect.width) + m.d * (_rect.y + _rect.height);
+
+			if (tx < tx0) tx0 = tx;
+			if (ty < ty0) ty0 = ty;
+			if (tx > tx1) tx1 = tx;
+			if (ty > ty1) ty1 = ty;
+
+			tx = m.a * _rect.x + m.c * (_rect.y + _rect.height);
+			ty = m.b * _rect.x + m.d * (_rect.y + _rect.height);
+
+			if (tx < tx0) tx0 = tx;
+			if (ty < ty0) ty0 = ty;
+			if (tx > tx1) tx1 = tx;
+			if (ty > ty1) ty1 = ty;
+
+			_rect.setTo(tx0 + m.tx, ty0 + m.ty, tx1 - tx0, ty1 - ty0);
+		}
+
+	@:noCompletion private inline function __transformInverseX(_matrix:Matrix, px:Float, py:Float):Float
+	{
+		var norm = _matrix.a * _matrix.d - _matrix.b * _matrix.c;
+
+		if (norm == 0)
+		{
+			return -_matrix.tx;
+		}
+		else
+		{
+			return (1.0 / norm) * (_matrix.c * (_matrix.ty - py) + _matrix.d * (px - _matrix.tx));
+		}
+	}
+
+	@:noCompletion private inline function __transformInverseY(_matrix:Matrix, px:Float, py:Float):Float
+	{
+		var norm = _matrix.a * _matrix.d - _matrix.b * _matrix.c;
+
+		if (norm == 0)
+		{
+			return -_matrix.ty;
+		}
+		else
+		{
+			return (1.0 / norm) * (_matrix.a * (py - _matrix.ty) + _matrix.b * (_matrix.tx - px));
+		}
+	}
+	#end
 
 	@:keep @:noCompletion private function __onResize(e:openfl.events.Event)
 	{
