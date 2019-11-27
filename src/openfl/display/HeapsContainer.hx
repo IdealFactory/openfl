@@ -86,6 +86,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	@:noCompletion private var __window:Window;
 	@:noCompletion private var __cullingState:Face = None;
 	@:noCompletion private var __stateStore:Context3DState;
+	@:noCompletion private var __heapsDirty:Bool = true;
 
 	@:noCompletion private var __mousePoint:Point = new Point();
 	@:noCompletion private var __localPoint:Point = new Point();
@@ -109,9 +110,12 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	public var appInstance:Dynamic;
 	public var backgroundColor:UInt = 0x0;
 
-	public function new(appClass:Class<Dynamic>)
+	var __autoUpdate:Bool;
+
+	public function new(appClass:Class<Dynamic>, autoUpdate:Bool = true)
 	{
 		__appClass = appClass;
+		__autoUpdate = autoUpdate;
 
 		super();
 
@@ -171,10 +175,12 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 	@:noCompletion #if !flash override #end private function __enterFrame(deltaTime:Int):Void
 	{
-		if (__engine != null && parent != null)
+		if ((__heapsDirty || __autoUpdate) && __engine != null && parent != null)
 		{
 			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null && __renderTarget != null)
 			{
+				__heapsDirty = false;
+
 				// Ensure all the cached render states are cleared for a new render
 				@:privateAccess __engine.needFlushTarget = true;
 
@@ -188,29 +194,16 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
 				driver.curIndexBuffer = null;
 				driver.curAttribs = [];
-				if (stage.context3D.__state != null)
-				{
-					// stage.context3D.__contextState.stateDirty = true;
 
-					__stateStore = stage.context3D.__state.clone();
-					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
-					@:privateAccess stage.context3D.__setGLBlend(false);
-					if (@:privateAccess stage.context3D.__state.program != null) @:privateAccess stage.context3D.__state.program.__flush();
-				}
-				else
-				{
-					@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
-					@:privateAccess stage.context3D.__setGLBlend(false);
-				}
+				stage.context3D.__contextState.stateDirty = true;
+
+				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
+				@:privateAccess stage.context3D.__setGLBlend(false);
 				#end
-				driver.curColorMask = -1;
-				driver.curMatBits = -1;
-				driver.curShader = null;
-				driver.curBuffer = null;
 
 				__engine.driver.begin(hxd.Timer.frameCount);
 
-				__engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
+				// __engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
 
 				#if (!js && !flash)
 				@:privateAccess System.mainLoop();
@@ -223,20 +216,23 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 				__engine.popTarget();
 
-				__engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
+				// __engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
 
 				#if !flash
-				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
-
 				// Modify the texture ID to point to the Heaps render target texture to bind it correctly
 				@:privateAccess __texture.__textureID = __renderTarget.t.t;
 
-				__setRenderDirty();
+				__setParentRenderDirty();
 				#else
 				@:privateAccess __heapsRenderbufferTexture = cast __renderTarget.t;
 				#end
 			}
 		}
+	}
+
+	public function render():Void
+	{
+		__heapsDirty = true;
 	}
 
 	public function capture(w:Int, h:Int)
@@ -476,10 +472,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 		return bounds;
 	}
-
 	#end
 
-	@:noCompletion private #if !flash override #end function __getBounds(rect:Rectangle, matrix:Matrix):Void
+	@:noCompletion
+	private #if !flash override #end function __getBounds(rect:Rectangle, matrix:Matrix):Void
 	{
 		if (__bitmapData == null) return;
 
@@ -497,7 +493,8 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		#end
 	}
 
-	@:noCompletion private #if !flash override #end function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
+	@:noCompletion
+	private #if !flash override #end function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
 			hitObject:DisplayObject):Bool
 	{
 		#if !flash
@@ -507,8 +504,8 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		var px = __renderTransform.__transformInverseX(x, y);
 		var py = __renderTransform.__transformInverseY(x, y);
 		#else
-		if (!hitObject.visible|| __bitmapData == null) return false;
-		if (mask != null && !mask.hitTestPoint (x, y)) return false;
+		if (!hitObject.visible || __bitmapData == null) return false;
+		if (mask != null && !mask.hitTestPoint(x, y)) return false;
 		var px = __transformInverseX(this.transform.matrix, x, y);
 		var py = __transformInverseY(this.transform.matrix, x, y);
 		#end
@@ -531,7 +528,8 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		return false;
 	}
 
-	@:noCompletion private #if !flash override #end function __hitTestMask(x:Float, y:Float):Bool
+	@:noCompletion
+	private #if !flash override #end function __hitTestMask(x:Float, y:Float):Bool
 	{
 		if (__bitmapData == null) return false;
 
@@ -541,7 +539,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		var py = __renderTransform.__transformInverseY(x, y);
 		#else
 		var px = __transformInverseX(this.transform.matrix, x, y);
-		var py = __transformInverseY(this.transform.matrix,x, y);
+		var py = __transformInverseY(this.transform.matrix, x, y);
 		#end
 		if (px > 0 && py > 0 && px <= __bitmapData.width && py <= __bitmapData.height)
 		{
@@ -552,38 +550,38 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 	#if flash
 	@:noCompletion private inline function __transformBounds(_rect:Rectangle, m:Matrix):Void
-		{
-			var tx0 = m.a * _rect.x + m.c * _rect.y;
-			var tx1 = tx0;
-			var ty0 = m.b * _rect.x + m.d * _rect.y;
-			var ty1 = ty0;
+	{
+		var tx0 = m.a * _rect.x + m.c * _rect.y;
+		var tx1 = tx0;
+		var ty0 = m.b * _rect.x + m.d * _rect.y;
+		var ty1 = ty0;
 
-			var tx = m.a * (_rect.x + _rect.width) + m.c * _rect.y;
-			var ty = m.b * (_rect.x + _rect.width) + m.d * _rect.y;
+		var tx = m.a * (_rect.x + _rect.width) + m.c * _rect.y;
+		var ty = m.b * (_rect.x + _rect.width) + m.d * _rect.y;
 
-			if (tx < tx0) tx0 = tx;
-			if (ty < ty0) ty0 = ty;
-			if (tx > tx1) tx1 = tx;
-			if (ty > ty1) ty1 = ty;
+		if (tx < tx0) tx0 = tx;
+		if (ty < ty0) ty0 = ty;
+		if (tx > tx1) tx1 = tx;
+		if (ty > ty1) ty1 = ty;
 
-			tx = m.a * (_rect.x + _rect.width) + m.c * (_rect.y + _rect.height);
-			ty = m.b * (_rect.x + _rect.width) + m.d * (_rect.y + _rect.height);
+		tx = m.a * (_rect.x + _rect.width) + m.c * (_rect.y + _rect.height);
+		ty = m.b * (_rect.x + _rect.width) + m.d * (_rect.y + _rect.height);
 
-			if (tx < tx0) tx0 = tx;
-			if (ty < ty0) ty0 = ty;
-			if (tx > tx1) tx1 = tx;
-			if (ty > ty1) ty1 = ty;
+		if (tx < tx0) tx0 = tx;
+		if (ty < ty0) ty0 = ty;
+		if (tx > tx1) tx1 = tx;
+		if (ty > ty1) ty1 = ty;
 
-			tx = m.a * _rect.x + m.c * (_rect.y + _rect.height);
-			ty = m.b * _rect.x + m.d * (_rect.y + _rect.height);
+		tx = m.a * _rect.x + m.c * (_rect.y + _rect.height);
+		ty = m.b * _rect.x + m.d * (_rect.y + _rect.height);
 
-			if (tx < tx0) tx0 = tx;
-			if (ty < ty0) ty0 = ty;
-			if (tx > tx1) tx1 = tx;
-			if (ty > ty1) ty1 = ty;
+		if (tx < tx0) tx0 = tx;
+		if (ty < ty0) ty0 = ty;
+		if (tx > tx1) tx1 = tx;
+		if (ty > ty1) ty1 = ty;
 
-			_rect.setTo(tx0 + m.tx, ty0 + m.ty, tx1 - tx0, ty1 - ty0);
-		}
+		_rect.setTo(tx0 + m.tx, ty0 + m.ty, tx1 - tx0, ty1 - ty0);
+	}
 
 	@:noCompletion private inline function __transformInverseX(_matrix:Matrix, px:Float, py:Float):Float
 	{
