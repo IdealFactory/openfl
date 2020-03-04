@@ -1136,30 +1136,8 @@ class Context3DRenderer extends Context3DRendererAPI
 
 	private function __renderHeapsContainer(heaps:HeapsContainer):Void
 	{
-		if (heaps.__bitmapData != null)
-		{
-			var shader = __defaultDisplayShader;
-			setShader(shader);
-			applyBitmapData(heaps.__bitmapData, __upscaled);
-			applyMatrix(__getMatrix(heaps.__renderTransform, AUTO));
-			applyAlpha(heaps.__worldAlpha);
-			applyColorTransform(heaps.__worldColorTransform);
-			updateShader();
-
-			// alpha == 1, __worldColorTransform
-
-			var vertexBuffer = heaps.__bitmapData.getVertexBuffer(context3D);
-			if (shader.__position != null) context3D.setVertexBufferAt(shader.__position.index, vertexBuffer, 0, FLOAT_3);
-			if (shader.__textureCoord != null) context3D.setVertexBufferAt(shader.__textureCoord.index, vertexBuffer, 3, FLOAT_2);
-			var indexBuffer = heaps.__bitmapData.getIndexBuffer(context3D);
-			context3D.drawTriangles(indexBuffer);
-
-			#if gl_stats
-			Context3DStats.incrementDrawCall(DrawCallContext.STAGE);
-			#end
-
-			__clearShader();
-		}
+		trace("Type:" + Type.getClassName(Type.getClass(heaps)));
+		// heaps.renderContainer();
 	}
 
 	private function __renderMask(mask:DisplayObject):Void
