@@ -1137,7 +1137,7 @@ class Context3DRenderer extends Context3DRendererAPI
 	private function __renderHeapsContainer(heaps:HeapsContainer):Void
 	{
 		trace("Type:" + Type.getClassName(Type.getClass(heaps)));
-		// heaps.renderContainer();
+		heaps.renderContainer();
 	}
 
 	private function __renderMask(mask:DisplayObject):Void
