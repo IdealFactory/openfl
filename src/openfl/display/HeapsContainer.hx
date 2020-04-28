@@ -214,6 +214,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				driver.curIndexBuffer = null;
 				driver.curAttribs = [];
 
+				#if !flash
+				if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
+				#end
+
 				stage.context3D.__contextState.stateDirty = true;
 				stage.context3D.setDepthTest(true, openfl.display3D.Context3DCompareMode.LESS);
 				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
@@ -230,6 +234,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 				appInstance.s3d.render(__engine);
 				appInstance.s2d.render(__engine);
+
+				#if !flash
+				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
+				#end
 			}
 		}
 	}

@@ -106,6 +106,7 @@ class Context3DBitmap
 			var shader = renderer.__maskShader;
 			renderer.setShader(shader);
 			renderer.applyBitmapData(Context3DMaskShader.opaqueBitmapData, true);
+			// renderer.applyBitmapData(bitmap.__bitmapData, true);
 			renderer.applyMatrix(renderer.__getMatrix(bitmap.__renderTransform, bitmap.pixelSnapping));
 			renderer.updateShader();
 
