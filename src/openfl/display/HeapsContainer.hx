@@ -190,9 +190,9 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		{
 			// TODO: Make sure state is correct for this?
 			@:privateAccess if (stage.context3D.__stage.context3D == stage.context3D && !stage.context3D.__stage.__renderer.__cleared)
-		{
+			{
 				@:privateAccess stage.context3D.__stage.__renderer.__clear();
-		}
+			}
 		}
 		#end
 
@@ -213,6 +213,9 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
 				driver.curIndexBuffer = null;
 				driver.curAttribs = [];
+				driver.curAttribs = [];
+				driver.curStOpBits = -1;
+				driver.curStMaskBits = -1;
 
 				#if !flash
 				if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
@@ -285,6 +288,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
 				driver.curIndexBuffer = null;
 				driver.curAttribs = [];
+				driver.curAttribs = [];
+				driver.curStOpBits = -1;
+				driver.curStMaskBits = -1;
+
 				if (stage.context3D.__state != null)
 				{
 					__stateStore = stage.context3D.__state.clone();
