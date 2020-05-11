@@ -44,7 +44,7 @@ import haxe.io.BytesOutput;
 @:access(h3d.Engine)
 @:access(h3d.impl.GlDriver)
 @:access(h3d.impl.Stage3dDriver)
-class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements IDisplayObject #end
+class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implements IDisplayObject #end
 {
 	public static var heapsRenderTargets:Array<Texture> = [];
 
@@ -447,7 +447,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 			hitObject:DisplayObject):Bool
 	{
 		#if !flash
-		if (!hitObject.visible || __isMask || __bitmapData == null) return false;
+		if (!hitObject.visible || __isMask) return false;
 		if (mask != null && !mask.__hitTestMask(x, y)) return false;
 		__getRenderTransform();
 		var px = __renderTransform.__transformInverseX(x, y);
@@ -458,20 +458,17 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		var px = __transformInverseX(this.transform.matrix, x, y);
 		var py = __transformInverseY(this.transform.matrix, x, y);
 		#end
-		if (px > 0 && py > 0 && px <= __bitmapData.width && py <= __bitmapData.height)
+		#if !flash
+		if (__scrollRect != null && !__scrollRect.contains(px, py))
+		#else
+		if (scrollRect != null && !scrollRect.contains(px, py))
+		#end
 		{
-			#if !flash
-			if (__scrollRect != null && !__scrollRect.contains(px, py))
-			#else
-			if (scrollRect != null && !scrollRect.contains(px, py))
-			#end
-			{
-				return false;
-			}
-			if (stack != null && !interactiveOnly)
-			{
-				stack.push(hitObject);
-			}
+			return false;
+		}
+		if (stack != null && px > 0 && py > 0 && px <= width && py <= height)
+		{
+			stack.push(hitObject);
 			return true;
 		}
 		return false;
@@ -480,8 +477,6 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 	@:noCompletion
 	private #if !flash override #end function __hitTestMask(x:Float, y:Float):Bool
 	{
-		if (__bitmapData == null) return false;
-
 		#if !flash
 		__getRenderTransform();
 		var px = __renderTransform.__transformInverseX(x, y);
@@ -490,7 +485,7 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		var px = __transformInverseX(this.transform.matrix, x, y);
 		var py = __transformInverseY(this.transform.matrix, x, y);
 		#end
-		if (px > 0 && py > 0 && px <= __bitmapData.width && py <= __bitmapData.height)
+		if (px > 0 && py > 0 && px <= width && py <= height)
 		{
 			return true;
 		}
@@ -635,8 +630,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 	@:keep @:noCompletion private function __onTouchBegin(te:TouchEvent):Void
 	{
+		trace("__onTouchBegin:" + __localPoint + " tID=" + te.touchPointID + " wh:" + __width + "/" + __height);
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
+			trace(" - sending EPush");
 			var e = new Event(EPush, __localPoint.x, __localPoint.y);
 			e.touchId = te.touchPointID;
 			appInstance.sevents.onEvent(e);
@@ -649,8 +646,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 		__mousePoint.y = te.localY;
 		__localPoint = globalToLocal(__mousePoint);
 
+		trace("__onTouchMove:" + __localPoint + " tID=" + te.touchPointID + " wh:" + __width + "/" + __height);
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
+			trace(" - sending EMove");
 			#if (js || flash)
 			@:privateAccess __window.openFLMouseX = __localPoint.x;
 			@:privateAccess __window.openFLMouseY = __localPoint.y;
@@ -665,8 +664,10 @@ class HeapsContainer extends #if !flash DisplayObject #else Bitmap implements ID
 
 	@:keep @:noCompletion private function __onTouchEnd(te:TouchEvent):Void
 	{
+		trace("__onTouchEnd:" + __localPoint + " tID=" + te.touchPointID + " wh:" + __width + "/" + __height);
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
+			trace(" - sending ERelease");
 			var e = new Event(ERelease, __localPoint.x, __localPoint.y);
 			e.touchId = te.touchPointID;
 			appInstance.sevents.onEvent(e);
