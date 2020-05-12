@@ -75,6 +75,8 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	public var smoothing:Bool;
 	#end
 
+	@:noCompletion private var __x:Int = -1;
+	@:noCompletion private var __y:Int = -1;
 	@:noCompletion private var __width:Int = 0;
 	@:noCompletion private var __height:Int = 0;
 
@@ -226,7 +228,8 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
 				#end
 
-				__engine.driver.offset(Std.int(x), Std.int(y));
+				if (Std.int(x) != __x || Std.int(y) != __y) __engine.driver.offset(Std.int(x), stage.stageHeight - __height - Std.int(y));
+
 				__engine.driver.begin(hxd.Timer.frameCount);
 
 				#if (!js && !flash)
@@ -241,6 +244,9 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				#if !flash
 				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
 				#end
+
+				__x = Std.int(x);
+				__y = Std.int(y);
 			}
 		}
 	}
@@ -571,6 +577,7 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 			driver.width = __width;
 			driver.height = __height;
 			#else
+			__engine.driver.offset(Std.int(x), stage.stageHeight - __height - Std.int(y));
 			__engine.driver.resize(__width, __height);
 			#end
 			__window.windowWidth = __width;
