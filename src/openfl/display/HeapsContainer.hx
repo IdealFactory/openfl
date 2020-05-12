@@ -630,10 +630,8 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 	@:keep @:noCompletion private function __onTouchBegin(te:TouchEvent):Void
 	{
-		trace("__onTouchBegin:" + __localPoint + " tID=" + te.touchPointID + " wh:" + __width + "/" + __height);
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
-			trace(" - sending EPush");
 			var e = new Event(EPush, __localPoint.x, __localPoint.y);
 			e.touchId = te.touchPointID;
 			appInstance.sevents.onEvent(e);
@@ -646,10 +644,8 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		__mousePoint.y = te.localY;
 		__localPoint = globalToLocal(__mousePoint);
 
-		trace("__onTouchMove:" + __localPoint + " tID=" + te.touchPointID + " wh:" + __width + "/" + __height);
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
-			trace(" - sending EMove");
 			#if (js || flash)
 			@:privateAccess __window.openFLMouseX = __localPoint.x;
 			@:privateAccess __window.openFLMouseY = __localPoint.y;
@@ -664,10 +660,8 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 	@:keep @:noCompletion private function __onTouchEnd(te:TouchEvent):Void
 	{
-		trace("__onTouchEnd:" + __localPoint + " tID=" + te.touchPointID + " wh:" + __width + "/" + __height);
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
-			trace(" - sending ERelease");
 			var e = new Event(ERelease, __localPoint.x, __localPoint.y);
 			e.touchId = te.touchPointID;
 			appInstance.sevents.onEvent(e);
