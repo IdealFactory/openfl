@@ -631,6 +631,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 	@:keep @:noCompletion private function __onMouseDown(me:MouseEvent):Void
 	{
+		__mousePoint.x = me.localX;
+		__mousePoint.y = me.localY;
+		__localPoint = globalToLocal(__mousePoint);
+
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
 			var e = new Event(EPush, __localPoint.x, __localPoint.y);
@@ -658,6 +662,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 	@:keep @:noCompletion private function __onMouseUp(me:MouseEvent):Void
 	{
+		__mousePoint.x = me.localX;
+		__mousePoint.y = me.localY;
+		__localPoint = globalToLocal(__mousePoint);
+
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
 			var e = new Event(ERelease, __localPoint.x, __localPoint.y);
@@ -680,6 +688,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 	@:keep @:noCompletion private function __onTouchBegin(te:TouchEvent):Void
 	{
+		__mousePoint.x = te.localX;
+		__mousePoint.y = te.localY;
+		__localPoint = globalToLocal(__mousePoint);
+
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
 			var e = new Event(EPush, __localPoint.x, __localPoint.y);
@@ -710,6 +722,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 	@:keep @:noCompletion private function __onTouchEnd(te:TouchEvent):Void
 	{
+		__mousePoint.x = te.localX;
+		__mousePoint.y = te.localY;
+		__localPoint = globalToLocal(__mousePoint);
+
 		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
 		{
 			var e = new Event(ERelease, __localPoint.x, __localPoint.y);
