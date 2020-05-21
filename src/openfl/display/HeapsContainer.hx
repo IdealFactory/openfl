@@ -109,6 +109,9 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 	public var __renderTarget:Texture;
 
+	static var __rttQueue:Array<Void->Void>;
+	static var __rttCallbackQueue:Array<Void->Void>;
+
 	public var appInstance:Dynamic;
 	public var backgroundColor:UInt = 0x0;
 
@@ -118,6 +121,9 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		__appClass = appClass;
 		__autoUpdate = autoUpdate;
+
+		__rttQueue = [];
+		__rttCallbackQueue = [];
 
 		super();
 
@@ -134,6 +140,12 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 		// Create instance of Heaps app on delay to avoid blocking
 		haxe.Timer.delay(initHeapsApp, 0);
+	}
+
+	public static function addRTTFunc(rttFunc:Void->Void, callback:Void->Void)
+	{
+		__rttQueue.push(rttFunc);
+		__rttCallbackQueue.push(callback);
 	}
 
 	private function initHeapsApp()
@@ -181,6 +193,37 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		if ((__heapsDirty || __autoUpdate) && __engine != null && parent != null && appInstance != null && appInstance.s2d != null && appInstance.s3d != null)
 		{
 			__setParentRenderDirty();
+
+			if (__rttQueue.length > 0)
+			{
+				#if !flash
+				if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
+				#end
+				@:privateAccess openfl.Lib.current.stage.context3D.gl.disable(lime.graphics.opengl.GL.STENCIL_TEST);
+				@:privateAccess openfl.Lib.current.stage.context3D.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+
+				for (rttFunc in __rttQueue)
+				{
+					rttFunc();
+				}
+
+				@:privateAccess openfl.Lib.current.stage.context3D.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
+				@:privateAccess openfl.Lib.current.stage.context3D.gl.enable(lime.graphics.opengl.GL.STENCIL_TEST);
+				#if !flash
+				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
+				#end
+
+				__rttQueue = [];
+			}
+
+			if (__rttCallbackQueue.length > 0)
+			{
+				for (callbackFunc in __rttCallbackQueue)
+				{
+					callbackFunc();
+				}
+				__rttCallbackQueue = [];
+			}
 		}
 	}
 	#end
