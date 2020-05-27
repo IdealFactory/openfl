@@ -16,6 +16,7 @@ import openfl.utils.AGALMiniAssembler;
 import openfl._internal.renderer.context3D.Context3DState;
 import openfl.display3D.textures.TextureBase;
 import openfl.events.Event;
+import openfl.events.KeyboardEvent;
 import openfl.events.MouseEvent;
 import openfl.events.TouchEvent;
 import openfl.events.RenderEvent;
@@ -162,6 +163,8 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				Lib.current.stage.addEventListener(TouchEvent.TOUCH_MOVE, __onTouchMove);
 				Lib.current.stage.addEventListener(TouchEvent.TOUCH_BEGIN, __onTouchBegin);
 				Lib.current.stage.addEventListener(TouchEvent.TOUCH_END, __onTouchEnd);
+				Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, __onKeyDown);
+				Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, __onKeyUp);
 
 				__engine = appInstance.engine = @:privateAccess new h3d.Engine();
 				__window = Window.getInstance();
@@ -199,6 +202,7 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				#if !flash
 				if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
 				#end
+				var preMultValue = @:privateAccess openfl.Lib.current.stage.context3D.gl.getParameter(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
 				@:privateAccess openfl.Lib.current.stage.context3D.gl.disable(lime.graphics.opengl.GL.STENCIL_TEST);
 				@:privateAccess openfl.Lib.current.stage.context3D.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
 
@@ -207,7 +211,7 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 					rttFunc();
 				}
 
-				@:privateAccess openfl.Lib.current.stage.context3D.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
+				@:privateAccess openfl.Lib.current.stage.context3D.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, preMultValue);
 				@:privateAccess openfl.Lib.current.stage.context3D.gl.enable(lime.graphics.opengl.GL.STENCIL_TEST);
 				#if !flash
 				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
@@ -732,6 +736,20 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 			e.touchId = te.touchPointID;
 			appInstance.sevents.onEvent(e);
 		}
+	}
+
+	@:keep @:noCompletion private function __onKeyDown(ke:KeyboardEvent)
+	{
+		var e = new Event(EKeyDown);
+		e.keyCode = ke.keyCode;
+		hxd.Window.getInstance().event(e);
+	}
+
+	@:keep @:noCompletion private function __onKeyUp(ke:KeyboardEvent):Void
+	{
+		var e = new Event(EKeyUp);
+		e.keyCode = ke.keyCode;
+		hxd.Window.getInstance().event(e);
 	}
 
 	@:getter(height)
