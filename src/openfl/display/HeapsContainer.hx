@@ -156,13 +156,13 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 			hxd.System.start(function()
 			{
 				Lib.current.stage.addEventListener(openfl.events.Event.RESIZE, __onResize);
-				Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, __onMouseMove);
-				Lib.current.stage.addEventListener(MouseEvent.MOUSE_DOWN, __onMouseDown);
-				Lib.current.stage.addEventListener(MouseEvent.MOUSE_UP, __onMouseUp);
-				Lib.current.stage.addEventListener(MouseEvent.MOUSE_WHEEL, __onMouseWheel);
-				Lib.current.stage.addEventListener(TouchEvent.TOUCH_MOVE, __onTouchMove);
-				Lib.current.stage.addEventListener(TouchEvent.TOUCH_BEGIN, __onTouchBegin);
-				Lib.current.stage.addEventListener(TouchEvent.TOUCH_END, __onTouchEnd);
+				this.addEventListener(MouseEvent.MOUSE_MOVE, __onMouseMove);
+				this.addEventListener(MouseEvent.MOUSE_DOWN, __onMouseDown);
+				this.addEventListener(MouseEvent.MOUSE_UP, __onMouseUp);
+				this.addEventListener(MouseEvent.MOUSE_WHEEL, __onMouseWheel);
+				this.addEventListener(TouchEvent.TOUCH_MOVE, __onTouchMove);
+				this.addEventListener(TouchEvent.TOUCH_BEGIN, __onTouchBegin);
+				this.addEventListener(TouchEvent.TOUCH_END, __onTouchEnd);
 				Lib.current.stage.addEventListener(KeyboardEvent.KEY_DOWN, __onKeyDown);
 				Lib.current.stage.addEventListener(KeyboardEvent.KEY_UP, __onKeyUp);
 
@@ -275,7 +275,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
 				#end
 
-				if (Std.int(x) != __x || Std.int(y) != __y) __engine.driver.offset(Std.int(x), stage.stageHeight - __height - Std.int(y));
+				if (Std.int(x) != __x || Std.int(y) != __y) __engine.offset(Std.int(x), stage.stageHeight - __height - Std.int(y));
+
+				__x = Std.int(x);
+				__y = Std.int(y);
 
 				__engine.driver.begin(hxd.Timer.frameCount);
 
@@ -291,9 +294,6 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				#if !flash
 				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
 				#end
-
-				__x = Std.int(x);
-				__y = Std.int(y);
 			}
 		}
 	}
@@ -624,8 +624,8 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 			driver.width = __width;
 			driver.height = __height;
 			#else
-			__engine.driver.offset(Std.int(x), stage.stageHeight - __height - Std.int(y));
-			__engine.driver.resize(__width, __height);
+			__engine.offset(Std.int(x), stage.stageHeight - __height - Std.int(y));
+			__engine.resize(__width, __height);
 			#end
 			__window.windowWidth = __width;
 			__window.windowHeight = __height;
@@ -637,11 +637,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		__mousePoint.x = me.localX;
 		__mousePoint.y = me.localY;
-		__localPoint = globalToLocal(__mousePoint);
 
-		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(EPush, __localPoint.x, __localPoint.y);
+			var e = new Event(EPush, __mousePoint.x, __mousePoint.y);
 			appInstance.sevents.onEvent(e);
 		}
 	}
@@ -650,17 +649,18 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		__mousePoint.x = me.localX;
 		__mousePoint.y = me.localY;
-		__localPoint = globalToLocal(__mousePoint);
 
-		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		trace("MouseMove: xy=" + __mousePoint.x + "/" + __mousePoint.y + " stage=" + stage.mouseX + "/" + stage.mouseY);
+
+		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
 			#if (js || flash)
-			@:privateAccess __window.openFLMouseX = __localPoint.x;
-			@:privateAccess __window.openFLMouseY = __localPoint.y;
+			@:privateAccess __window.openFLMouseX = __mousePoint.x;
+			@:privateAccess __window.openFLMouseY = __mousePoint.y;
 			#else
-			appInstance.sevents.setMousePos(__localPoint.x, __localPoint.y);
+			appInstance.sevents.setMousePos(__mousePoint.x, __mousePoint.y);
 			#end
-			appInstance.sevents.onEvent(new Event(EMove, __localPoint.x, __localPoint.y));
+			appInstance.sevents.onEvent(new Event(EMove, __mousePoint.x, __mousePoint.y));
 		}
 	}
 
@@ -668,22 +668,21 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		__mousePoint.x = me.localX;
 		__mousePoint.y = me.localY;
-		__localPoint = globalToLocal(__mousePoint);
 
-		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(ERelease, __localPoint.x, __localPoint.y);
+			var e = new Event(ERelease, __mousePoint.x, __mousePoint.y);
 			appInstance.sevents.onEvent(e);
 		}
 	}
 
 	@:keep @:noCompletion private function __onMouseWheel(me:MouseEvent):Void
 	{
-		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
 			if (me.delta != 0)
 			{
-				var e = new Event(EWheel, __localPoint.x, __localPoint.y);
+				var e = new Event(EWheel, __mousePoint.x, __mousePoint.y);
 				e.wheelDelta = -me.delta #if js / 120 #end; // Similar division as in Heaps hxd.Window.js.hx onMouseWheel method.
 				appInstance.sevents.onEvent(e);
 			}
@@ -694,11 +693,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		__mousePoint.x = te.localX;
 		__mousePoint.y = te.localY;
-		__localPoint = globalToLocal(__mousePoint);
 
-		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(EPush, __localPoint.x, __localPoint.y);
+			var e = new Event(EPush, __mousePoint.x, __mousePoint.y);
 			e.touchId = te.touchPointID;
 			appInstance.sevents.onEvent(e);
 		}
@@ -708,17 +706,16 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		__mousePoint.x = te.localX;
 		__mousePoint.y = te.localY;
-		__localPoint = globalToLocal(__mousePoint);
 
-		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
 			#if (js || flash)
-			@:privateAccess __window.openFLMouseX = __localPoint.x;
-			@:privateAccess __window.openFLMouseY = __localPoint.y;
+			@:privateAccess __window.openFLMouseX = __mousePoint.x;
+			@:privateAccess __window.openFLMouseY = __mousePoint.y;
 			#else
-			appInstance.sevents.setMousePos(__localPoint.x, __localPoint.y);
+			appInstance.sevents.setMousePos(__mousePoint.x, __mousePoint.y);
 			#end
-			var e = new Event(EMove, __localPoint.x, __localPoint.y);
+			var e = new Event(EMove, __mousePoint.x, __mousePoint.y);
 			e.touchId = te.touchPointID;
 			appInstance.sevents.onEvent(e);
 		}
@@ -728,11 +725,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		__mousePoint.x = te.localX;
 		__mousePoint.y = te.localY;
-		__localPoint = globalToLocal(__mousePoint);
 
-		if (__localPoint.x > 0 && __localPoint.x < __width && __localPoint.y > 0 && __localPoint.y < __height)
+		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(ERelease, __localPoint.x, __localPoint.y);
+			var e = new Event(ERelease, __mousePoint.x, __mousePoint.y);
 			e.touchId = te.touchPointID;
 			appInstance.sevents.onEvent(e);
 		}
