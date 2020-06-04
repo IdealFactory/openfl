@@ -230,6 +230,66 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 			}
 		}
 	}
+	#else
+	@:noCompletion private function __enterFrame(deltaTime:Int):Void
+	{
+		if ((__heapsDirty || __autoUpdate) && __engine != null && parent != null)
+		{
+			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null && __renderTarget != null)
+			{
+				if (__rttQueue.length > 0)
+				{
+					// var preMultValue = @:privateAccess openfl.Lib.current.stage.context3D.getParameter(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
+					// @:privateAccess openfl.Lib.current.stage.context3D.disable(lime.graphics.opengl.GL.STENCIL_TEST);
+					// @:privateAccess openfl.Lib.current.stage.context3D.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+
+					for (rttFunc in __rttQueue)
+					{
+						rttFunc();
+					}
+
+					// @:privateAccess openfl.Lib.current.stage.context3D.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, preMultValue);
+					// @:privateAccess openfl.Lib.current.stage.context3D.enable(lime.graphics.opengl.GL.STENCIL_TEST);
+
+					__rttQueue = [];
+				}
+
+				if (__rttCallbackQueue.length > 0)
+				{
+					for (callbackFunc in __rttCallbackQueue)
+					{
+						callbackFunc();
+					}
+					__rttCallbackQueue = [];
+				}
+
+				__heapsDirty = false;
+				// Ensure all the cached render states are cleared for a new render
+				@:privateAccess __engine.needFlushTarget = true;
+
+				__engine.pushTarget(__renderTarget);
+
+				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
+				driver.curAttributes = 0;
+				Lib.current.stage.stage3Ds[0].context3D.setCulling(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? "front" : "back");
+
+				__engine.driver.begin(hxd.Timer.frameCount);
+
+				__engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
+
+				@:privateAccess System.loopFunc();
+
+				appInstance.s3d.render(__engine);
+				appInstance.s2d.render(__engine);
+
+				__engine.popTarget();
+
+				__engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
+
+				@:privateAccess __heapsRenderbufferTexture = cast __renderTarget.t;
+			}
+		}
+	}
 	#end
 
 	public function renderContainer():Void
@@ -429,9 +489,71 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	}
 
 	#if flash
+	private function setupRenderTarget()
+	{
+		if (__renderTarget != null)
+		{
+			heapsRenderTargets.remove(__renderTarget);
+
+			__renderTarget.depthBuffer.dispose();
+			__renderTarget.dispose();
+			if (__bitmapData != null) __bitmapData.dispose();
+			if (__texture != null) __texture.dispose();
+		}
+
+		// Create render target and depth buffer for Heaps rendering
+		var w = __width;
+		var h = __height;
+		trace("setupRenderTargets:" + w + "/" + h);
+		__renderTarget = new Texture(w, h, [TextureFlags.Target]);
+		__renderTarget.depthBuffer = new DepthBuffer(-1, -1);
+
+		heapsRenderTargets.push(__renderTarget);
+
+		// Create a fake OpenFl bitmap data to allow integrating the renderTarget texture into the OpenFL rendering pipeline.
+		var st = Lib.current.stage;
+		__bitmapData = new BitmapData(w, h, true, 0x80ff0000);
+		__projection.identity();
+		var raw = __projection.rawData;
+
+		var sx = 1.0 / st.stageWidth;
+		var sy = 1.0 / -st.stageHeight;
+		var sz = 1.0 / 2000;
+
+		raw[0] = 2 * sx;
+		raw[5] = 2 * sy;
+		raw[10] = -2 * sz;
+
+		raw[12] = -st.stageWidth * sx;
+		raw[13] = -st.stageHeight * sy;
+		__projection.rawData = raw;
+
+		var vertexAssembler = new AGALMiniAssembler();
+		vertexAssembler.assemble(Context3DProgramType.VERTEX, "m44 op, va0, vc0\n" + "mov v0, va1" #if heaps, 2 #end);
+
+		var fragmentAssembler = new AGALMiniAssembler();
+		fragmentAssembler.assemble(Context3DProgramType.FRAGMENT, "tex ft0, v0, fs0 <2d,nearest,nomip>\n" + "mov oc, ft0.rgb" #if heaps, 2 #end);
+
+		var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
+		__context3D = driver.ctx;
+
+		__heapsRenderbufferTexture = __context3D.createRectangleTexture(__bitmapData.width, __bitmapData.height, 'bgra', true);
+		__heapsRenderbufferTexture.uploadFromBitmapData(__bitmapData);
+
+		__vertexBuffer = __context3D.createVertexBuffer(4, 5);
+		__vertexBufferData[10] = __vertexBufferData[15] = __width;
+		__vertexBufferData[1] = __vertexBufferData[16] = __height;
+		__vertexBuffer.uploadFromVector(__vertexBufferData, 0, 4);
+		__indexBuffer = __context3D.createIndexBuffer(6);
+		__indexBuffer.uploadFromVector(__indexBufferData, 0, 6);
+
+		__heapsRenderbufferProgram = __context3D.createProgram();
+		__heapsRenderbufferProgram.upload(vertexAssembler.agalcode, fragmentAssembler.agalcode);
+	}
+
 	@:noCompletion private function __renderFlash():Void
 	{
-		renderContainer();
+		__enterFrame(0);
 		FlashHeaps.render(this);
 	}
 	#end
@@ -616,6 +738,10 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 		if (appInstance != null && __engine != null && __engine.mem != null)
 		{
+			#if flash
+			setupRenderTarget();
+			#end
+
 			__engine.width = __width;
 			__engine.height = __height;
 			#if flash
@@ -649,8 +775,6 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		__mousePoint.x = me.localX;
 		__mousePoint.y = me.localY;
-
-		trace("MouseMove: xy=" + __mousePoint.x + "/" + __mousePoint.y + " stage=" + stage.mouseX + "/" + stage.mouseY);
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
@@ -736,14 +860,14 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 	@:keep @:noCompletion private function __onKeyDown(ke:KeyboardEvent)
 	{
-		var e = new Event(EKeyDown);
+		var e = new Event(EKeyDown, __mousePoint.x, __mousePoint.y);
 		e.keyCode = ke.keyCode;
 		hxd.Window.getInstance().event(e);
 	}
 
 	@:keep @:noCompletion private function __onKeyUp(ke:KeyboardEvent):Void
 	{
-		var e = new Event(EKeyUp);
+		var e = new Event(EKeyUp, __mousePoint.x, __mousePoint.y);
 		e.keyCode = ke.keyCode;
 		hxd.Window.getInstance().event(e);
 	}
