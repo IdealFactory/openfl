@@ -750,7 +750,7 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 			driver.width = __width;
 			driver.height = __height;
 			#else
-			__engine.offset(Std.int(x), stage.stageHeight - __height - Std.int(y));
+			__engine.offset(Std.int(x), Lib.current.stage.stageHeight - __height - Std.int(y));
 			__engine.resize(__width, __height);
 			#end
 			__window.windowWidth = __width;
