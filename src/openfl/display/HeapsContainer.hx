@@ -326,12 +326,9 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				driver.curStOpBits = -1;
 				driver.curStMaskBits = -1;
 
-				#if !flash
 				if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
-				#end
 
 				stage.context3D.__contextState.stateDirty = true;
-				stage.context3D.setDepthTest(true, openfl.display3D.Context3DCompareMode.LESS);
 				@:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
 				#end
 
@@ -386,17 +383,11 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				__engine.width = w;
 				__engine.height = h;
 				#if flash
-				var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
+				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
 				driver.width = w;
 				driver.height = h;
-				#else
-				__engine.driver.resize(w, h);
-				#end
-
-				#if flash
-				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
 				driver.curAttributes = 0;
-				Lib.current.stage.stage3Ds[0].context3D.setCulling(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? "front" : "back");
+				Lib.current.stage.stage3Ds[0].context3D.setCulling("front");
 				#else
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
 				driver.curIndexBuffer = null;
@@ -404,26 +395,14 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				driver.curAttribs = [];
 				driver.curStOpBits = -1;
 				driver.curStMaskBits = -1;
+				driver.resize(w, h);
 
-				if (stage.context3D.__state != null)
-				{
-					__stateStore = stage.context3D.__state.clone();
-					// @:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
-					@:privateAccess stage.context3D.__setGLBlend(false);
-					if (@:privateAccess stage.context3D.__state.program != null) @:privateAccess stage.context3D.__state.program.__flush();
-				}
-				else
-				{
-					// @:privateAccess stage.context3D.__setGLFrontFace(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
-					@:privateAccess stage.context3D.__setGLBlend(false);
-				}
-				#end
-				driver.curColorMask = -1;
-				driver.curMatBits = -1;
-				driver.curShader = null;
-				driver.curBuffer = null;
+				if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
 
 				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+
+				@:privateAccess stage.context3D.__setGLFrontFace(true);
+				#end
 
 				appInstance.s3d.render(__engine);
 				appInstance.s2d.render(__engine);
