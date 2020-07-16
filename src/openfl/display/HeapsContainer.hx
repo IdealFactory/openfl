@@ -360,7 +360,7 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		__heapsDirty = true;
 	}
 
-	public function capture(w:Int, h:Int)
+	public function capture(w:Int, h:Int, msaaLevel:Int = 4)
 	{
 		if (__engine != null)
 		{
@@ -369,67 +369,115 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				// Ensure all the cached render states are cleared for a new render
 				@:privateAccess __engine.needFlushTarget = true;
 
-				var captureTarget:Texture;
-				captureTarget = new Texture(w, h, [TextureFlags.Target]#if !flash, hxd.PixelFormat.RGBA #end);
-				#if !flash
-				captureTarget.depthBuffer = new DepthBuffer(w, h);
-				#else
-				captureTarget.depthBuffer = new DepthBuffer(-1, -1);
-				#end
-				__engine.pushTarget(captureTarget);
-
+				var oldX = __x;
+				var oldY = __y;
 				var oldW = __width;
 				var oldH = __height;
-				__engine.width = w;
-				__engine.height = h;
+
 				#if flash
-				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
+				var destTarget:Texture;
+				destTarget = new Texture(w, h, [TextureFlags.Target]#if !flash, hxd.PixelFormat.RGBA #end);
+				destTarget.depthBuffer = new DepthBuffer(-1, -1);
+
+				__engine.pushTarget(destTarget);
+
+				var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
 				driver.width = w;
 				driver.height = h;
 				driver.curAttributes = 0;
 				Lib.current.stage.stage3Ds[0].context3D.setCulling("front");
-				#else
-				var driver:h3d.impl.GlDriver = cast __engine.driver;
-				driver.curIndexBuffer = null;
-				driver.curAttribs = [];
-				driver.curAttribs = [];
-				driver.curStOpBits = -1;
-				driver.curStMaskBits = -1;
-				driver.resize(w, h);
-
-				if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
-
-				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
-
-				@:privateAccess stage.context3D.__setGLFrontFace(true);
-				#end
 
 				appInstance.s3d.render(__engine);
 				appInstance.s2d.render(__engine);
+				#else
+				var destTarget:Texture;
+				var driver:h3d.impl.GlDriver = cast __engine.driver;
+				if (!__engine.driver.hasFeature(ShaderModel3))
+				{
+					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
+					destTarget.depthBuffer = new DepthBuffer(w, h);
 
-				__engine.popTarget();
+					__engine.pushTarget(destTarget);
 
-				__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+					driver.curIndexBuffer = null;
+					driver.curAttribs = [];
+					driver.curAttribs = [];
+					driver.curStOpBits = -1;
+					driver.curStMaskBits = -1;
+					driver.resize(w, h);
 
-				#if !flash
+					if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
+
+					__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+
+					@:privateAccess stage.context3D.__setGLFrontFace(true);
+
+					appInstance.s3d.render(__engine);
+					appInstance.s2d.render(__engine);
+				}
+				else
+				{
+					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
+
+					var captureTarget:Texture;
+					captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
+					captureTarget.depthBuffer = new DepthBuffer(w, h, msaaLevel);
+					captureTarget.customFBO = __engine.driver.createFrameBuffer(w, h, msaaLevel);
+
+					var msaaTarget:Texture;
+					msaaTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
+					msaaTarget.depthBuffer = new DepthBuffer(w, h, msaaLevel);
+					msaaTarget.msaaBuffer = __engine.driver.createFrameBuffer(w, h, msaaLevel);
+
+					__engine.pushTarget(msaaTarget);
+					__engine.width = w;
+					__engine.height = h;
+
+					driver.curIndexBuffer = null;
+					driver.curAttribs = [];
+					driver.curAttribs = [];
+					driver.curStOpBits = -1;
+					driver.curStMaskBits = -1;
+					driver.resize(w, h);
+
+					if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
+
+					__engine.clear(1, 1, 1); // Clears the render target texture and depth buffer
+					__engine.setRenderZone(0, 0, w, h);
+
+					@:privateAccess stage.context3D.__setGLFrontFace(true);
+
+					appInstance.s3d.render(__engine);
+					appInstance.s2d.render(__engine);
+
+					// Blit the rendered multi-sample FBO to the target texture
+					driver.blitFramebuffer(msaaTarget.msaaBuffer, captureTarget.customFBO, destTarget, w, h);
+				}
+
 				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
 				#end
 
-				var pixels = captureTarget.capturePixels();
+				var pixels = destTarget.capturePixels();
 				var bmd = new hxd.BitmapData(pixels.width, pixels.height);
 				bmd.setPixels(pixels);
 
+				__engine.popTarget();
+
 				__engine.width = oldW;
 				__engine.height = oldH;
+				__engine.setRenderZone(oldX, oldY, oldW, oldH);
+
+				__engine.clear(1, 1, 1);
 				#if flash
-				var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
 				driver.width = oldW;
 				driver.height = oldH;
 				#else
-				__engine.driver.resize(oldW, oldH);
+				driver.resize(oldW, oldH);
+				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
 				#end
 
-				return #if !flash BitmapData.fromImage(bmd.toNative(), true) #else bmd.toNative() #end;
+				trace("CAPTURE COMPLETED================");
+				return /*new BitmapData(w, h, false, 0);*/ #if !flash BitmapData.fromImage(bmd.toNative(), true) #else bmd.toNative() #end;
 			}
 		}
 		return null;
@@ -889,6 +937,22 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	{
 		return hxd.BitmapData.fromNative(#if !flash bmd.image #else bmd #end);
 	}
+
+	#if js
+	public static function savePNG(bmd:openfl.display.BitmapData, fName:String = "thumbnail.png")
+	{
+		lime._internal.graphics.ImageCanvasUtil.convertToCanvas(bmd.image);
+		@:privateAccess var can = bmd.image.buffer.__srcCanvas;
+		untyped
+		{
+			var link = js.Browser.document.createElement('a');
+			link.download = fName;
+			link.href = can.toDataURL();
+			link.click();
+			trace("DOWNLOAD......");
+		}
+	}
+	#end
 }
 #else
 // Null Bitmap class when heaps is not defined
