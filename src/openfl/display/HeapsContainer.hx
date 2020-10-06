@@ -967,5 +967,10 @@ class HeapsContainer extends openfl.display.Bitmap
 		super();
 		throw "Heaps library is not referenced in project.xml. Please add '<haxelib name=\"heaps\" />' and '<haxelib name=\"hxbit\" />'";
 	}
+
+	public function renderContainer()
+	{
+		trace("Doing Nothing!!!");
+	}
 }
 #end
