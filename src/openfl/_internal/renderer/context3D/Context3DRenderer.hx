@@ -1003,7 +1003,7 @@ class Context3DRenderer extends Context3DRendererAPI
 				case DISPLAY_OBJECT, SHAPE:
 					__renderShape(cast object);
 				case HEAPS_CONTAINER:
-					__renderHeapsContainer(cast object);
+				// 	__renderHeapsContainer(cast object);
 				case SIMPLE_BUTTON:
 					__renderSimpleButton(cast object);
 				case TEXTFIELD:

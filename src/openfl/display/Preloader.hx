@@ -117,6 +117,8 @@ class Preloader
 	{
 		super();
 
+		name = "Preloader";
+
 		var backgroundColor = getBackgroundColor();
 		var r = backgroundColor >> 16 & 0xFF;
 		var g = backgroundColor >> 8 & 0xFF;

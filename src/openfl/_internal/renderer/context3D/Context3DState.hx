@@ -104,7 +104,7 @@ class Context3DState
 		#end
 	}
 
-	public function clone() : Context3DState
+	public function clone():Context3DState
 	{
 		var clone = new Context3DState();
 		clone.backBufferEnableDepthAndStencil = backBufferEnableDepthAndStencil;
@@ -144,7 +144,7 @@ class Context3DState
 		return clone;
 	}
 
-	public function fromState( src:Context3DState)
+	public function fromState(src:Context3DState)
 	{
 		backBufferEnableDepthAndStencil = src.backBufferEnableDepthAndStencil;
 		blendDestinationAlphaFactor = src.blendDestinationAlphaFactor;
@@ -179,6 +179,45 @@ class Context3DState
 		__frontFaceGLCCW = src.__frontFaceGLCCW;
 		#if lime
 		__glBlendEquation = src.__glBlendEquation;
+		#end
+	}
+
+	public function dump()
+	{
+		trace("Context3D.state--------");
+		trace(" - backBufferEnableDepthAndStencil:" + backBufferEnableDepthAndStencil);
+		trace(" - blendDestinationAlphaFactor:" + blendDestinationAlphaFactor);
+		trace(" - blendSourceAlphaFactor:" + blendSourceAlphaFactor);
+		trace(" - blendDestinationRGBFactor:" + blendDestinationRGBFactor);
+		trace(" - blendSourceRGBFactor:" + blendSourceRGBFactor);
+		trace(" - colorMaskRed:" + colorMaskRed);
+		trace(" - colorMaskGreen:" + colorMaskGreen);
+		trace(" - colorMaskBlue:" + colorMaskBlue);
+		trace(" - colorMaskAlpha:" + colorMaskAlpha);
+		trace(" - culling:" + culling);
+		trace(" - depthCompareMode:" + depthCompareMode);
+		trace(" - depthMask:" + depthMask);
+		trace(" - program:" + program);
+		trace(" - renderToTexture:" + renderToTexture);
+		trace(" - renderToTextureAntiAlias:" + renderToTextureAntiAlias);
+		trace(" - renderToTextureDepthStencil:" + renderToTextureDepthStencil);
+		trace(" - renderToTextureSurfaceSelector:" + renderToTextureSurfaceSelector);
+		trace(" - samplerStates:" + samplerStates);
+		trace(" - scissorEnabled:" + scissorEnabled);
+		trace(" - scissorRectangle:" + scissorRectangle);
+		trace(" - stencilCompareMode:" + stencilCompareMode);
+		trace(" - stencilDepthFail:" + stencilDepthFail);
+		trace(" - stencilFail:" + stencilFail);
+		trace(" - stencilPass:" + stencilPass);
+		trace(" - stencilReadMask:" + stencilReadMask);
+		trace(" - stencilReferenceValue:" + stencilReferenceValue);
+		trace(" - stencilTriangleFace:" + stencilTriangleFace);
+		trace(" - stencilWriteMask:" + stencilWriteMask);
+		trace(" - textures:" + textures);
+		trace(" - shader:" + shader);
+		trace(" - __frontFaceGLCCW:" + __frontFaceGLCCW);
+		#if lime
+		trace(" - __glBlendEquation:" + __glBlendEquation);
 		#end
 	}
 }

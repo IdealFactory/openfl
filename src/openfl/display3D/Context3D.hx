@@ -508,6 +508,10 @@ import lime.math.Vector2;
 		if (clearMask == 0) return;
 
 		__setGLScissorTest(false);
+		// trace("Context3D.clear (final clear mask):");
+		// trace(" - COLOR_BUFFER_BIT:" + ((clearMask & gl.COLOR_BUFFER_BIT) == gl.COLOR_BUFFER_BIT));
+		// trace(" - DEPTH_BUFFER_BIT:" + ((clearMask & gl.DEPTH_BUFFER_BIT) == gl.DEPTH_BUFFER_BIT));
+		// trace(" - STENCIL_BUFFER_BIT:" + ((clearMask * gl.STENCIL_BUFFER_BIT) == gl.STENCIL_BUFFER_BIT));
 		gl.clear(clearMask);
 	}
 
@@ -1168,6 +1172,7 @@ import lime.math.Vector2;
 			// TODO: Make sure state is correct for this?
 			if (__stage.context3D == this && !__stage.__renderer.__cleared)
 			{
+				trace("Renderer not cleared - so clearing");
 				__stage.__renderer.__clear();
 			}
 			else if (!__cleared)
@@ -2044,7 +2049,7 @@ import lime.math.Vector2;
 		}
 	}
 
-	@:noCompletion private inline function __flushGLColor():Void
+	@:noCompletion private function __flushGLColor():Void
 	{
 		if (#if openfl_disable_context_cache true #else __contextState.stateDirty
 			|| __contextState.colorMaskRed != __state.colorMaskRed

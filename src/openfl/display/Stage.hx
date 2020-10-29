@@ -668,6 +668,8 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	**/
 	public var stage3Ds(default, null):Vector<Stage3D>;
 
+	public var heapsLayers(default, null):Vector<HeapsContainer>;
+
 	/**
 		Specifies whether or not objects display a glowing border when they have
 		focus.
@@ -987,6 +989,8 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		{
 			stage3Ds.push(new Stage3D(this));
 		}
+
+		heapsLayers = new Vector();
 
 		this.stage = this;
 
@@ -1925,6 +1929,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		#if lime
 		if (__renderer != null)
 		{
+			trace("STARTING FRAME RENDER #######################################");
 			if (context3D != null)
 			{
 				for (stage3D in stage3Ds)
@@ -1936,6 +1941,37 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				if (context3D.__present) shouldRender = true;
 				#end
 			}
+
+			if (context3D != null && __renderer.__type == OPENGL)
+			{
+				if (!context3D.__cleared)
+				{
+					// Make sure texture is initialized
+					// TODO: Throw error if error reporting is enabled?
+					context3D.clear(0, 0, 0, 0, 1, 0, openfl.display3D.Context3DClearMask.COLOR);
+				}
+
+				var ctx:Context3DRenderer = cast __renderer;
+				for (heapsLayer in heapsLayers)
+				{
+					ctx.__renderHeapsContainer(heapsLayer);
+				}
+
+				var cacheBuffer = context3D.__backBufferTexture;
+				context3D.__backBufferTexture = context3D.__frontBufferTexture;
+				context3D.__frontBufferTexture = cacheBuffer;
+
+				// @:privateAccess context3D.__state.__primaryGLFramebuffer = context3D.__backBufferTexture.__getGLFramebuffer(context3D.__state.backBufferEnableDepthAndStencil,
+				// 	context3D.__backBufferAntiAlias, 0);
+				// context3D.__cleared = false;
+
+				context3D.__present = true;
+				#if !openfl_disable_display_render
+				shouldRender = true;
+				#end
+			}
+
+			// trace("_renderer:" + Type.getClassName(Type.getClass(__renderer)));
 
 			if (shouldRender)
 			{
@@ -1983,6 +2019,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 			// TODO: Run once for multi-stage application
 			BitmapData.__pool.cleanup();
+			trace(" - FRAME RENDERED     #######################################");
 		}
 		#end
 
