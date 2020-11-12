@@ -1172,7 +1172,6 @@ import lime.math.Vector2;
 			// TODO: Make sure state is correct for this?
 			if (__stage.context3D == this && !__stage.__renderer.__cleared)
 			{
-				trace("Renderer not cleared - so clearing");
 				__stage.__renderer.__clear();
 			}
 			else if (!__cleared)

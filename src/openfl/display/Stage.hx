@@ -1929,7 +1929,6 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		#if lime
 		if (__renderer != null)
 		{
-			trace("STARTING FRAME RENDER #######################################");
 			if (context3D != null)
 			{
 				for (stage3D in stage3Ds)
@@ -1942,13 +1941,13 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				#end
 			}
 
-			if (context3D != null && __renderer.__type == OPENGL)
+			if (context3D != null && __renderer.__type == OPENGL && heapsLayers.length > 0)
 			{
 				if (!context3D.__cleared)
 				{
 					// Make sure texture is initialized
 					// TODO: Throw error if error reporting is enabled?
-					context3D.clear(0, 0, 0, 0, 1, 0, openfl.display3D.Context3DClearMask.COLOR);
+					__renderer.__clear();
 				}
 
 				var ctx:Context3DRenderer = cast __renderer;
@@ -1961,17 +1960,11 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				context3D.__backBufferTexture = context3D.__frontBufferTexture;
 				context3D.__frontBufferTexture = cacheBuffer;
 
-				// @:privateAccess context3D.__state.__primaryGLFramebuffer = context3D.__backBufferTexture.__getGLFramebuffer(context3D.__state.backBufferEnableDepthAndStencil,
-				// 	context3D.__backBufferAntiAlias, 0);
-				// context3D.__cleared = false;
-
 				context3D.__present = true;
 				#if !openfl_disable_display_render
 				shouldRender = true;
 				#end
 			}
-
-			// trace("_renderer:" + Type.getClassName(Type.getClass(__renderer)));
 
 			if (shouldRender)
 			{
@@ -2019,7 +2012,6 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 			// TODO: Run once for multi-stage application
 			BitmapData.__pool.cleanup();
-			trace(" - FRAME RENDERED     #######################################");
 		}
 		#end
 

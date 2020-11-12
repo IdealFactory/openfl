@@ -1138,6 +1138,7 @@ class Context3DRenderer extends Context3DRendererAPI
 	{
 		#if (heaps && !neko)
 		#if !flash
+		if (heaps == null) return;
 		heaps.renderContainer();
 		#else
 		if (heaps.__bitmapData != null)

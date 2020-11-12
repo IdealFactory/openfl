@@ -117,11 +117,14 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	public var backgroundColor:UInt = 0x0;
 
 	var __autoUpdate:Bool;
+	var __onCompleteCallback:Void->Void;
 
-	public function new(appClass:Class<Dynamic>, autoUpdate:Bool = true)
+	public function new(appClass:Class<Dynamic>, autoUpdate:Bool = true, callback:Void->Void = null)
 	{
 		__appClass = appClass;
 		__autoUpdate = autoUpdate;
+
+		__onCompleteCallback = callback;
 
 		__rttQueue = [];
 		__rttCallbackQueue = [];
@@ -140,13 +143,7 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		if (__appClass != null) appInstance = cast Type.createEmptyInstance(__appClass);
 
 		// Create instance of Heaps app on delay to avoid blocking
-		haxe.Timer.delay(initHeapsApp, 0);
-	}
-
-	public static function addRTTFunc(rttFunc:Void->Void, callback:Void->Void)
-	{
-		__rttQueue.push(rttFunc);
-		__rttCallbackQueue.push(callback);
+		haxe.Timer.delay(initHeapsApp, 5);
 	}
 
 	private function initHeapsApp()
@@ -187,137 +184,11 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		FlashRenderer.register(this);
 		#end
 
-		dispatchEvent(new openfl.events.Event(openfl.events.Event.COMPLETE));
+		if (__onCompleteCallback != null) __onCompleteCallback();
 	}
-
-	#if !flash
-	@:noCompletion override private function __enterFrame(deltaTime:Int):Void
-	{
-		if ((__heapsDirty || __autoUpdate)
-			&& __engine != null /*&& parent != null*/
-			&& appInstance != null
-			&& appInstance.s2d != null
-			&& appInstance.s3d != null)
-		{
-			// __setParentRenderDirty();
-
-			if (__rttQueue.length > 0)
-			{
-				#if !flash
-				if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
-				#end
-				@:privateAccess openfl.Lib.current.stage.context3D.gl.disable(lime.graphics.opengl.GL.STENCIL_TEST);
-
-				#if js
-				var preMultValue = @:privateAccess openfl.Lib.current.stage.context3D.gl.getParameter(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
-				@:privateAccess openfl.Lib.current.stage.context3D.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-				#end
-
-				for (rttFunc in __rttQueue)
-				{
-					rttFunc();
-				}
-
-				#if js
-				@:privateAccess openfl.Lib.current.stage.context3D.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, preMultValue);
-				#end
-
-				@:privateAccess openfl.Lib.current.stage.context3D.gl.enable(lime.graphics.opengl.GL.STENCIL_TEST);
-				#if !flash
-				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
-				#end
-
-				__rttQueue = [];
-			}
-
-			if (__rttCallbackQueue.length > 0)
-			{
-				for (callbackFunc in __rttCallbackQueue)
-				{
-					callbackFunc();
-				}
-				__rttCallbackQueue = [];
-			}
-		}
-	}
-	#else
-	@:noCompletion private function __enterFrame(deltaTime:Int):Void
-	{
-		if ((__heapsDirty || __autoUpdate) && __engine != null /*&& parent != null */)
-		{
-			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null && __renderTarget != null)
-			{
-				if (__rttQueue.length > 0)
-				{
-					// var preMultValue = @:privateAccess openfl.Lib.current.stage.context3D.getParameter(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
-					// @:privateAccess openfl.Lib.current.stage.context3D.disable(lime.graphics.opengl.GL.STENCIL_TEST);
-					// @:privateAccess openfl.Lib.current.stage.context3D.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-
-					for (rttFunc in __rttQueue)
-					{
-						rttFunc();
-					}
-
-					// @:privateAccess openfl.Lib.current.stage.context3D.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, preMultValue);
-					// @:privateAccess openfl.Lib.current.stage.context3D.enable(lime.graphics.opengl.GL.STENCIL_TEST);
-
-					__rttQueue = [];
-				}
-
-				if (__rttCallbackQueue.length > 0)
-				{
-					for (callbackFunc in __rttCallbackQueue)
-					{
-						callbackFunc();
-					}
-					__rttCallbackQueue = [];
-				}
-
-				__heapsDirty = false;
-				// Ensure all the cached render states are cleared for a new render
-				@:privateAccess __engine.needFlushTarget = true;
-
-				__engine.pushTarget(__renderTarget);
-
-				var driver:h3d.impl.Stage3dDriver = cast __engine.driver;
-				driver.curAttributes = 0;
-				Lib.current.stage.stage3Ds[0].context3D.setCulling(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? "front" : "back");
-
-				__engine.driver.begin(hxd.Timer.frameCount);
-
-				__engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
-
-				@:privateAccess System.loopFunc();
-
-				appInstance.s3d.render(__engine);
-				appInstance.s2d.render(__engine);
-
-				__engine.popTarget();
-
-				__engine.clear(backgroundColor, 1, 1); // Clears the render target texture and depth buffer
-
-				@:privateAccess __heapsRenderbufferTexture = cast __renderTarget.t;
-			}
-		}
-	}
-	#end
 
 	public function renderContainer():Void
 	{
-		#if (!openfl_disable_display_render && !flash)
-		// if (stage.context3D.__state.renderToTexture == null)
-		// {
-		// 	// TODO: Make sure state is correct for this?
-		// 	@:privateAccess if (stage.context3D.__stage.context3D == stage.context3D && !stage.context3D.__stage.__renderer.__cleared)
-		// 	{
-		// 		@:privateAccess stage.context3D.__stage.__renderer.__clear();
-		// 	}
-		// }
-		#end
-		#if gl_debug
-		trace("RenderHeapsContainer START----------");
-		#end
-
 		if ((true || __heapsDirty || __autoUpdate) && __engine != null /* &&  parent != null */)
 		{
 			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null) // && __renderTarget != null)
@@ -327,9 +198,6 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				var stg = Lib.current.stage;
 				var ctx = Lib.current.stage.context3D;
 
-				@:privateAccess if (ctx.__stage3D == null) Lib.current.stage.__renderer.__clear();
-
-				// __engine.pushTarget(cast Lib.current.stage.context3D.__backBufferTexture);
 				// Ensure all the cached render states are cleared for a new render
 				@:privateAccess __engine.needFlushTarget = true;
 
@@ -338,49 +206,18 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				driver.curAttributes = 0;
 				Lib.current.stage.stage3Ds[0].context3D.setCulling(appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? "front" : "back");
 				#else
-				var driver:h3d.impl.GlDriver = cast __engine.driver;
+				var driver:h3d.impl.GlDriver = cast h3d.Engine.getCurrent().driver;
 				driver.curIndexBuffer = null;
 				driver.curAttribs = [];
 				driver.curAttribs = [];
 				driver.curStOpBits = -1;
 				driver.curStMaskBits = -1;
-
-				ctx.setBlendFactors(ONE, ZERO);
-				ctx.setColorMask(true, true, true, true);
-				ctx.setCulling(NONE);
-				ctx.setDepthTest(false, ALWAYS);
-				ctx.setStencilActions();
-				ctx.setStencilReferenceValue(0, 0, 0);
-				ctx.setScissorRectangle(null);
-
-				@:privateAccess driver.buffer = Lib.current.stage.context3D.__state.__primaryGLFramebuffer; // stage.context3D.__backBufferTexture;
-
-				if (Lib.current.stage.context3D.__state != null) __stateStore = Lib.current.stage.context3D.__state.clone();
-
-				// stage.context3D.__contextState.stateDirty = true;
-				// @:privateAccess stage.context3D.__setGLFrontFace(false); // appInstance.s3d.renderer.lastCullingState == h3d.mat.Data.Face.Front ? true : false);
+				driver.curMatBits = -1;
 				#end
 
-				// #if gl_debug
-				// if (Lib.current.stage.context3D.__state != null) Lib.current.stage.context3D.__state.dump();
-				// #end
+				@:privateAccess if (ctx.__stage3D == null) ctx.clear(0, 0, 0, 0, 1, 0, openfl.display3D.Context3DClearMask.DEPTH);
 
-				// __engine.clear(backgroundColor, 1, 1);
-				// @:privateAccess stage.context3D.__setGLBlend(false);
-				// stage.context3D.__state.depthCompareMode = openfl.display3D.Context3DCompareMode.LESALS;
-				// stage.context3D.__flushGLDepth();
-				// var gl = openfl.Lib.current.stage.context3D.gl;
-				// gl.depthFunc(gl.NEVER);
 				var gl = openfl.Lib.current.stage.context3D.gl;
-				// gl.cullFace(gl.FRONT);
-				// gl.disable(gl.STENCIL_TEST);
-				// gl.disable(gl.BLEND);
-				// gl.enable(gl.DEPTH_TEST);
-				// gl.depthFunc(gl.ALWAYS);
-				// gl.depthRange(0.0, 1.0);
-				// gl.depthMask(false);
-				// gl.disable(gl.SCISSOR_TEST);
-				// gl.frontFace(gl.CCW);
 
 				if (Std.int(x) != __x || Std.int(y) != __y) __engine.offset(Std.int(x), Lib.current.stage.stageHeight - __height - Std.int(y));
 
@@ -400,46 +237,14 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 				@:privateAccess __engine.doFlushTarget();
 
-				trace("RenderHeapsContainer: About to __flushGL");
+				Lib.current.stage.context3D.__contextState.stateDirty = true;
+				@:privateAccess ctx.__stage.__renderer.__cleared = ctx.__cleared = true;
 
-				// Lib.current.stage.context3D.__contextState.stateDirty = true;
-				// @:privateAccess ctx.__stage.__renderer.__cleared = ctx.__cleared = true;
-				ctx.__flushGL();
-
-				// __engine.popTarget();
-
-				// #if debug_gltf
-				// if (Lib.current.stage.context3D.__state != null) Lib.current.stage.context3D.__state.dump();
-				// #end
-				// #if !flash
-				// if (__stateStore != null) Lib.current.stage.context3D.__state.fromState(__stateStore);
-				// #end
-				// #if gl_debug
-				// if (Lib.current.stage.context3D.__state != null) Lib.current.stage.context3D.__state.dump();
-				// #end
-
-				// @:privateAccess stage.context3D.__bindGLFramebuffer(stage.context3D.__state.__primaryGLFramebuffer);
-
-				// @:privateAccess stage.context3D.__contextState.renderToTexture = null;
-				// @:privateAccess stage.context3D.__contextState.backBufferEnableDepthAndStencil = stage.context3D.__state.backBufferEnableDepthAndStencil;
-
-				// @:privateAccess stage.context3D.__setGLDepthTest(stage.context3D.__state.backBufferEnableDepthAndStencil);
-				// @:privateAccess stage.context3D.__setGLStencilTest(stage.context3D.__state.backBufferEnableDepthAndStencil);
-
-				// stage.context3D.__setGLFrontFace(stage.context3D.__stage.context3D != this);
-
-				// @:privateAccess ctx.__stage.__renderer.__cleared = ctx.__cleared = true;
-
-				// gl.enable(gl.BLEND);
-				// gl.enable(gl.SCISSOR_TEST);
-				// gl.frontFace(gl.CCW);
-
-				// ctx.__flushGL();
+				#if !flash
+				if (__stateStore != null) Lib.current.stage.context3D.__state.fromState(__stateStore);
+				#end
 			}
 		}
-		#if gl_debug
-		trace("RenderHeapsContainer COMPLETE ----------");
-		#end
 	}
 
 	public function render():Void
