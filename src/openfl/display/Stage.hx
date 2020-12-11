@@ -1951,6 +1951,8 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				}
 
 				var ctx:Context3DRenderer = cast __renderer;
+				HeapsContainer.syncedRenderCalls();
+
 				for (heapsLayer in heapsLayers)
 				{
 					ctx.__renderHeapsContainer(heapsLayer);

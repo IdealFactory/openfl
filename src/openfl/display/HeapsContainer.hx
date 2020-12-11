@@ -146,6 +146,12 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		haxe.Timer.delay(initHeapsApp, 5);
 	}
 
+	public static function addRTTFunc(rttFunc:Void->Void, callback:Void->Void)
+	{
+		__rttQueue.push(rttFunc);
+		__rttCallbackQueue.push(callback);
+	}
+
 	private function initHeapsApp()
 	{
 		if (__appClass != null && Window.CURRENT != null)
@@ -187,13 +193,52 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		if (__onCompleteCallback != null) __onCompleteCallback();
 	}
 
+	public static function syncedRenderCalls():Void
+	{
+		if (__rttQueue.length > 0)
+		{
+			var ctx3d = Lib.current.stage.context3D;
+			var __stateStore:openfl._internal.renderer.context3D.Context3DState = null;
+			if (ctx3d.__state != null) __stateStore = ctx3d.__state.clone();
+
+			var preMultValue = @:privateAccess ctx3d.gl.getParameter(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
+			@:privateAccess ctx3d.gl.disable(lime.graphics.opengl.GL.STENCIL_TEST);
+			@:privateAccess ctx3d.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+
+			for (rttFunc in __rttQueue)
+			{
+				rttFunc();
+			}
+
+			@:privateAccess ctx3d.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, preMultValue);
+			@:privateAccess ctx3d.gl.enable(lime.graphics.opengl.GL.STENCIL_TEST);
+
+			if (__stateStore != null) ctx3d.__state.fromState(__stateStore);
+
+			__rttQueue = [];
+		}
+
+		if (__rttCallbackQueue.length > 0)
+		{
+			for (callbackFunc in __rttCallbackQueue)
+			{
+				callbackFunc();
+			}
+			__rttCallbackQueue = [];
+		}
+	}
+
 	public function renderContainer():Void
 	{
-		if ((true || __heapsDirty || __autoUpdate) && __engine != null /* &&  parent != null */)
+		if ((__heapsDirty || __autoUpdate) && __engine != null /* &&  parent != null */)
 		{
 			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null) // && __renderTarget != null)
 			{
 				__heapsDirty = false;
+
+				#if !flash
+				if (Lib.current.stage.context3D.__state != null) __stateStore = Lib.current.stage.context3D.__state.clone();
+				#end
 
 				var stg = Lib.current.stage;
 				var ctx = Lib.current.stage.context3D;
@@ -237,11 +282,11 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 				@:privateAccess __engine.doFlushTarget();
 
-				Lib.current.stage.context3D.__contextState.stateDirty = true;
 				@:privateAccess ctx.__stage.__renderer.__cleared = ctx.__cleared = true;
 
 				#if !flash
 				if (__stateStore != null) Lib.current.stage.context3D.__state.fromState(__stateStore);
+				Lib.current.stage.context3D.__contextState.stateDirty = true;
 				#end
 			}
 		}
@@ -859,6 +904,8 @@ class HeapsContainer extends openfl.display.Bitmap
 		super();
 		throw "Heaps library is not referenced in project.xml. Please add '<haxelib name=\"heaps\" />' and '<haxelib name=\"hxbit\" />'";
 	}
+
+	public static function syncedRenderCalls():Void {}
 
 	public function renderContainer()
 	{
