@@ -668,6 +668,8 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	**/
 	public var stage3Ds(default, null):Vector<Stage3D>;
 
+	public var heapsLayers(default, null):Vector<HeapsContainer>;
+
 	/**
 		Specifies whether or not objects display a glowing border when they have
 		focus.
@@ -987,6 +989,8 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		{
 			stage3Ds.push(new Stage3D(this));
 		}
+
+		heapsLayers = new Vector();
 
 		this.stage = this;
 
@@ -1934,6 +1938,31 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 				#if !openfl_disable_display_render
 				if (context3D.__present) shouldRender = true;
+				#end
+			}
+
+			if (context3D != null && __renderer.__type == OPENGL && heapsLayers.length > 0)
+			{
+				if (!context3D.__cleared)
+				{
+					__renderer.__clear();
+				}
+
+				var ctx:Context3DRenderer = cast __renderer;
+				HeapsContainer.syncedRenderCalls();
+
+				for (heapsLayer in heapsLayers)
+				{
+					ctx.__renderHeapsContainer(heapsLayer);
+				}
+
+				var cacheBuffer = context3D.__backBufferTexture;
+				context3D.__backBufferTexture = context3D.__frontBufferTexture;
+				context3D.__frontBufferTexture = cacheBuffer;
+
+				context3D.__present = true;
+				#if !openfl_disable_display_render
+				shouldRender = true;
 				#end
 			}
 

@@ -340,7 +340,7 @@ import lime.math.Vector2;
 		#if lime
 		if (__glDepthStencil == -1)
 		{
-			#if ((js && html5) || heaps)
+			#if (js && html5)
 			__glDepthStencil = gl.DEPTH_STENCIL;
 			#else
 			if (__context.type == OPENGLES && Std.parseFloat(__context.version) >= 3)

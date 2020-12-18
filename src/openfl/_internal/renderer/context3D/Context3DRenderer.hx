@@ -1002,8 +1002,6 @@ class Context3DRenderer extends Context3DRendererAPI
 					__renderDisplayObjectContainer(cast object);
 				case DISPLAY_OBJECT, SHAPE:
 					__renderShape(cast object);
-				case HEAPS_CONTAINER:
-					__renderHeapsContainer(cast object);
 				case SIMPLE_BUTTON:
 					__renderSimpleButton(cast object);
 				case TEXTFIELD:
@@ -1138,6 +1136,7 @@ class Context3DRenderer extends Context3DRendererAPI
 	{
 		#if (heaps && !neko)
 		#if !flash
+		if (heaps == null) return;
 		heaps.renderContainer();
 		#else
 		if (heaps.__bitmapData != null)
