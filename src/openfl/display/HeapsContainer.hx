@@ -117,14 +117,11 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 	public var backgroundColor:UInt = 0x0;
 
 	var __autoUpdate:Bool;
-	var __onCompleteCallback:Void->Void;
 
-	public function new(appClass:Class<Dynamic>, autoUpdate:Bool = true, callback:Void->Void = null)
+	public function new(appClass:Class<Dynamic>, autoUpdate:Bool = true)
 	{
 		__appClass = appClass;
 		__autoUpdate = autoUpdate;
-
-		__onCompleteCallback = callback;
 
 		__rttQueue = [];
 		__rttCallbackQueue = [];
@@ -190,7 +187,7 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		FlashRenderer.register(this);
 		#end
 
-		if (__onCompleteCallback != null) __onCompleteCallback();
+		dispatchEvent(new openfl.events.Event(openfl.events.Event.COMPLETE));
 	}
 
 	public static function syncedRenderCalls():Void
