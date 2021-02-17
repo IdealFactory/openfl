@@ -198,17 +198,21 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 			var __stateStore:openfl._internal.renderer.context3D.Context3DState = null;
 			if (ctx3d.__state != null) __stateStore = ctx3d.__state.clone();
 
+			#if !android
 			var preMultValue = @:privateAccess ctx3d.gl.getParameter(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL);
-			@:privateAccess ctx3d.gl.disable(lime.graphics.opengl.GL.STENCIL_TEST);
 			@:privateAccess ctx3d.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+			#end
+			@:privateAccess ctx3d.gl.disable(lime.graphics.opengl.GL.STENCIL_TEST);
 
 			for (rttFunc in __rttQueue)
 			{
 				rttFunc();
 			}
 
+			#if !android
 			@:privateAccess ctx3d.gl.pixelStorei(lime.graphics.opengl.GL.UNPACK_PREMULTIPLY_ALPHA_WEBGL, preMultValue);
 			@:privateAccess ctx3d.gl.enable(lime.graphics.opengl.GL.STENCIL_TEST);
+			#end
 
 			if (__stateStore != null) ctx3d.__state.fromState(__stateStore);
 
@@ -219,7 +223,7 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 		{
 			for (callbackFunc in __rttCallbackQueue)
 			{
-				callbackFunc();
+				if (callbackFunc != null) callbackFunc();
 			}
 			__rttCallbackQueue = [];
 		}
@@ -308,6 +312,12 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				var oldW = __width;
 				var oldH = __height;
 
+				var stg = Lib.current.stage;
+				var ctx = Lib.current.stage.context3D;
+
+				// Ensure all the cached render states are cleared for a new render
+				@:privateAccess __engine.needFlushTarget = true;
+
 				#if flash
 				var destTarget:Texture;
 				destTarget = new Texture(w, h, [TextureFlags.Target]#if !flash, hxd.PixelFormat.RGBA #end);
@@ -326,6 +336,9 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				#else
 				var destTarget:Texture;
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
+
+				if (ctx.__state != null) __stateStore = ctx.__state.clone();
+
 				if (!__engine.driver.hasFeature(ShaderModel3))
 				{
 					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
@@ -338,13 +351,12 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 					driver.curAttribs = [];
 					driver.curStOpBits = -1;
 					driver.curStMaskBits = -1;
+					driver.curMatBits = -1;
 					driver.resize(w, h);
-
-					if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
 
 					__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
 
-					@:privateAccess stage.context3D.__setGLFrontFace(true);
+					@:privateAccess ctx.__setGLFrontFace(true);
 
 					appInstance.s3d.render(__engine);
 					appInstance.s2d.render(__engine);
@@ -355,12 +367,12 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 					var captureTarget:Texture;
 					captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
-					captureTarget.depthBuffer = new DepthBuffer(w, h, msaaLevel);
+					captureTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
 					captureTarget.customFBO = __engine.driver.createFrameBuffer(w, h, msaaLevel);
 
 					var msaaTarget:Texture;
 					msaaTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
-					msaaTarget.depthBuffer = new DepthBuffer(w, h, msaaLevel);
+					msaaTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
 					msaaTarget.msaaBuffer = __engine.driver.createFrameBuffer(w, h, msaaLevel);
 
 					__engine.pushTarget(msaaTarget);
@@ -372,14 +384,14 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 					driver.curAttribs = [];
 					driver.curStOpBits = -1;
 					driver.curStMaskBits = -1;
+					driver.curMatBits = -1;
 					driver.resize(w, h);
 
-					if (stage.context3D.__state != null) __stateStore = stage.context3D.__state.clone();
-
 					__engine.clear(1, 1, 1); // Clears the render target texture and depth buffer
+
 					__engine.setRenderZone(0, 0, w, h);
 
-					@:privateAccess stage.context3D.__setGLFrontFace(true);
+					@:privateAccess ctx.__setGLFrontFace(true);
 
 					appInstance.s3d.render(__engine);
 					appInstance.s2d.render(__engine);
@@ -387,8 +399,6 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 					// Blit the rendered multi-sample FBO to the target texture
 					driver.blitFramebuffer(msaaTarget.msaaBuffer, captureTarget.customFBO, destTarget, w, h);
 				}
-
-				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
 				#end
 
 				var pixels = destTarget.capturePixels();
@@ -402,12 +412,17 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				__engine.setRenderZone(oldX, oldY, oldW, oldH);
 
 				__engine.clear(1, 1, 1);
+
 				#if flash
 				driver.width = oldW;
 				driver.height = oldH;
 				#else
+				@:privateAccess ctx.__stage.__renderer.__cleared = ctx.__cleared = true;
+				@:privateAccess __engine.doFlushTarget();
+
 				driver.resize(oldW, oldH);
-				if (__stateStore != null) stage.context3D.__state.fromState(__stateStore);
+				if (__stateStore != null && ctx.__state != null) ctx.__state.fromState(__stateStore);
+				ctx.__contextState.stateDirty = true;
 				#end
 
 				trace("CAPTURE COMPLETED================");
