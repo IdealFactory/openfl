@@ -898,8 +898,15 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 			link.download = fName;
 			link.href = can.toDataURL();
 			link.click();
-			trace("DOWNLOAD......");
 		}
+	}
+	#else
+	public static function savePNG(bmd:openfl.display.BitmapData, fName:String = "thumbnail.png")
+	{
+		var fullName = lime.system.System.documentsDirectory + fName;
+		#if !(android || ios) // Not working on Android
+		sys.io.File.saveBytes(fullName, bmd.image.encode(lime.graphics.ImageFileFormat.PNG));
+		#end
 	}
 	#end
 }
