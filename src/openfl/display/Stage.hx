@@ -1953,7 +1953,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 				for (heapsLayer in heapsLayers)
 				{
-					ctx.__renderHeapsContainer(heapsLayer);
+					if (heapsLayer.visible) ctx.__renderHeapsContainer(heapsLayer);
 				}
 
 				var cacheBuffer = context3D.__backBufferTexture;
