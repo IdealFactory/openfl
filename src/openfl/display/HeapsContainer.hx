@@ -354,7 +354,9 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 					driver.curMatBits = -1;
 					driver.resize(w, h);
 
-					__engine.clear(0, 1, 1); // Clears the render target texture and depth buffer
+					__engine.clear(1, 1, 1); // Clears the render target texture and depth buffer
+
+					__engine.setRenderZone(0, 0, w, h);
 
 					@:privateAccess ctx.__setGLFrontFace(true);
 
