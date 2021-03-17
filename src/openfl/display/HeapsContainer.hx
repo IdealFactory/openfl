@@ -342,9 +342,19 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 				if (!__engine.driver.hasFeature(ShaderModel3))
 				{
 					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
-					destTarget.depthBuffer = new DepthBuffer(w, h);
 
-					__engine.pushTarget(destTarget);
+					var captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
+					captureTarget.depthBuffer = new DepthBuffer(w, h);
+
+					// destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
+					// destTarget.depthBuffer = new DepthBuffer(w, h);
+
+					if (Std.is(appInstance.s3d.renderer, h3d.scene.fwd.PBRSinglePassRenderer))
+					{
+						appInstance.s3d.renderer.enableFXAA = true;
+					}
+
+					__engine.pushTarget(captureTarget);
 
 					driver.curIndexBuffer = null;
 					driver.curAttribs = [];
@@ -362,6 +372,15 @@ class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implement
 
 					appInstance.s3d.render(__engine);
 					appInstance.s2d.render(__engine);
+
+					if (Std.is(appInstance.s3d.renderer, h3d.scene.fwd.PBRSinglePassRenderer))
+					{
+						appInstance.s3d.renderer.enableFXAA = false;
+					}
+
+					var fxaa = new h3d.pass.FXAA();
+					__engine.pushTarget(destTarget);
+					fxaa.apply(captureTarget);
 				}
 				else
 				{
