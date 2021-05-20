@@ -10,8 +10,6 @@ import openfl.display3D.IndexBuffer3D;
 import openfl.display3D.Context3DProgramType;
 import openfl.geom.Matrix3D;
 import openfl.utils.AGALMiniAssembler;
-#else
-// import openfl._internal.renderer.context3D.Context3DHeaps;
 #end
 import openfl._internal.renderer.context3D.Context3DState;
 import openfl.display3D.textures.TextureBase;
@@ -45,7 +43,7 @@ import haxe.io.BytesOutput;
 @:access(h3d.Engine)
 @:access(h3d.impl.GlDriver)
 @:access(h3d.impl.Stage3dDriver)
-class HeapsContainer extends #if !flash InteractiveObject #else Bitmap implements IDisplayObject #end
+class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayObject #end
 {
 	public static var heapsRenderTargets:Array<Texture> = [];
 
