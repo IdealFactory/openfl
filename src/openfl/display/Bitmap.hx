@@ -80,6 +80,13 @@ class Bitmap extends DisplayObject
 	**/
 	public var smoothing:Bool;
 
+	/**
+		Controls whether the hitTest logic takes pixel transparency into consideration.
+		`true`, the hitTest only adds the bitmap to the stack when the pixel alpha > 0 and the image tansparency is true
+		`false`, simple use the bitmap bounds for the hitTest - better performance
+	**/
+	public var transparentHitTest:Bool;
+
 	#if (js && html5)
 	@:noCompletion private var __image:ImageElement;
 	#end
@@ -106,7 +113,7 @@ class Bitmap extends DisplayObject
 
 		![A bitmap without smoothing.](/images/bitmap_smoothing_off.jpg) ![A bitmap with smoothing.](bitmap_smoothing_on.jpg)
 	**/
-	public function new(bitmapData:BitmapData = null, pixelSnapping:PixelSnapping = null, smoothing:Bool = false)
+	public function new(bitmapData:BitmapData = null, pixelSnapping:PixelSnapping = null, smoothing:Bool = false, transparentHitTest:Bool = false)
 	{
 		super();
 
@@ -115,6 +122,7 @@ class Bitmap extends DisplayObject
 		__bitmapData = bitmapData;
 		this.pixelSnapping = pixelSnapping;
 		this.smoothing = smoothing;
+		this.transparentHitTest = transparentHitTest;
 
 		if (pixelSnapping == null)
 		{
@@ -162,9 +170,19 @@ class Bitmap extends DisplayObject
 				return false;
 			}
 
-			if (stack != null && !interactiveOnly)
+			if (stack != null && (!interactiveOnly || transparentHitTest))
 			{
-				stack.push(hitObject);
+				if (!transparentHitTest || !__bitmapData.transparent) stack.push(hitObject);
+				else
+				{
+					var alpha = (__bitmapData.getPixel32(Std.int(px), Std.int(py)) >> 24) & 255;
+					if (alpha != 0)
+					{
+						if (!interactiveOnly) stack.push(hitObject);
+					}
+					else
+						return false;
+				}
 			}
 
 			return true;
