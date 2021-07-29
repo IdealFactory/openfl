@@ -1900,6 +1900,8 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		__enterFrame(__deltaTime);
 		__deltaTime = 0;
 
+		__renderDirty = __renderDirty || (heapsLayers.length > 0);
+
 		var shouldRender = #if !openfl_disable_display_render (__renderer != null #if !openfl_always_render && (__renderDirty || __forceRender) #end) #else false #end;
 
 		if (__invalidated && shouldRender)
@@ -1961,9 +1963,6 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				context3D.__frontBufferTexture = cacheBuffer;
 
 				context3D.__present = true;
-				#if !openfl_disable_display_render
-				shouldRender = true;
-				#end
 			}
 
 			if (shouldRender)
