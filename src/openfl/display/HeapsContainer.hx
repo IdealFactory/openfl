@@ -190,7 +190,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 	public static function syncedRenderCalls():Void
 	{
-		if (__rttQueue.length > 0)
+		if (__rttQueue != null && __rttQueue.length > 0)
 		{
 			var ctx3d = Lib.current.stage.context3D;
 			var __stateStore:openfl._internal.renderer.context3D.Context3DState = null;
@@ -217,13 +217,37 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			__rttQueue = [];
 		}
 
-		if (__rttCallbackQueue.length > 0)
+		if (__rttCallbackQueue != null && __rttCallbackQueue.length > 0)
 		{
 			for (callbackFunc in __rttCallbackQueue)
 			{
 				if (callbackFunc != null) callbackFunc();
 			}
 			__rttCallbackQueue = [];
+		}
+	}
+
+	public function updateContainer():Void
+	{
+		if ((__heapsDirty || __autoUpdate) && __engine != null)
+		{
+			if (appInstance != null && appInstance.s2d != null && appInstance.s3d != null)
+			{
+				__heapsDirty = false;
+
+				if (Std.int(x) != __x || Std.int(y) != __y) __engine.offset(Std.int(x), Lib.current.stage.stageHeight - __height - Std.int(y));
+
+				__x = Std.int(x);
+				__y = Std.int(y);
+
+				__engine.driver.begin(hxd.Timer.frameCount);
+
+				#if (!js && !flash)
+				@:privateAccess System.mainLoop();
+				#else
+				@:privateAccess System.loopFunc();
+				#end
+			}
 		}
 	}
 
@@ -262,19 +286,6 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				@:privateAccess if (ctx.__stage3D == null) ctx.clear(0, 0, 0, 0, 1, 0, openfl.display3D.Context3DClearMask.DEPTH);
 
 				var gl = openfl.Lib.current.stage.context3D.gl;
-
-				if (Std.int(x) != __x || Std.int(y) != __y) __engine.offset(Std.int(x), Lib.current.stage.stageHeight - __height - Std.int(y));
-
-				__x = Std.int(x);
-				__y = Std.int(y);
-
-				__engine.driver.begin(hxd.Timer.frameCount);
-
-				#if (!js && !flash)
-				@:privateAccess System.mainLoop();
-				#else
-				@:privateAccess System.loopFunc();
-				#end
 
 				appInstance.s3d.render(__engine);
 				appInstance.s2d.render(__engine);
@@ -386,12 +397,12 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 					var captureTarget:Texture;
 					captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
-					captureTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
+					captureTarget.depthBuffer = new DepthBuffer(w, h, Depth24Stencil8, msaaLevel);
 					captureTarget.customFBO = __engine.driver.createFrameBuffer(w, h, msaaLevel);
 
 					var msaaTarget:Texture;
 					msaaTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
-					msaaTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
+					msaaTarget.depthBuffer = new DepthBuffer(w, h, Depth24Stencil8, msaaLevel);
 					msaaTarget.msaaBuffer = __engine.driver.createFrameBuffer(w, h, msaaLevel);
 
 					__engine.pushTarget(msaaTarget);
@@ -444,7 +455,6 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				ctx.__contextState.stateDirty = true;
 				#end
 
-				trace("CAPTURE COMPLETED================");
 				return /*new BitmapData(w, h, false, 0);*/ #if !flash BitmapData.fromImage(bmd.toNative(), true) #else bmd.toNative() #end;
 			}
 		}
@@ -499,7 +509,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		// Create render target and depth buffer for Heaps rendering
 		var w = __width;
 		var h = __height;
-		trace("setupRenderTargets:" + w + "/" + h);
+
 		__renderTarget = new Texture(w, h, [TextureFlags.Target]);
 		__renderTarget.depthBuffer = new DepthBuffer(-1, -1);
 
@@ -780,6 +790,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			appInstance.sevents.setMousePos(__mousePoint.x, __mousePoint.y);
 			#end
 			appInstance.sevents.onEvent(new Event(EMove, __mousePoint.x, __mousePoint.y));
+			__heapsDirty = true;
 		}
 	}
 

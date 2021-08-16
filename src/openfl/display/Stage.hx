@@ -1901,6 +1901,13 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		__deltaTime = 0;
 
 		__renderDirty = __renderDirty || (heapsLayers.length > 0);
+		if (heapsLayers.length > 0)
+		{
+			for (heapsLayer in heapsLayers)
+			{
+				if (heapsLayer.visible) heapsLayer.updateContainer();
+			}
+		}
 
 		var shouldRender = #if !openfl_disable_display_render (__renderer != null #if !openfl_always_render && (__renderDirty || __forceRender) #end) #else false #end;
 
