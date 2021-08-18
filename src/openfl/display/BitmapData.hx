@@ -788,6 +788,22 @@ class BitmapData implements IBitmapDrawable
 	**/
 	public function dispose():Void
 	{
+		if (image != null)
+		{
+			if (image.buffer != null)
+			{
+				if (image.buffer.__srcCanvas != null)
+				{
+					#if debug
+					openfl.display.HeapsContainer.removeCanvasMem(image.buffer.__srcCanvas);
+					#end
+					image.buffer.__srcCanvas.width = 1;
+					image.buffer.__srcCanvas.height = 1;
+					image.buffer.__srcCanvas = null;
+				}
+				image.buffer = null;
+			}
+		}
 		image = null;
 
 		width = 0;
