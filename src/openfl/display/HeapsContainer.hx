@@ -397,12 +397,12 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 					var captureTarget:Texture;
 					captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
-					captureTarget.depthBuffer = new DepthBuffer(w, h, Depth24Stencil8, msaaLevel);
+					captureTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
 					captureTarget.customFBO = __engine.driver.createFrameBuffer(w, h, msaaLevel);
 
 					var msaaTarget:Texture;
 					msaaTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
-					msaaTarget.depthBuffer = new DepthBuffer(w, h, Depth24Stencil8, msaaLevel);
+					msaaTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
 					msaaTarget.msaaBuffer = __engine.driver.createFrameBuffer(w, h, msaaLevel);
 
 					__engine.pushTarget(msaaTarget);
@@ -955,6 +955,8 @@ class HeapsContainer extends openfl.display.Bitmap
 	}
 
 	public static function syncedRenderCalls():Void {}
+
+	public function updateContainer() {}
 
 	public function renderContainer()
 	{
