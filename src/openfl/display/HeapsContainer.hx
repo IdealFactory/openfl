@@ -90,6 +90,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	@:noCompletion private var __heapsDirty:Bool = true;
 
 	@:noCompletion private var __mousePoint:Point = new Point();
+	@:noCompletion private var __touchMoveInitialPoints:Array<Point> = [];
+	@:noCompletion private var __touchMoveDistance:Float = 10;
 	@:noCompletion private var __localPoint:Point = new Point();
 	#if flash
 	@:noCompletion private var __heapsRenderbufferProgram:Program3D;
@@ -153,7 +155,6 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		{
 			hxd.System.start(function()
 			{
-				Lib.current.stage.addEventListener(openfl.events.Event.RESIZE, __onResize);
 				this.addEventListener(MouseEvent.MOUSE_MOVE, __onMouseMove);
 				this.addEventListener(MouseEvent.MOUSE_DOWN, __onMouseDown);
 				this.addEventListener(MouseEvent.MOUSE_UP, __onMouseUp);
@@ -828,6 +829,9 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		{
 			var e = new Event(EPush, __mousePoint.x, __mousePoint.y);
 			e.touchId = te.touchPointID;
+
+			__touchMoveInitialPoints[e.touchId] = __mousePoint.clone();
+
 			appInstance.sevents.onEvent(e);
 		}
 	}
@@ -845,9 +849,15 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			#else
 			appInstance.sevents.setMousePos(__mousePoint.x, __mousePoint.y);
 			#end
-			var e = new Event(EMove, __mousePoint.x, __mousePoint.y);
-			e.touchId = te.touchPointID;
-			appInstance.sevents.onEvent(e);
+
+			var d = Point.distance(__mousePoint, __touchMoveInitialPoints[te.touchPointID]);
+
+			if (d > __touchMoveDistance)
+			{
+				var e = new Event(EMove, __mousePoint.x, __mousePoint.y);
+				e.touchId = te.touchPointID;
+				appInstance.sevents.onEvent(e);
+			}
 		}
 	}
 

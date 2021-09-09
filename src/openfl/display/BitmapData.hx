@@ -794,9 +794,6 @@ class BitmapData implements IBitmapDrawable
 			{
 				if (image.buffer.__srcCanvas != null)
 				{
-					#if debug
-					openfl.display.HeapsContainer.removeCanvasMem(image.buffer.__srcCanvas);
-					#end
 					image.buffer.__srcCanvas.width = 1;
 					image.buffer.__srcCanvas.height = 1;
 					image.buffer.__srcCanvas = null;

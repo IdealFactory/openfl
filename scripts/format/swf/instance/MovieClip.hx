@@ -566,9 +566,9 @@ class MovieClip extends flash.display.MovieClip
 		{
 			removeChild(bmp_do);
 			var bmp:Bitmap = cast bmp_do;
-			#if flash
+			// #if flash
 			bmp.bitmapData.dispose();
-			#end
+			// #end
 			bmp.bitmapData = null;
 		}
 

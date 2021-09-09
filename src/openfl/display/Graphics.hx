@@ -1659,6 +1659,7 @@ import js.html.CanvasRenderingContext2D;
 		__bitmap = null;
 
 		#if (js && html5)
+		if (__canvas != null) __canvas.width = __canvas.height = 1;
 		__canvas = null;
 		__context = null;
 		#else
