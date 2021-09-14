@@ -11,6 +11,7 @@ import openfl._internal.text.TextFormatRange;
 import openfl._internal.text.TextLayoutGroup;
 import openfl._internal.text.UTF8String;
 import openfl._internal.utils.Log;
+import openfl.display.BitmapData;
 import openfl.display.DisplayObject;
 import openfl.display.Graphics;
 import openfl.display.InteractiveObject;
@@ -32,6 +33,7 @@ import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 #end
 #if (js && html5)
+import openfl._internal.renderer.canvas.CanvasTextField;
 import js.html.DivElement;
 #end
 
@@ -639,6 +641,13 @@ class TextField extends InteractiveObject
 		@default 0
 	**/
 	// var thickness : Float;
+
+	/**
+		Controls whether the hitTest logic takes pixel transparency into consideration.
+		`true`, the hitTest only adds the bitmap to the stack when the pixel alpha > 0 and the image tansparency is true
+		`false`, simple use the bitmap bounds for the hitTest - better performance
+	**/
+	public var transparentHitTest:Bool;
 
 	/**
 		The type of the text field. Either one of the following TextFieldType
@@ -2085,9 +2094,36 @@ class TextField extends InteractiveObject
 
 		if (__textEngine.bounds.contains(px, py))
 		{
-			if (stack != null)
+			if (stack != null && !transparentHitTest)
 			{
+				trace(" - 1st condition true: adding to stack");
 				stack.push(hitObject);
+			}
+			else
+			{
+				if (transparentHitTest)
+				{
+					var tx = __renderTransform.__transformInverseX(x, y);
+					var ty = __renderTransform.__transformInverseY(x, y);
+					var mtx = __graphics.__renderTransform.__transformX(tx, ty);
+					var mty = __graphics.__renderTransform.__transformY(tx, ty);
+					if (__graphics.__bitmap == null)
+					{
+						#if (js && html5)
+						@:privateAccess CanvasTextField.render(this, cast stage.__renderer, this.__worldTransform);
+						__graphics.__bitmap = BitmapData.fromCanvas(this.__graphics.__canvas);
+						#end
+					}
+					var alpha = (__graphics.__bitmap.getPixel32(Std.int(mtx), Std.int(mty)) >> 24) & 255;
+					if (alpha > 0)
+					{
+						stack.push(hitObject);
+					}
+					else
+						return false;
+				}
+				else
+					return false;
 			}
 
 			return true;
