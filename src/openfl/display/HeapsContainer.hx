@@ -116,6 +116,15 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	public var appInstance:Dynamic;
 	public var backgroundColor:UInt = 0x0;
 
+	private var isGestureTouchPoints:Array<Int> = [];
+
+	public var isGestureTouch(get, null):Bool;
+
+	private function get_isGestureTouch():Bool
+	{
+		return isGestureTouchPoints.length > 1;
+	}
+
 	var __autoUpdate:Bool;
 
 	public function new(appClass:Class<Dynamic>, autoUpdate:Bool = true)
@@ -830,6 +839,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			var e = new Event(EPush, __mousePoint.x, __mousePoint.y);
 			e.touchId = te.touchPointID;
 
+			if (isGestureTouchPoints.indexOf(te.touchPointID) == -1) isGestureTouchPoints.push(te.touchPointID);
+
 			__touchMoveInitialPoints[e.touchId] = __mousePoint.clone();
 
 			appInstance.sevents.onEvent(e);
@@ -870,6 +881,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		{
 			var e = new Event(ERelease, __mousePoint.x, __mousePoint.y);
 			e.touchId = te.touchPointID;
+			if (isGestureTouchPoints.indexOf(te.touchPointID) != -1) isGestureTouchPoints.remove(te.touchPointID);
 			appInstance.sevents.onEvent(e);
 		}
 	}
