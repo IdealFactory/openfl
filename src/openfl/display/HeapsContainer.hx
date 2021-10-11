@@ -116,7 +116,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	public var appInstance:Dynamic;
 	public var backgroundColor:UInt = 0x0;
 
-	private var isGestureTouchPoints:Array<Int> = [];
+	public var isGestureTouchPoints:Array<Int> = [];
 
 	public var isGestureTouch(get, null):Bool;
 
