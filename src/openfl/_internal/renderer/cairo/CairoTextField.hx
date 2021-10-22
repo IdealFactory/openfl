@@ -6,6 +6,7 @@ import openfl.display.Graphics;
 import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
 import openfl.text.TextField;
+import openfl.display.DisplayObject;
 #if lime
 import lime.graphics.cairo.Cairo;
 import lime.graphics.cairo.CairoAntialias;
@@ -14,6 +15,8 @@ import lime.graphics.cairo.CairoFTFontFace;
 import lime.graphics.cairo.CairoGlyph;
 import lime.graphics.cairo.CairoHintMetrics;
 import lime.graphics.cairo.CairoHintStyle;
+import lime.graphics.cairo.CairoTextExtents;
+import lime.graphics.cairo.CairoFontExtents;
 #end
 
 #if !openfl_debug
@@ -27,6 +30,280 @@ import lime.graphics.cairo.CairoHintStyle;
 @SuppressWarnings("checkstyle:FieldDocComment")
 class CairoTextField
 {
+	public static function getTextWidth(textField:TextField, subString:String = null, renderer:CairoRenderer, transform:Matrix):Float
+	{
+		var wid = 0.;
+
+		#if lime_cairo
+		var textEngine = textField.__textEngine;
+		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
+		var graphics = textField.__graphics;
+		var cairo = graphics.__cairo;
+
+		graphics.__update(renderer.__worldTransform);
+
+		var width = 1; // graphics.__width;
+		var height = 1; // graphics.__height;
+
+		var renderable = (textEngine.border || textEngine.background || textEngine.text != null);
+		var needsUpscaling = false;
+
+		if (cairo != null)
+		{
+			var surface = graphics.__bitmap.getSurface();
+
+			if (graphics.__softwareDirty && (width > surface.width || height > surface.height))
+			{
+				needsUpscaling = true;
+			}
+
+			if (!renderable || needsUpscaling)
+			{
+				graphics.__cairo = null;
+				graphics.__bitmap = null;
+				graphics.__visible = false;
+				cairo = null;
+			}
+		}
+
+		if (cairo == null)
+		{
+			var bitmapWidth = needsUpscaling ? Std.int(width * 1.25) : width;
+			var bitmapHeight = needsUpscaling ? Std.int(height * 1.25) : height;
+
+			if (Graphics.maxTextureWidth != null && bitmapWidth > Graphics.maxTextureWidth)
+			{
+				bitmapWidth = Graphics.maxTextureWidth;
+			}
+
+			if (Graphics.maxTextureHeight != null && bitmapHeight > Graphics.maxTextureHeight)
+			{
+				bitmapHeight = Graphics.maxTextureHeight;
+			}
+
+			var bitmap = new BitmapData(bitmapWidth, bitmapHeight, true, 0);
+			var surface = bitmap.getSurface();
+			graphics.__cairo = new Cairo(surface);
+			graphics.__visible = true;
+			graphics.__managed = true;
+
+			graphics.__bitmap = bitmap;
+
+			cairo = graphics.__cairo;
+
+			var options = new CairoFontOptions();
+
+			if (textEngine.antiAliasType == ADVANCED && textEngine.sharpness == 400)
+			{
+				options.hintStyle = CairoHintStyle.NONE;
+				options.hintMetrics = CairoHintMetrics.OFF;
+				options.antialias = CairoAntialias.NONE;
+			}
+			else
+			{
+				options.hintStyle = CairoHintStyle.SLIGHT;
+				options.hintMetrics = CairoHintMetrics.OFF;
+				options.antialias = CairoAntialias.GOOD;
+			}
+
+			cairo.fontOptions = options;
+		}
+		else
+		{
+			cairo.identityMatrix();
+			cairo.resetClip();
+
+			cairo.setOperator(CLEAR);
+			cairo.paint();
+			cairo.setOperator(OVER);
+		}
+
+		renderer.applyMatrix(graphics.__renderTransform, cairo);
+
+		cairo.rectangle(0, 0, width, height);
+
+		if (textEngine.background)
+		{
+			var color = textEngine.backgroundColor;
+			var r = ((color & 0xFF0000) >>> 16) / 0xFF;
+			var g = ((color & 0x00FF00) >>> 8) / 0xFF;
+			var b = (color & 0x0000FF) / 0xFF;
+
+			cairo.setSourceRGB(r, g, b);
+			cairo.fillPreserve();
+		}
+
+		if (textEngine.border)
+		{
+			var color = textEngine.borderColor;
+			var r = ((color & 0xFF0000) >>> 16) / 0xFF;
+			var g = ((color & 0x00FF00) >>> 8) / 0xFF;
+			var b = (color & 0x0000FF) / 0xFF;
+
+			cairo.setSourceRGB(r, g, b);
+			cairo.lineWidth = 1;
+			cairo.stroke();
+		}
+
+		var measureText = textEngine.text;
+		if (subString != null && subString != "") measureText = subString;
+
+		if (measureText != null && measureText != "")
+		{
+			var text = textEngine.text;
+			var color, r, g, b, font, size, advance;
+
+			font = TextEngine.getFontInstance(textField.__textFormat);
+
+			if (font != null) // && group.format.size != null)
+			{
+				if (textEngine.__cairoFont != null)
+				{
+					if (textEngine.__font != font)
+					{
+						textEngine.__cairoFont = null;
+					}
+				}
+
+				if (textEngine.__cairoFont == null)
+				{
+					textEngine.__font = font;
+					textEngine.__cairoFont = CairoFTFontFace.create(font, 0);
+				}
+
+				cairo.fontFace = textEngine.__cairoFont;
+
+				size = Std.int(textField.__textFormat.size);
+				cairo.setFontSize(size);
+				cairo.moveTo(0, 0);
+
+				var extents:CairoTextExtents = cairo.textExtents(measureText);
+				wid += extents.x_advance;
+			}
+		}
+		#end
+		return wid;
+	}
+
+	public static function getFontExtents(textField:TextField, renderer:CairoRenderer):CairoFontExtents
+	{
+		var wid = 0.;
+
+		#if lime_cairo
+		var textEngine = textField.__textEngine;
+		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
+		var graphics = textField.__graphics;
+		var cairo = graphics.__cairo;
+
+		var width = 1; // graphics.__width;
+		var height = 1; // graphics.__height;
+
+		var renderable = (textEngine.border || textEngine.background || textEngine.text != null);
+		var needsUpscaling = false;
+
+		if (cairo != null)
+		{
+			var surface = graphics.__bitmap.getSurface();
+
+			if (graphics.__softwareDirty && (width > surface.width || height > surface.height))
+			{
+				needsUpscaling = true;
+			}
+
+			if (!renderable || needsUpscaling)
+			{
+				graphics.__cairo = null;
+				graphics.__bitmap = null;
+				graphics.__visible = false;
+				cairo = null;
+			}
+		}
+
+		if (cairo == null)
+		{
+			var bitmapWidth = needsUpscaling ? Std.int(width * 1.25) : width;
+			var bitmapHeight = needsUpscaling ? Std.int(height * 1.25) : height;
+
+			if (Graphics.maxTextureWidth != null && bitmapWidth > Graphics.maxTextureWidth)
+			{
+				bitmapWidth = Graphics.maxTextureWidth;
+			}
+
+			if (Graphics.maxTextureHeight != null && bitmapHeight > Graphics.maxTextureHeight)
+			{
+				bitmapHeight = Graphics.maxTextureHeight;
+			}
+
+			var bitmap = new BitmapData(bitmapWidth, bitmapHeight, true, 0);
+			var surface = bitmap.getSurface();
+			graphics.__cairo = new Cairo(surface);
+			graphics.__visible = true;
+			graphics.__managed = true;
+
+			graphics.__bitmap = bitmap;
+
+			cairo = graphics.__cairo;
+
+			var options = new CairoFontOptions();
+
+			if (textEngine.antiAliasType == ADVANCED && textEngine.sharpness == 400)
+			{
+				options.hintStyle = CairoHintStyle.NONE;
+				options.hintMetrics = CairoHintMetrics.OFF;
+				options.antialias = CairoAntialias.NONE;
+			}
+			else
+			{
+				options.hintStyle = CairoHintStyle.SLIGHT;
+				options.hintMetrics = CairoHintMetrics.ON;
+				options.antialias = CairoAntialias.GOOD;
+			}
+
+			cairo.fontOptions = options;
+		}
+		else
+		{
+			cairo.identityMatrix();
+			cairo.resetClip();
+
+			cairo.setOperator(CLEAR);
+			cairo.paint();
+			cairo.setOperator(OVER);
+		}
+
+		var text = textEngine.text;
+		var color, r, g, b, font, size, advance;
+
+		font = TextEngine.getFontInstance(textField.__textFormat);
+
+		if (font != null) // && group.format.size != null)
+		{
+			if (textEngine.__cairoFont != null)
+			{
+				if (textEngine.__font != font)
+				{
+					textEngine.__cairoFont = null;
+				}
+			}
+
+			if (textEngine.__cairoFont == null)
+			{
+				textEngine.__font = font;
+				textEngine.__cairoFont = CairoFTFontFace.create(font, 0);
+			}
+
+			cairo.fontFace = textEngine.__cairoFont;
+
+			size = Std.int(textField.__textFormat.size);
+			cairo.setFontSize(size);
+
+			var fontExtents:CairoFontExtents = cairo.fontExtents();
+			return fontExtents;
+		}
+		#end
+		return new CairoFontExtents();
+	}
+
 	public static function render(textField:TextField, renderer:CairoRenderer, transform:Matrix):Void
 	{
 		#if lime_cairo
@@ -247,7 +524,6 @@ class CairoTextField
 
 					cairo.showGlyphs(glyphs);
 					#end
-
 					if (textField.__caretIndex > -1 && textEngine.selectable)
 					{
 						if (textField.__selectionIndex == textField.__caretIndex)

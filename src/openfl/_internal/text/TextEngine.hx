@@ -4,6 +4,8 @@ import haxe.Timer;
 import openfl._internal.backend.gl.GLTexture;
 import openfl._internal.utils.Log;
 import openfl.Vector;
+import openfl.display.BitmapData;
+import openfl.display.DisplayObjectRenderer;
 import openfl.geom.Rectangle;
 import openfl.text.AntiAliasType;
 import openfl.text.Font;
@@ -14,6 +16,14 @@ import openfl.text.TextFieldType;
 import openfl.text.TextFormat;
 import openfl.text.TextFormatAlign;
 #if lime
+#if openfl_cairo_show_text
+import lime.graphics.Image;
+import lime.graphics.cairo.CairoImageSurface;
+import lime.graphics.cairo.Cairo;
+import openfl._internal.renderer.cairo.CairoTextField;
+import openfl._internal.renderer.cairo.CairoRenderer;
+import lime.graphics.cairo.CairoTextExtents;
+#end
 import lime.graphics.cairo.CairoFontFace;
 import lime.system.System;
 #end
@@ -30,6 +40,8 @@ import js.Browser;
 @:access(openfl.text.Font)
 @:access(openfl.text.TextField)
 @:access(openfl.text.TextFormat)
+@:access(openfl.display.DisplayObjectRenderer)
+@:access(openfl._internal.renderer.cairo.CairoRenderer)
 @SuppressWarnings("checkstyle:FieldDocComment")
 class TextEngine
 {
@@ -39,6 +51,14 @@ class TextEngine
 	private static inline var UTF8_HYPHEN:Int = 0x2D;
 	private static inline var GUTTER:Int = 2;
 	private static var __defaultFonts:Map<String, Font> = new Map();
+	#if lime_cairo
+	@:noCompletion private static var __softwareRenderer:DisplayObjectRenderer;
+
+	private var renderer:CairoRenderer;
+	private var __surface:CairoImageSurface;
+	private var image:Image;
+	#end
+
 	#if (js && html5)
 	private static var __context:CanvasRenderingContext2D;
 	#end
@@ -107,6 +127,25 @@ class TextEngine
 
 		width = 100;
 		height = 100;
+
+		#if lime_cairo
+		function getSurface()
+		{
+			if (__surface == null)
+			{
+				__surface = CairoImageSurface.fromImage(image);
+			}
+
+			return __surface;
+		}
+
+		var bmd = new BitmapData(1, 1, true, 0);
+		image = Image.fromBitmapData(bmd);
+		if (__softwareRenderer == null) __softwareRenderer = new CairoRenderer(null);
+		renderer = cast __softwareRenderer;
+		renderer.cairo = new Cairo(getSurface());
+		#end
+
 		text = "";
 
 		bounds = new Rectangle(0, 0, 0, 0);
@@ -863,6 +902,16 @@ class TextEngine
 			// __textLayout.script = ARABIC;
 
 			__textLayout.text = text.substring(startIndex, endIndex);
+
+			#if openfl_cairo_show_text
+			// Overwrite the Harfbuzz char x_advance values with the x_advance from the Cairo Extents values
+			for (i in startIndex...endIndex)
+			{
+				__textLayout.positions[i - startIndex].advance.x = CairoTextField.getTextWidth(textField, text.charAt(i), renderer,
+					textField.__worldTransform);
+			}
+			#end
+
 			return __textLayout.positions;
 			#end
 		}
@@ -957,6 +1006,7 @@ class TextEngine
 				ascent = currentFormat.size * currentFormat.__ascent;
 				descent = currentFormat.size * currentFormat.__descent;
 			}
+			#if !openfl_cairo_show_text
 			else if (#if lime font != null && font.unitsPerEM != 0 #else false #end)
 			{
 				#if lime
@@ -964,11 +1014,12 @@ class TextEngine
 				descent = Math.abs((font.descender / font.unitsPerEM) * currentFormat.size);
 				#end
 			}
-			else
-			{
-				ascent = currentFormat.size;
-				descent = currentFormat.size * 0.185;
-			}
+			#end
+		else
+		{
+			ascent = currentFormat.size;
+			descent = currentFormat.size * 0.185;
+		}
 
 			leading = currentFormat.leading;
 
