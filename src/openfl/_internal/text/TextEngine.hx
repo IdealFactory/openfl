@@ -16,7 +16,7 @@ import openfl.text.TextFieldType;
 import openfl.text.TextFormat;
 import openfl.text.TextFormatAlign;
 #if lime
-#if openfl_cairo_show_text
+#if lime_cairo
 import lime.graphics.Image;
 import lime.graphics.cairo.CairoImageSurface;
 import lime.graphics.cairo.Cairo;
