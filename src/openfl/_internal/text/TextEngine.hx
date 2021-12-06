@@ -10,6 +10,7 @@ import openfl.geom.Rectangle;
 import openfl.text.AntiAliasType;
 import openfl.text.Font;
 import openfl.text.GridFitType;
+import openfl.text.SVGFont;
 import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.TextFieldType;
@@ -831,92 +832,123 @@ class TextEngine
 				letterSpacing = formatRange.format.letterSpacing;
 			}
 
-			#if (js && html5)
-			if (__useIntAdvances == null)
-			{
-				__useIntAdvances = ~/Trident\/7.0/.match(Browser.navigator.userAgent); // IE
-			}
+			var f = cast font;
+			var fName = f.name;
+			var svgFont;
 
-			if (__useIntAdvances)
+			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(fName)) != null)
 			{
-				// slower, but more accurate if browser returns Int measurements
-
-				var previousWidth = 0.0;
-				var width;
+				var fScale = 1 / svgFont.fontFace.unitsPerEm * formatRange.format.size;
 
 				for (i in startIndex...endIndex)
 				{
-					width = __context.measureText(text.substring(startIndex, i + 1)).width;
-					// if (i > 0) width += letterSpacing;
-
-					positions.push(width - previousWidth);
-
-					previousWidth = width;
+					var g = SVGFont.getGlyph(text.substring(i, i + 1), fName);
+					var advance = 0.;
+					if (g != null)
+					{
+						advance = g.horizAdvX * fScale;
+					}
+					#if (js && html5)
+					positions.push(advance);
+					#else
+					if (g != null)
+					{
+						var g = new lime.text.Glyph(g.unicode.charCodeAt(0));
+						var v = new lime.math.Vector2(advance, 0);
+						var glyph = new GlyphPosition(g, v);
+						positions.push(glyph);
+					}
+					#end
 				}
+				return positions;
 			}
 			else
 			{
+				#if (js && html5)
+				if (__useIntAdvances == null)
+				{
+					__useIntAdvances = ~/Trident\/7.0/.match(Browser.navigator.userAgent); // IE
+				}
+
+				if (__useIntAdvances)
+				{
+					// slower, but more accurate if browser returns Int measurements
+
+					var previousWidth = 0.0;
+					var width;
+
+					for (i in startIndex...endIndex)
+					{
+						width = __context.measureText(text.substring(startIndex, i + 1)).width;
+						// if (i > 0) width += letterSpacing;
+						positions.push(width - previousWidth);
+
+						previousWidth = width;
+					}
+				}
+				else
+				{
+					for (i in startIndex...endIndex)
+					{
+						var advance;
+
+						if (i < text.length - 1)
+						{
+							// Advance can be less for certain letter combinations, e.g. 'Yo' vs. 'Do'
+							var nextWidth = __context.measureText(text.charAt(i + 1)).width;
+							var twoWidths = __context.measureText(text.substr(i, 2)).width;
+							advance = twoWidths - nextWidth;
+						}
+						else
+						{
+							advance = __context.measureText(text.charAt(i)).width;
+						}
+
+						// if (i > 0) advance += letterSpacing;
+						positions.push(advance);
+					}
+				}
+
+				return positions;
+				#else
+				if (__textLayout == null)
+				{
+					__textLayout = new TextLayout();
+				}
+
+				var width = 0.0;
+
+				__textLayout.text = null;
+				__textLayout.font = font;
+
+				if (formatRange.format.size != null)
+				{
+					__textLayout.size = formatRange.format.size;
+				}
+
+				__textLayout.letterSpacing = letterSpacing;
+				__textLayout.autoHint = (antiAliasType != ADVANCED || sharpness < 400);
+
+				// __textLayout.direction = RIGHT_TO_LEFT;
+				// __textLayout.script = ARABIC;
+
+				__textLayout.text = text.substring(startIndex, endIndex);
+
+				#if openfl_cairo_show_text
+				// Overwrite the Harfbuzz char x_advance values with the x_advance from the Cairo Extents values
 				for (i in startIndex...endIndex)
 				{
-					var advance;
-
-					if (i < text.length - 1)
-					{
-						// Advance can be less for certain letter combinations, e.g. 'Yo' vs. 'Do'
-						var nextWidth = __context.measureText(text.charAt(i + 1)).width;
-						var twoWidths = __context.measureText(text.substr(i, 2)).width;
-						advance = twoWidths - nextWidth;
-					}
-					else
-					{
-						advance = __context.measureText(text.charAt(i)).width;
-					}
-
-					// if (i > 0) advance += letterSpacing;
-
-					positions.push(advance);
+					__textLayout.positions[i - startIndex].advance.x = CairoTextField.getTextWidth(textField, text.charAt(i), renderer,
+						textField.__worldTransform);
 				}
+				#end
+
+				return __textLayout.positions;
+				#end
 			}
-
-			return positions;
-			#else
-			if (__textLayout == null)
-			{
-				__textLayout = new TextLayout();
-			}
-
-			var width = 0.0;
-
-			__textLayout.text = null;
-			__textLayout.font = font;
-
-			if (formatRange.format.size != null)
-			{
-				__textLayout.size = formatRange.format.size;
-			}
-
-			__textLayout.letterSpacing = letterSpacing;
-			__textLayout.autoHint = (antiAliasType != ADVANCED || sharpness < 400);
-
-			// __textLayout.direction = RIGHT_TO_LEFT;
-			// __textLayout.script = ARABIC;
-
-			__textLayout.text = text.substring(startIndex, endIndex);
-
-			#if openfl_cairo_show_text
-			// Overwrite the Harfbuzz char x_advance values with the x_advance from the Cairo Extents values
-			for (i in startIndex...endIndex)
-			{
-				__textLayout.positions[i - startIndex].advance.x = CairoTextField.getTextWidth(textField, text.charAt(i), renderer,
-					textField.__worldTransform);
-			}
-			#end
-
-			return __textLayout.positions;
-			#end
 		}
 
-		#if !js inline #end function getPositionsWidth(positions:#if (js && html5) Array<Float> #else Array<GlyphPosition> #end):Float
+		function getPositionsWidth(positions:#if (js && html5) Array<Float> #else Array<GlyphPosition> #end):Float
 
 		{
 			var width = 0.0;
@@ -1001,7 +1033,16 @@ class TextEngine
 		#if !js inline #end function setLineMetrics():Void
 
 		{
-			if (currentFormat.__ascent != null)
+			var svgFont;
+			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(currentFormat.font)) != null)
+			{
+				ascent = currentFormat.size;
+				descent = currentFormat.size * 0.185;
+				// OR
+				// ascent = (svgFont.fontFace.ascent / svgFont.fontFace.unitsPerEm) * currentFormat.size;
+				// descent = Math.abs((svgFont.fontFace.descent / svgFont.fontFace.unitsPerEm) * currentFormat.size);
+			}
+			else if (currentFormat.__ascent != null)
 			{
 				ascent = currentFormat.size * currentFormat.__ascent;
 				descent = currentFormat.size * currentFormat.__descent;
@@ -1648,7 +1689,7 @@ class TextEngine
 		#if openfl_trace_text_layout_groups
 		for (lg in layoutGroups)
 		{
-			Log.info('LG ${lg.positions.length - (lg.endIndex - lg.startIndex)},line:${lg.lineIndex},w:${lg.width},h:${lg.height},x:${Std.int(lg.offsetX)},y:${Std.int(lg.offsetY)},"${text.substring(lg.startIndex, lg.endIndex)}",${lg.startIndex},${lg.endIndex}');
+			Log.info('LG ${lg.positions.length - (lg.endIndex - lg.startIndex)},line:${lg.lineIndex},w:${lg.width},h:${lg.height},x:${Std.int(lg.offsetX)},y:${Std.int(lg.offsetY)},a:${lg.ascent},d:${lg.descent},l:${lg.leading},"${text.substring(lg.startIndex, lg.endIndex)}",${lg.startIndex},${lg.endIndex}');
 		}
 		#end
 	}

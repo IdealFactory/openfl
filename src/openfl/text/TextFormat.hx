@@ -209,6 +209,11 @@ class TextFormat
 	**/
 	public var url:String;
 
+	/**
+	 * Use and pre-registered SVG Font (SVGFont.registerFont()) for rendering instead of TTF or WOFF, etc
+	 */
+	public var useSVGFont:Null<Bool>;
+
 	@:noCompletion private var __ascent:Null<Float>;
 	@:noCompletion private var __descent:Null<Float>;
 
@@ -268,6 +273,7 @@ class TextFormat
 		this.rightMargin = rightMargin;
 		this.indent = indent;
 		this.leading = leading;
+		this.useSVGFont = false;
 	}
 
 	@SuppressWarnings("checkstyle:FieldDocComment")
@@ -289,6 +295,8 @@ class TextFormat
 
 		newFormat.__ascent = __ascent;
 		newFormat.__descent = __descent;
+
+		newFormat.useSVGFont = useSVGFont;
 
 		return newFormat;
 	}
@@ -316,6 +324,8 @@ class TextFormat
 
 		if (format.__ascent != null) __ascent = format.__ascent;
 		if (format.__descent != null) __descent = format.__descent;
+
+		if (format.useSVGFont != null) useSVGFont = format.useSVGFont;
 	}
 }
 #else
