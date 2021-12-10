@@ -12,20 +12,25 @@ class SVGFont
 {
 	static var fontCache:Map<String, Font> = new Map<String, Font>();
 
+	public static var fallbackFont:Font;
+
 	public static function getSVGFont(name:String):Font
 	{
 		if (fontCache.exists(name)) return fontCache[name];
 		return null;
 	}
 
-	public static function registerFont(svg:String)
+	public static function registerFont(svg:String, name:String = "", src:String = ""):Font
 	{
 		var svgFont = SVGFontProcessor.process(svg);
-		if (fontCache.exists(svgFont.id))
+		var id = name == "" ? svgFont.id : name;
+		svgFont.src = src;
+		if (fontCache.exists(id))
 		{
-			fontCache.remove(svgFont.id);
+			fontCache.remove(id);
 		}
-		fontCache[svgFont.id] = svgFont;
+		fontCache[id] = svgFont;
+		return svgFont;
 	}
 
 	public static function getGlyph(char:String, font:String):Glyph
@@ -34,48 +39,52 @@ class SVGFont
 		var svgFont = fontCache[font];
 
 		if (svgFont.glyphs.exists(char)) return svgFont.glyphs[char];
+		else if (fallbackFont != null)
+		{
+			var g:Glyph;
+			if (fallbackFont.glyphs.exists(char)) g = fallbackFont.glyphs[char].clone();
+			else
+				g = fallbackFont.missingGlyph.clone();
+			g.horizAdvX *= svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
+			return g;
+		}
 		return null;
+	}
+
+	public static function getSupportedFontChars(font:String):Array<String>
+	{
+		var svgFont = fontCache[font];
+		return svgFont.getSupportedFontChars();
+	}
+
+	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Int, color:UInt = 0):String
+	{
+		if (text == null || text == "" || font == null || !fontCache.exists(font)) return "";
+
+		var svgFont = fontCache[font];
+
+		var fScale = 1 / svgFont.fontFace.unitsPerEm * size;
+		var fallbackFScale = 1.;
+		if (fallbackFont != null) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
+
+		var content = svgGroup(svgFont, text, x, y, size, color);
+
+		#if svgfont_debug
+		trace("SVGContent:\n" + content);
+		#end
+
+		return content;
 	}
 
 	public static function renderText(text:String, font:String, g:Graphics, x:Float, y:Float, size:Int, color:UInt = 0)
 	{
-		if (text == null || text == "" || font == null || !fontCache.exists(font) || g == null)
-		{
-			return;
-		}
+		if (text == null || text == "" || font == null || !fontCache.exists(font) || g == null) return;
 
 		var svgFont = fontCache[font];
-		var xOffset = 0.;
-		var yOffset = 0.;
-
-		#if svgfont_debug
-		trace("SVGFont.renderText: text:" + text);
-		trace("Font: " + svgFont.id + " hOrig=" + svgFont.horizOriginX + "/" + svgFont.horizOriginY + " adv=" + svgFont.horizAdvX + "/" + svgFont.vertAdvY
-			+ " vert=" + svgFont.vertOriginX + "/" + svgFont.vertOriginY);
-		trace("Face: unitsPerEm=" + svgFont.fontFace.unitsPerEm + " ascent=" + svgFont.fontFace.ascent + " descent=" + svgFont.fontFace.descent
-			+ " capHeight=" + svgFont.fontFace.capHeight + " xHeight=" + svgFont.fontFace.xHeight + " bbox=" + svgFont.fontFace.bbox);
-		#end
 
 		var content = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0" y="0" viewBox="0 0 1000 1000">'
 			+ "\n";
-
-		var fScale = 1 / svgFont.fontFace.unitsPerEm * size;
-		content += '<g transform="matrix(' + fScale + ' 0 0 -' + fScale + ' ' + x + ' ' + y + ')">' + "\n";
-		for (cIdx in 0...text.length)
-		{
-			var c = text.substr(cIdx, 1);
-			var cdbg = " - not rendered";
-			if (svgFont.glyphs.exists(c))
-			{
-				var glyph = svgFont.glyphs[c];
-				content += '    <g transform="matrix(1 0 0 1 ' + xOffset + ' ' + yOffset + ')" >' + "\n";
-				content += '        <path fill="' + "#" + StringTools.hex(color & 0xFFFFFF, 6) + '" d="' + glyph.path + '" />' + "\n";
-				content += '    </g>' + "\n";
-				xOffset += glyph.horizAdvX;
-				cdbg = " adv=" + glyph.horizAdvX + "/" + glyph.vertAdvY + " orig:" + glyph.vertOriginX + "/" + glyph.vertOriginY;
-			}
-		}
-		content += '</g>' + "\n";
+		content += svgGroup(svgFont, text, x, y, size, color);
 		content += '</svg>' + "\n";
 
 		#if svgfont_debug
@@ -88,6 +97,57 @@ class SVGFont
 		var data = new SVGData(xml);
 		var renderer = new SVGRenderer(data);
 		renderer.render(g);
+	}
+
+	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Int, color:UInt):String
+	{
+		#if svgfont_debug
+		trace("SVGFont.renderText: text:" + text);
+		trace("Font: " + svgFont.id + " hOrig=" + svgFont.horizOriginX + "/" + svgFont.horizOriginY + " adv=" + svgFont.horizAdvX + "/" + svgFont.vertAdvY
+			+ " vert=" + svgFont.vertOriginX + "/" + svgFont.vertOriginY);
+		trace("Face: unitsPerEm=" + svgFont.fontFace.unitsPerEm + " ascent=" + svgFont.fontFace.ascent + " descent=" + svgFont.fontFace.descent
+			+ " capHeight=" + svgFont.fontFace.capHeight + " xHeight=" + svgFont.fontFace.xHeight + " bbox=" + svgFont.fontFace.bbox);
+		#end
+
+		var xOffset = 0.;
+		var yOffset = 0.;
+
+		var fScale = 1 / svgFont.fontFace.unitsPerEm * size;
+		var fallbackFScale = 1.;
+		if (fallbackFont != null) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
+
+		var content = '<g transform="matrix(' + fScale + ' 0 0 -' + fScale + ' ' + x + ' ' + y + ')">' + "\n";
+		for (cIdx in 0...text.length)
+		{
+			var c = text.substr(cIdx, 1);
+			var glyph:Glyph = null;
+			var scale = 1.;
+			if (svgFont.glyphs.exists(c))
+			{
+				glyph = svgFont.glyphs[c];
+			}
+			else if (fallbackFont != null)
+			{
+				if (fallbackFont.glyphs.exists(c)) glyph = fallbackFont.glyphs[c];
+				else
+					glyph = fallbackFont.missingGlyph;
+
+				scale = fallbackFScale;
+			}
+			else
+				glyph = svgFont.missingGlyph;
+
+			if (glyph != null)
+			{
+				content += '    <g transform="matrix(' + scale + ' 0 0 ' + scale + ' ' + xOffset + ' ' + yOffset + ')" >' + "\n";
+				content += '        <path fill="' + "#" + StringTools.hex(color & 0xFFFFFF, 6) + '" d="' + glyph.path + '" />' + "\n";
+				content += '    </g>' + "\n";
+				xOffset += (glyph.horizAdvX * scale);
+			}
+		}
+		content += '</g>' + "\n";
+
+		return content;
 	}
 }
 

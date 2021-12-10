@@ -833,7 +833,7 @@ class TextEngine
 			}
 
 			var f = cast font;
-			var fName = f.name;
+			var fName:String = f == null ? "" : f.name;
 			var svgFont;
 
 			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(fName)) != null)

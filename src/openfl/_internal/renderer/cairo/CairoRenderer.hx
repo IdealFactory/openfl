@@ -4,6 +4,7 @@ import lime.graphics.cairo.Cairo;
 import lime.graphics.cairo.CairoFilter;
 import lime.graphics.cairo.CairoOperator;
 import lime.graphics.cairo.CairoPattern;
+import openfl._internal.renderer.svg.SVGTextField;
 import lime.math.Matrix3;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
@@ -435,7 +436,15 @@ class CairoRenderer extends CairoRendererAPI
 		}
 		else
 		{
-			CairoTextField.render(textField, this, textField.__worldTransform);
+			if (textField.defaultTextFormat.useSVGFont)
+			{
+				SVGTextField.render(textField, this, textField.__worldTransform);
+			}
+			else
+			{
+				CairoTextField.render(textField, this, textField.__worldTransform);
+			}
+
 			CairoDisplayObject.render(textField, this);
 		}
 	}

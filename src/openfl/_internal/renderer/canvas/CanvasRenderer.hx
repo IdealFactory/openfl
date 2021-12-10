@@ -3,6 +3,7 @@ package openfl._internal.renderer.canvas;
 import lime._internal.graphics.ImageCanvasUtil;
 import lime.graphics.Canvas2DRenderContext;
 import openfl._internal.formats.html.HTMLParser;
+import openfl._internal.renderer.svg.SVGTextField;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.BlendMode;
@@ -452,7 +453,14 @@ class CanvasRenderer extends CanvasRendererAPI
 			}
 			else
 			{
-				CanvasTextField.render(textField, this, textField.__worldTransform);
+				if (textField.defaultTextFormat.useSVGFont)
+				{
+					SVGTextField.render(textField, this, textField.__worldTransform);
+				}
+				else
+				{
+					CanvasTextField.render(textField, this, textField.__worldTransform);
+				}
 
 				var smoothingEnabled = false;
 

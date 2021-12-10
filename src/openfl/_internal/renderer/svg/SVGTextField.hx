@@ -21,7 +21,7 @@ import openfl._internal.renderer.cairo.CairoRenderer;
 @SuppressWarnings("checkstyle:FieldDocComment")
 class SVGTextField
 {
-	public static /*inline*/ function render(textField:TextField, renderer:#if js CanvasRenderer #else CairoRenderer #end, transform:Matrix):Void
+	public static inline function render(textField:TextField, renderer:Dynamic, transform:Matrix):Void
 	{
 		var textEngine = textField.__textEngine;
 		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
@@ -55,7 +55,7 @@ class SVGTextField
 				|| ((textEngine.width <= 0 || textEngine.height <= 0) && textEngine.autoSize != TextFieldAutoSize.NONE))
 			{
 				#if (js && html5)
-				textField.__graphics.__canvas.width = textField.__graphics.__canvas.height = 1;
+				if (textField.__graphics.__canvas != null) textField.__graphics.__canvas.width = textField.__graphics.__canvas.height = 1;
 				textField.__graphics.__canvas = null;
 				textField.__graphics.__context = null;
 				#else
@@ -181,5 +181,43 @@ class SVGTextField
 				}
 			}
 		}
+	}
+
+	public static inline function renderSVGGroup(textField:TextField, transform:Matrix):String
+	{
+		var textEngine = textField.__textEngine;
+		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
+		var graphics = textField.__graphics;
+
+		if (textField.__dirty)
+		{
+			textField.__updateLayout();
+		}
+
+		var text = textEngine.text;
+
+		var scrollX = -textField.scrollH;
+		var scrollY = 0.0;
+
+		for (i in 0...textField.scrollV - 1)
+		{
+			scrollY -= textEngine.lineHeights[i];
+		}
+
+		var svg = "";
+		for (group in textEngine.layoutGroups)
+		{
+			var color = "#" + StringTools.hex(group.format.color & 0xFFFFFF, 6);
+
+			var font = TextEngine.getFont(group.format);
+
+			var groupText = text.substring(group.startIndex, group.endIndex);
+			var tx = Math.round(group.offsetX);
+			var ty = Math.round(group.offsetY + group.ascent);
+
+			svg += SVGFont.renderSVGGroup(groupText, group.format.font, tx, ty, group.format.size, group.format.color);
+		}
+
+		return svg;
 	}
 }

@@ -252,6 +252,14 @@ class Font #if lime extends LimeFont #end
 		{
 			if (src != null)
 			{
+				if (Std.is(src, String))
+				{
+					if (src.substr(-4) == ".svg")
+					{
+						__initialized = true;
+						return __initialized;
+					}
+				}
 				// TODO: How does src get defined without being initialized in Lime?
 				if (unitsPerEM == 0) __initializeSource();
 				__initialized = true;
