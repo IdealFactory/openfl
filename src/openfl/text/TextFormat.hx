@@ -214,6 +214,16 @@ class TextFormat
 	 */
 	public var useSVGFont:Null<Bool>;
 
+	/**
+	 * SVG Font stroke color
+	 */
+	public var stroke:Null<UInt>;
+
+	/**
+	 * SVG Font stroke width
+	 */
+	public var strokeWidth:Null<Float>;
+
 	@:noCompletion private var __ascent:Null<Float>;
 	@:noCompletion private var __descent:Null<Float>;
 
@@ -298,6 +308,9 @@ class TextFormat
 
 		newFormat.useSVGFont = useSVGFont;
 
+		newFormat.stroke = stroke;
+		newFormat.strokeWidth = strokeWidth;
+
 		return newFormat;
 	}
 
@@ -326,6 +339,9 @@ class TextFormat
 		if (format.__descent != null) __descent = format.__descent;
 
 		if (format.useSVGFont != null) useSVGFont = format.useSVGFont;
+
+		if (format.stroke != null) stroke = format.stroke;
+		if (format.stroke != null) strokeWidth = format.strokeWidth;
 	}
 }
 #else

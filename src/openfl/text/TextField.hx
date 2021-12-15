@@ -27,12 +27,14 @@ import openfl.net.URLRequest;
 import openfl.ui.Keyboard;
 import openfl.ui.MouseCursor;
 import openfl.Lib;
+import openfl._internal.renderer.svg.SVGTextField;
 #if lime
 import lime.system.Clipboard;
 import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 #end
 #if (js && html5)
+import openfl._internal.renderer.canvas.CanvasGraphics;
 import openfl._internal.renderer.canvas.CanvasTextField;
 import js.html.DivElement;
 #end
@@ -2092,41 +2094,77 @@ class TextField extends InteractiveObject
 		var px = __renderTransform.__transformInverseX(x, y);
 		var py = __renderTransform.__transformInverseY(x, y);
 
-		if (__textEngine.bounds.contains(px, py))
+		if (defaultTextFormat.useSVGFont)
 		{
-			if (stack != null && !transparentHitTest)
+			var bounds = this.__graphics.__bounds;
+			if (bounds == null) return false;
+
+			@:privateAccess SVGTextField.render(this, cast stage.__renderer, this.__worldTransform);
+
+			if (px > bounds.x && py > bounds.y && bounds.contains(px, py))
 			{
-				trace(" - 1st condition true: adding to stack");
-				stack.push(hitObject);
-			}
-			else
-			{
-				if (transparentHitTest)
+				if (stack != null && !transparentHitTest)
 				{
-					var tx = __renderTransform.__transformInverseX(x, y);
-					var ty = __renderTransform.__transformInverseY(x, y);
-					var mtx = __graphics.__renderTransform.__transformX(tx, ty);
-					var mty = __graphics.__renderTransform.__transformY(tx, ty);
-					if (__graphics.__bitmap == null)
+					stack.push(hitObject);
+				}
+				else
+				{
+					if (transparentHitTest)
 					{
 						#if (js && html5)
-						@:privateAccess CanvasTextField.render(this, cast stage.__renderer, this.__worldTransform);
-						__graphics.__bitmap = BitmapData.fromCanvas(this.__graphics.__canvas);
+						var hit = CanvasGraphics.hitTest(this.__graphics, px, py);
+						#elseif (lime_cffi)
+						var hit = CairoGraphics.hitTest(this.__graphics, px, py);
 						#end
+						if (hit)
+						{
+							stack.push(hitObject);
+						}
+						return hit;
 					}
-					var alpha = (__graphics.__bitmap.getPixel32(Std.int(mtx), Std.int(mty)) >> 24) & 255;
-					if (alpha > 0)
+					return false;
+				}
+				return true;
+			}
+
+			return false;
+		}
+		else
+		{
+			if (__textEngine.bounds.contains(px, py))
+			{
+				if (stack != null && !transparentHitTest)
+				{
+					stack.push(hitObject);
+				}
+				else
+				{
+					if (transparentHitTest)
 					{
-						stack.push(hitObject);
+						var tx = __renderTransform.__transformInverseX(x, y);
+						var ty = __renderTransform.__transformInverseY(x, y);
+						var mtx = __graphics.__renderTransform.__transformX(tx, ty);
+						var mty = __graphics.__renderTransform.__transformY(tx, ty);
+						if (__graphics.__bitmap == null)
+						{
+							#if (js && html5)
+							@:privateAccess CanvasTextField.render(this, cast stage.__renderer, this.__worldTransform);
+							__graphics.__bitmap = BitmapData.fromCanvas(this.__graphics.__canvas);
+							#end
+						}
+						var alpha = (__graphics.__bitmap.getPixel32(Std.int(mtx), Std.int(mty)) >> 24) & 255;
+						if (alpha > 0)
+						{
+							stack.push(hitObject);
+						}
+						else
+							return false;
 					}
 					else
 						return false;
 				}
-				else
-					return false;
+				return true;
 			}
-
-			return true;
 		}
 
 		return false;

@@ -85,8 +85,8 @@ class SVGTextField
 					var tx = Math.round(group.offsetX);
 					var ty = Math.round(group.offsetY + group.ascent);
 
-					SVGFont.renderText(groupText, group.format.font, textField.__graphics, tx, ty, group.format.size, group.format.color);
-
+					SVGFont.renderText(groupText, group.format.font, textField.__graphics, tx, ty, group.format.size, group.format.color, group.format.stroke,
+						group.format.strokeWidth);
 					if (textField.__caretIndex > -1 && textEngine.selectable)
 					{
 						if (textField.__selectionIndex == textField.__caretIndex)
@@ -165,7 +165,7 @@ class SVGTextField
 									+ start.x,
 									group.offsetY
 									+ group.ascent
-									+ scrollY, group.format.size, 0xffffff);
+									+ scrollY, group.format.size, 0xffffff, group.format.stroke, group.format.strokeWidth);
 							}
 						}
 					}
