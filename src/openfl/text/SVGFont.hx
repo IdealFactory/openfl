@@ -122,7 +122,12 @@ class SVGFont
 		if (strokeWidth != null && strokeWidth > 0)
 		{
 			var strokeCol = stroke != null ? stroke : 0;
-			strokeSVG = 'stroke="' + "#" + StringTools.hex(strokeCol & 0xFFFFFF, 6) + '" stroke-width="' + (strokeWidth / fScale) + '" ';
+			strokeSVG = 'stroke="'
+				+ "#"
+				+ StringTools.hex(strokeCol & 0xFFFFFF, 6)
+				+ '" stroke-width="'
+				+ (strokeWidth / fScale)
+				+ '" stroke-style="outside"';
 		}
 
 		var content = '<g transform="matrix(' + fScale + ' 0 0 -' + fScale + ' ' + x + ' ' + y + ')">' + "\n";
