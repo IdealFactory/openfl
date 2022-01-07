@@ -120,6 +120,7 @@ class SVGTextField
 									+ TextEngine.getFormatHeight(textField.defaultTextFormat)
 									- 1
 									- bounds.y);
+								graphics.lineStyle();
 							}
 						}
 						else if ((group.startIndex <= textField.__caretIndex && group.endIndex >= textField.__caretIndex)
