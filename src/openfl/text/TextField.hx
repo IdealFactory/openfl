@@ -37,6 +37,8 @@ import lime.ui.KeyModifier;
 import openfl._internal.renderer.canvas.CanvasGraphics;
 import openfl._internal.renderer.canvas.CanvasTextField;
 import js.html.DivElement;
+#elseif lime_cffi
+import openfl._internal.renderer.cairo.CairoGraphics;
 #end
 
 /**
