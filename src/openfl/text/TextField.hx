@@ -2096,12 +2096,7 @@ class TextField extends InteractiveObject
 
 		if (defaultTextFormat.useSVGFont)
 		{
-			var bounds = this.__graphics.__bounds;
-			if (bounds == null) return false;
-
-			@:privateAccess SVGTextField.render(this, cast stage.__renderer, this.__worldTransform);
-
-			if (px > bounds.x && py > bounds.y && bounds.contains(px, py))
+			if (__textEngine.bounds.contains(px, py))
 			{
 				if (stack != null && !transparentHitTest)
 				{
@@ -2111,6 +2106,8 @@ class TextField extends InteractiveObject
 				{
 					if (transparentHitTest)
 					{
+						@:privateAccess SVGTextField.render(this, cast stage.__renderer, this.__worldTransform);
+
 						#if (js && html5)
 						var hit = CanvasGraphics.hitTest(this.__graphics, px, py);
 						#elseif (lime_cffi)
