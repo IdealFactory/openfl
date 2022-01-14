@@ -1,7 +1,9 @@
 package openfl._internal.renderer.svg;
 
 import openfl._internal.text.TextEngine;
+import openfl.display.Bitmap;
 import openfl.display.BitmapData;
+import openfl.display.Graphics;
 import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
 import openfl.text.TextField;
@@ -30,14 +32,13 @@ class SVGTextField
 		if (textField.__dirty)
 		{
 			textField.__updateLayout();
-
+			graphics.clear();
 			if (graphics.__bounds == null)
 			{
 				graphics.__bounds = new Rectangle();
 			}
 
 			graphics.__bounds.copyFrom(bounds);
-			graphics.clear();
 		}
 
 		graphics.__update(renderer.__worldTransform);
@@ -82,11 +83,12 @@ class SVGTextField
 					var font = TextEngine.getFont(group.format);
 
 					var groupText = text.substring(group.startIndex, group.endIndex);
-					var tx = Math.round(group.offsetX);
-					var ty = Math.round(group.offsetY + group.ascent);
+					var tx = group.offsetX;
+					var ty = group.offsetY + group.ascent;
 
-					SVGFont.renderText(groupText, group.format.font, textField.__graphics, tx, ty, group.format.size, group.format.color, group.format.stroke,
-						group.format.strokeWidth);
+					SVGFont.renderText(groupText, group.format.font, graphics, tx, ty, group.format.size, group.format.letterSpacing, group.format.color,
+						group.format.stroke, group.format.strokeWidth);
+
 					if (textField.__caretIndex > -1 && textEngine.selectable)
 					{
 						if (textField.__selectionIndex == textField.__caretIndex)
@@ -166,7 +168,8 @@ class SVGTextField
 									+ start.x,
 									group.offsetY
 									+ group.ascent
-									+ scrollY, group.format.size, 0xffffff, group.format.stroke, group.format.strokeWidth);
+									+ scrollY, group.format.size, group.format.letterSpacing, 0xffffff, group.format.stroke,
+									group.format.strokeWidth);
 							}
 						}
 					}
@@ -213,10 +216,11 @@ class SVGTextField
 			var font = TextEngine.getFont(group.format);
 
 			var groupText = text.substring(group.startIndex, group.endIndex);
-			var tx = Math.round(group.offsetX);
-			var ty = Math.round(group.offsetY + group.ascent);
+			var tx = group.offsetX;
+			var ty = group.offsetY + group.ascent;
 
-			svg += SVGFont.renderSVGGroup(groupText, group.format.font, tx, ty, group.format.size, group.format.color);
+			svg += SVGFont.renderSVGGroup(groupText, group.format.font, tx, ty, group.format.size, group.format.letterSpacing, group.format.color,
+				group.format.stroke, group.format.strokeWidth);
 		}
 
 		return svg;

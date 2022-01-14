@@ -1849,7 +1849,7 @@ class TextField extends InteractiveObject
 			format.leftMargin = Std.int(symbol.leftMargin / 20);
 			format.rightMargin = Std.int(symbol.rightMargin / 20);
 			format.indent = Std.int(symbol.indent / 20);
-			format.leading = Std.int(symbol.leading / 20);
+			format.leading = symbol.leading / 20;
 		}
 
 		defaultTextFormat = format;
