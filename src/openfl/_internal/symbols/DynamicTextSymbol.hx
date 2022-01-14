@@ -27,7 +27,7 @@ class DynamicTextSymbol extends SWFSymbol
 	public var html:Bool;
 	public var indent:Null<Int>;
 	public var input:Bool;
-	public var leading:Null<Int>;
+	public var leading:Null<Float>;
 	public var leftMargin:Null<Int>;
 	public var multiline:Bool;
 	public var password:Bool;
@@ -155,7 +155,7 @@ class DynamicTextSymbol extends SWFSymbol
 			format.leftMargin = Std.int(leftMargin / 20);
 			format.rightMargin = Std.int(rightMargin / 20);
 			format.indent = Std.int(indent / 20);
-			format.leading = Std.int(leading / 20);
+			format.leading = leading / 20;
 		}
 
 		textField.defaultTextFormat = format;

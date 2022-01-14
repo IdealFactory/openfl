@@ -57,7 +57,7 @@ class SVGFont
 		return svgFont.getSupportedFontChars();
 	}
 
-	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Int, color:UInt = 0, stroke:Null<UInt> = null,
+	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0, stroke:Null<UInt> = null,
 			strokeWidth:Null<Float> = null):String
 	{
 		if (text == null || text == "" || font == null || !fontCache.exists(font)) return "";
@@ -68,7 +68,7 @@ class SVGFont
 		var fallbackFScale = 1.;
 		if (fallbackFont != null) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
 
-		var content = svgGroup(svgFont, text, x, y, size, color, stroke, strokeWidth);
+		var content = svgGroup(svgFont, text, x, y, size, spacing, color, stroke, strokeWidth);
 
 		#if svgfont_debug
 		trace("SVGContent:\n" + content);
@@ -77,16 +77,21 @@ class SVGFont
 		return content;
 	}
 
-	public static function renderText(text:String, font:String, g:Graphics, x:Float, y:Float, size:Int, color:UInt = 0, stroke:Null<UInt> = null,
-			strokeWidth:Null<Float> = null)
+	public static function renderText(text:String, font:String, g:Graphics, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0,
+			stroke:Null<UInt> = null, strokeWidth:Null<Float> = null)
 	{
 		if (text == null || text == "" || font == null || !fontCache.exists(font) || g == null) return;
 
 		var svgFont = fontCache[font];
 
 		var content = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0" y="0" viewBox="0 0 1000 1000">'
-			+ "\n";
-		content += svgGroup(svgFont, text, x, y, size, color, stroke, strokeWidth);
+			+ "\n"
+			+ "<defs>\n"
+			+ "<clipPath id='cut-off-bottom'>\n"
+			+ "  <rect x='0' y='0' width='200' height='100' />\n"
+			+ "</clipPath>\n"
+			+ "</defs>\n";
+		content += svgGroup(svgFont, text, x, y, size, spacing, color, stroke, strokeWidth);
 		content += '</svg>' + "\n";
 
 		#if svgfont_debug
@@ -101,16 +106,9 @@ class SVGFont
 		renderer.render(g);
 	}
 
-	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Int, color:UInt, stroke:Null<UInt>, strokeWidth:Null<Float>):String
+	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt, stroke:Null<UInt>,
+			strokeWidth:Null<Float>):String
 	{
-		#if svgfont_debug
-		trace("SVGFont.renderText: text:" + text);
-		trace("Font: " + svgFont.id + " hOrig=" + svgFont.horizOriginX + "/" + svgFont.horizOriginY + " adv=" + svgFont.horizAdvX + "/" + svgFont.vertAdvY
-			+ " vert=" + svgFont.vertOriginX + "/" + svgFont.vertOriginY);
-		trace("Face: unitsPerEm=" + svgFont.fontFace.unitsPerEm + " ascent=" + svgFont.fontFace.ascent + " descent=" + svgFont.fontFace.descent
-			+ " capHeight=" + svgFont.fontFace.capHeight + " xHeight=" + svgFont.fontFace.xHeight + " bbox=" + svgFont.fontFace.bbox);
-		#end
-
 		var xOffset = 0.;
 		var yOffset = 0.;
 
@@ -118,16 +116,21 @@ class SVGFont
 		var fallbackFScale = 1.;
 		if (fallbackFont != null) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
 
+		#if svgfont_debug
+		trace("SVGFont.renderText: text:" + text);
+		trace("Font: " + svgFont.id + " hOrig=" + svgFont.horizOriginX + "/" + svgFont.horizOriginY + " adv=" + svgFont.horizAdvX + "/" + svgFont.vertAdvY
+			+ " vert=" + svgFont.vertOriginX + "/" + svgFont.vertOriginY);
+		trace("Face: unitsPerEm=" + svgFont.fontFace.unitsPerEm + " ascent=" + svgFont.fontFace.ascent + " descent=" + svgFont.fontFace.descent
+			+ " capHeight=" + svgFont.fontFace.capHeight + " xHeight=" + svgFont.fontFace.xHeight + " bbox=" + svgFont.fontFace.bbox);
+		trace("Scale: fSc=" + fScale + " fallbackFSc=" + fallbackFScale);
+		#end
+
 		var strokeSVG = "";
 		if (strokeWidth != null && strokeWidth > 0)
 		{
 			var strokeCol = stroke != null ? stroke : 0;
-			strokeSVG = 'stroke="'
-				+ "#"
-				+ StringTools.hex(strokeCol & 0xFFFFFF, 6)
-				+ '" stroke-width="'
-				+ (strokeWidth / fScale)
-				+ '" stroke-style="outside"';
+			strokeSVG = 'stroke="' + "#" + StringTools.hex(strokeCol & 0xFFFFFF, 6) + '" stroke-width="' + (strokeWidth / fScale)
+				+ '" paint-order="stroke fill" ';
 		}
 
 		var content = '<g transform="matrix(' + fScale + ' 0 0 -' + fScale + ' ' + x + ' ' + y + ')">' + "\n";
@@ -165,6 +168,7 @@ class SVGFont
 					+ "\n";
 				content += '    </g>' + "\n";
 				xOffset += (glyph.horizAdvX * scale);
+				xOffset += spacing / fScale;
 			}
 		}
 		content += '</g>' + "\n";

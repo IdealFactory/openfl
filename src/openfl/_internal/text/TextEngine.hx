@@ -301,7 +301,7 @@ class TextEngine
 
 	public static function getFormatHeight(format:TextFormat):Float
 	{
-		var ascent:Float, descent:Float, leading:Int;
+		var ascent:Float, descent:Float, leading:Float;
 
 		#if (js && html5)
 		__context.font = getFont(format);
@@ -624,7 +624,7 @@ class TextEngine
 
 		var currentLineAscent = 0.0;
 		var currentLineDescent = 0.0;
-		var currentLineLeading:Null<Int> = null;
+		var currentLineLeading:Null<Float> = null;
 		var currentLineHeight = 0.0;
 		var currentLineWidth = 0.0;
 		var currentTextHeight = 0.0;
@@ -662,7 +662,7 @@ class TextEngine
 			}
 			else
 			{
-				currentLineLeading = Std.int(Math.max(currentLineLeading, group.leading));
+				currentLineLeading = Math.max(currentLineLeading, group.leading);
 			}
 
 			currentLineHeight = Math.max(currentLineHeight, group.height);
@@ -790,7 +790,7 @@ class TextEngine
 		var currentFormat = TextField.__defaultTextFormat.clone();
 
 		// line metrics
-		var leading = 0; // TODO: is maxLeading needed, just like with ascent? In case multiple formats in the same line have different leading values
+		var leading = 0.0; // TODO: is maxLeading needed, just like with ascent? In case multiple formats in the same line have different leading values
 		var ascent = 0.0, maxAscent = 0.0;
 		var descent = 0.0;
 
@@ -806,7 +806,7 @@ class TextEngine
 		var tabStops = null; // TODO: maybe there's a better init value (not sure what this actually is)
 
 		var layoutGroup:TextLayoutGroup = null, positions = null;
-		var widthValue = 0.0, heightValue = 0, maxHeightValue = 0;
+		var widthValue = 0.0, heightValue = 0.0, maxHeightValue = 0.0;
 		var previousSpaceIndex = -2; // -1 equals not found, -2 saves extra comparison in `breakIndex == previousSpaceIndex`
 		var previousBreakIndex = -1;
 		var spaceIndex = text.indexOf(" ");
@@ -847,6 +847,7 @@ class TextEngine
 					if (g != null)
 					{
 						advance = g.horizAdvX * fScale;
+						if (i != endIndex - 1) advance += (letterSpacing * fScale);
 					}
 					#if (js && html5)
 					positions.push(advance);
@@ -953,13 +954,15 @@ class TextEngine
 		{
 			var width = 0.0;
 
+			var posIdx = 0;
 			for (position in positions)
 			{
 				#if (js && html5)
-				width += position;
+				width += position + (posIdx == positions.length - 1 ? 0 : formatRange.format.letterSpacing);
 				#else
-				width += position.advance.x;
+				width += position.advance.x + (posIdx == positions.length - 1 ? 0 : formatRange.format.letterSpacing);
 				#end
+				posIdx++;
 			}
 
 			return width;
@@ -1064,7 +1067,7 @@ class TextEngine
 
 			leading = currentFormat.leading;
 
-			heightValue = Math.ceil(ascent + descent + leading);
+			heightValue = ascent + descent + leading;
 
 			if (heightValue > maxHeightValue)
 			{
@@ -1720,9 +1723,21 @@ class TextEngine
 		var lineIndex = -1;
 		var offsetX = 0.0;
 		var totalWidth = this.width - GUTTER * 2; // TODO: do margins and stuff affect this at all?
+		var maxTotalWidth = totalWidth;
 		var group, lineLength;
 		var lineMeasurementsDirty = false;
 
+		for (i in 0...layoutGroups.length)
+		{
+			group = layoutGroups[i];
+			if (group.lineIndex != lineIndex)
+			{
+				lineIndex = group.lineIndex;
+				if (lineWidths[lineIndex] > maxTotalWidth) maxTotalWidth = lineWidths[lineIndex];
+			}
+		}
+
+		lineIndex = -1;
 		for (i in 0...layoutGroups.length)
 		{
 			group = layoutGroups[i];
@@ -1734,9 +1749,9 @@ class TextEngine
 				switch (group.format.align)
 				{
 					case CENTER:
-						if (lineWidths[lineIndex] < totalWidth)
+						if (lineWidths[lineIndex] < maxTotalWidth)
 						{
-							offsetX = Math.round((totalWidth - lineWidths[lineIndex]) / 2);
+							offsetX = (maxTotalWidth - lineWidths[lineIndex]) / 2;
 						}
 						else
 						{
@@ -1744,9 +1759,9 @@ class TextEngine
 						}
 
 					case RIGHT:
-						if (lineWidths[lineIndex] < totalWidth)
+						if (lineWidths[lineIndex] < maxTotalWidth)
 						{
-							offsetX = Math.round(totalWidth - lineWidths[lineIndex]);
+							offsetX = maxTotalWidth - lineWidths[lineIndex];
 						}
 						else
 						{

@@ -117,7 +117,7 @@ extern class TextFormat
 	 * _leading_) between lines. The default value is `null`,
 	 * which indicates that the amount of leading used is 0.
 	 */
-	public var leading:Null<Int>;
+	public var leading:Null<Float>;
 
 	/**
 	 * The left margin of the paragraph, in pixels. The default value is
@@ -229,7 +229,7 @@ extern class TextFormat
 	 */
 	public function new(font:String = null, size:Null<Int> = null, color:Null<Int> = null, bold:Null<Bool> = null, italic:Null<Bool> = null,
 		underline:Null<Bool> = null, url:String = null, target:String = null, align:TextFormatAlign = null, leftMargin:Null<Int> = null,
-		rightMargin:Null<Int> = null, indent:Null<Int> = null, leading:Null<Int> = null);
+		rightMargin:Null<Int> = null, indent:Null<Int> = null, leading:Null<Float> = null);
 
 	@:dox(hide) @:noCompletion public function clone():TextFormat;
 }
