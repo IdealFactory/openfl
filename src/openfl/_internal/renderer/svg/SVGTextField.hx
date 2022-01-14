@@ -32,7 +32,7 @@ class SVGTextField
 		if (textField.__dirty)
 		{
 			textField.__updateLayout();
-
+			graphics.clear();
 			if (graphics.__bounds == null)
 			{
 				graphics.__bounds = new Rectangle();
