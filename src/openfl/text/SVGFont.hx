@@ -58,7 +58,7 @@ class SVGFont
 	}
 
 	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0, stroke:Null<UInt> = null,
-			strokeWidth:Null<Float> = null):String
+			strokeWidth:Null<Float> = null, splitStrokeFill:Bool = false):String
 	{
 		if (text == null || text == "" || font == null || !fontCache.exists(font)) return "";
 
@@ -68,7 +68,7 @@ class SVGFont
 		var fallbackFScale = 1.;
 		if (fallbackFont != null) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
 
-		var content = svgGroup(svgFont, text, x, y, size, spacing, color, stroke, strokeWidth);
+		var content = svgGroup(svgFont, text, x, y, size, spacing, color, stroke, strokeWidth, splitStrokeFill);
 
 		#if svgfont_debug
 		trace("SVGContent:\n" + content);
@@ -105,8 +105,8 @@ class SVGFont
 		renderer.render(g);
 	}
 
-	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt, stroke:Null<UInt>,
-			strokeWidth:Null<Float>):String
+	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt, stroke:Null<UInt>, strokeWidth:Null<Float>,
+			splitStrokeFill:Bool = false):String
 	{
 		var xOffset = 0.;
 		var yOffset = 0.;
@@ -129,8 +129,10 @@ class SVGFont
 		{
 			var strokeCol = stroke != null ? stroke : 0;
 			strokeSVG = 'stroke="' + "#" + StringTools.hex(strokeCol & 0xFFFFFF, 6) + '" stroke-width="' + (strokeWidth / fScale)
-				+ '" paint-order="stroke fill" ';
+				+ (splitStrokeFill ? '" ' : '" paint-order="stroke fill" ');
 		}
+
+		var fill = 'fill="#' + StringTools.hex(color & 0xFFFFFF, 6) + '" ';
 
 		var content = '<g transform="matrix(' + fScale + ' 0 0 -' + fScale + ' ' + x + ' ' + y + ')">' + "\n";
 		for (cIdx in 0...text.length)
@@ -156,15 +158,15 @@ class SVGFont
 			if (glyph != null)
 			{
 				content += '    <g transform="matrix(' + scale + ' 0 0 ' + scale + ' ' + xOffset + ' ' + yOffset + ')" >' + "\n";
-				content += '        <path '
-					+ strokeSVG
-					+ 'fill="'
-					+ "#"
-					+ StringTools.hex(color & 0xFFFFFF, 6)
-					+ '" d="'
-					+ glyph.path
-					+ '" />'
-					+ "\n";
+				if (splitStrokeFill)
+				{
+					content += '        <path ' + strokeSVG + 'd="' + glyph.path + '" />' + "\n";
+					content += '        <path ' + fill + 'd="' + glyph.path + '" />' + "\n";
+				}
+				else
+				{
+					content += '        <path ' + strokeSVG + fill + 'd="' + glyph.path + '" />' + "\n";
+				}
 				content += '    </g>' + "\n";
 				xOffset += (glyph.horizAdvX * scale);
 				xOffset += spacing / fScale;

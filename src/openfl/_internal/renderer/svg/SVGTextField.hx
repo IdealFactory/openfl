@@ -247,7 +247,7 @@ class SVGTextField
 		}
 	}
 
-	public static inline function renderSVGGroup(textField:TextField, transform:Matrix):String
+	public static inline function renderSVGGroup(textField:TextField, transform:Matrix, splitStrokeFill:Bool = false):String
 	{
 		var textEngine = textField.__textEngine;
 		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
@@ -280,7 +280,7 @@ class SVGTextField
 			var ty = group.offsetY + group.ascent;
 
 			svg += SVGFont.renderSVGGroup(groupText, group.format.font, tx, ty, group.format.size, group.format.letterSpacing, group.format.color,
-				group.format.stroke, group.format.strokeWidth);
+				group.format.stroke, group.format.strokeWidth, splitStrokeFill);
 		}
 
 		return svg;
