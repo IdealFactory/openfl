@@ -1250,7 +1250,20 @@ class Context3DRenderer extends Context3DRendererAPI
 		else
 		{
 			Context3DTextField.render(textField, this);
+
+			if (textField.defaultTextFormat.useSVGFont)
+			{
+				__pushMaskRect(new openfl.geom.Rectangle(0, 0, textField.__svgClipWidth, textField.__svgClipHeight), textField.__renderTransform);
+			}
 			Context3DDisplayObject.render(textField, this);
+			if (textField.defaultTextFormat.useSVGFont)
+			{
+				__popMaskRect();
+
+				textField.__dirty = false;
+				textField.__graphics.__softwareDirty = false;
+				textField.__graphics.__dirty = false;
+			}
 		}
 	}
 

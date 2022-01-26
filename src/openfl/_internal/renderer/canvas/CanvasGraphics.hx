@@ -1205,6 +1205,8 @@ class CanvasGraphics
 						canvas.width = width;
 						canvas.height = height;
 					}
+					transform.tx += graphics.__svgOffsetX * scale;
+					transform.ty += graphics.__svgOffsetY * scale;
 
 					context.setTransform(transform.a, transform.b, transform.c, transform.d, transform.tx, transform.ty);
 				}

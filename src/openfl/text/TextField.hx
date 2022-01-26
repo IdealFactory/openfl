@@ -708,6 +708,8 @@ class TextField extends InteractiveObject
 	@:noCompletion private var __rawHtmlText:String;
 	@:noCompletion private var __forceCachedBitmapUpdate:Bool = false;
 	#end
+	@:noCompletion private var __svgClipWidth:Int;
+	@:noCompletion private var __svgClipHeight:Int;
 
 	#if openfljs
 	@:noCompletion private static function __init__()

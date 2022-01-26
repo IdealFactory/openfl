@@ -93,6 +93,8 @@ import js.html.CanvasRenderingContext2D;
 	@SuppressWarnings("checkstyle:Dynamic") @:noCompletion private var __cairo:#if lime Cairo #else Dynamic #end;
 	#end
 	@:noCompletion private var __bitmap:BitmapData;
+	@:noCompletion private var __svgOffsetX:Float = 0;
+	@:noCompletion private var __svgOffsetY:Float = 0;
 
 	@:noCompletion private function new(owner:DisplayObject)
 	{
