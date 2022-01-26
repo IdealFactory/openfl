@@ -86,10 +86,9 @@ class SVGFont
 
 		var content = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0" y="0" viewBox="0 0 1000 1000">'
 			+ "\n"
-			+ "<defs>\n"
-			+ "<clipPath id='cut-off-bottom'>\n"
-			+ "  <rect x='0' y='0' width='200' height='100' />\n"
-			+ "</clipPath>\n"
+			+ "<defs>\n" // + "<clipPath id='cut-off-bottom'>\n"
+			// + "  <rect x='0' y='0' width='200' height='100' />\n"
+			// + "</clipPath>\n"
 			+ "</defs>\n";
 		content += svgGroup(svgFont, text, x, y, size, spacing, color, stroke, strokeWidth);
 		content += '</svg>' + "\n";

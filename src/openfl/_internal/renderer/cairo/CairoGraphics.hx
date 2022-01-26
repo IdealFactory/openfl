@@ -1180,7 +1180,11 @@ class CairoGraphics
 			cairo = graphics.__cairo;
 
 			renderer.__setBlendModeCairo(cairo, NORMAL);
-			renderer.applyMatrix(graphics.__renderTransform, cairo);
+			var transform = graphics.__renderTransform;
+			transform.tx += graphics.__svgOffsetX;
+			transform.ty += graphics.__svgOffsetY;
+
+			renderer.applyMatrix(transform, cairo);
 
 			cairo.setOperator(CLEAR);
 			cairo.paint();

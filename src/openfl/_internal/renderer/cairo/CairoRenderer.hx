@@ -445,7 +445,19 @@ class CairoRenderer extends CairoRendererAPI
 				CairoTextField.render(textField, this, textField.__worldTransform);
 			}
 
+			if (textField.defaultTextFormat.useSVGFont)
+			{
+				__pushMaskRect(new openfl.geom.Rectangle(0, 0, textField.__svgClipWidth, textField.__svgClipHeight), textField.__renderTransform);
+			}
 			CairoDisplayObject.render(textField, this);
+			if (textField.defaultTextFormat.useSVGFont)
+			{
+				__popMaskRect();
+
+				textField.__dirty = false;
+				textField.__graphics.__softwareDirty = false;
+				textField.__graphics.__dirty = false;
+			}
 		}
 	}
 
