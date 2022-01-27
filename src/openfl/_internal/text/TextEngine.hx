@@ -201,10 +201,6 @@ class TextEngine
 
 		if (accepted.length > 0)
 		{
-			restrict = StringTools.replace(restrict, '\\', '\\\\');
-			restrict = StringTools.replace(restrict, ']', '\\]');
-			restrict = StringTools.replace(restrict, '+', '\\+');
-			restrict = StringTools.replace(restrict, '-', '\\-');
 			testRegexpParts.push('[^$restrict]');
 		}
 
