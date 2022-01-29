@@ -3,8 +3,10 @@ package openfl;
 import haxe.Constraints.Function;
 import haxe.PosInfos;
 import haxe.Timer;
-import openfl._internal.utils.Log;
-import openfl._internal.Lib as InternalLib;
+import openfl.errors.Error;
+import openfl.errors.TypeError;
+import openfl.utils._internal.Log;
+import openfl.utils._internal.Lib as InternalLib;
 import openfl.display.Application;
 import openfl.display.MovieClip;
 import openfl.net.URLLoader;
@@ -12,16 +14,6 @@ import openfl.net.URLRequest;
 #if lime
 import lime.system.System;
 #end
-// #if swf
-// Workaround to keep SWFLibrary/SWFLiteLibrary types available
-import openfl._internal.formats.animate.AnimateLibrary;
-#if flash
-import openfl._internal.formats.swf.SWFLibrary;
-// import openfl._internal.formats.swf.SWFLiteLibrary;
-#else
-import openfl._internal.formats.swf.SWFLiteLibrary;
-#end
-// #end
 #if (js && html5)
 import js.Browser;
 #end
@@ -37,6 +29,7 @@ import js.Browser;
 	@:noCompletion private static var __lastTimerID:UInt = 0;
 	@:noCompletion private static var __sentWarnings:Map<String, Bool> = new Map();
 	@:noCompletion private static var __timers:Map<UInt, Timer> = new Map();
+	@:noCompletion private static var __registeredClassAliases:Map<String, Class<Dynamic>> = new Map();
 	#if 0
 	private static var __unusedImports:Array<Class<Dynamic>> = [SWFLibrary, SWFLiteLibrary];
 	#end
@@ -66,7 +59,7 @@ import js.Browser;
 		#if flash
 		return flash.Lib.as(v, c);
 		#else
-		return Std.is(v, c) ? v : null;
+		return #if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (v, c) ? v : null;
 		#end
 	}
 
@@ -160,12 +153,12 @@ import js.Browser;
 	public static function getQualifiedClassName(value:Dynamic):String
 	{
 		if (value == null) return null;
-		var ref = Std.is(value, Class) ? value : Type.getClass(value);
+		var ref = (value is Class) ? value : Type.getClass(value);
 		if (ref == null)
 		{
-			if (Std.is(value, Bool) || value == Bool) return "Bool";
-			else if (Std.is(value, Int) || value == Int) return "Int";
-			else if (Std.is(value, Float) || value == Float) return "Float";
+			if ((value is Bool) || value == Bool) return "Bool";
+			else if ((value is Int) || value == Int) return "Int";
+			else if ((value is Float) || value == Float) return "Float";
 			// TODO: Array? Map?
 			else
 				return null;
@@ -200,7 +193,7 @@ import js.Browser;
 	public static function getQualifiedSuperclassName(value:Dynamic):String
 	{
 		if (value == null) return null;
-		var ref = Std.is(value, Class) ? value : Type.getClass(value);
+		var ref = (value is Class) ? value : Type.getClass(value);
 		if (ref == null) return null;
 		var parentRef = Type.getSuperClass(ref);
 		if (parentRef == null) return null;
@@ -573,6 +566,91 @@ import js.Browser;
 	public static function trace(arg:Dynamic):Void
 	{
 		haxe.Log.trace(arg);
+	}
+
+	/**
+		Determines whether the specified string is a valid name for an XML
+		element or attribute.
+	**/
+	public static function isXMLName(name:String):Bool
+	{
+		#if flash
+		return untyped __global__["isXMLName"](name);
+		#else
+		if (name == null)
+		{
+			return false;
+		}
+		// can't start with invalid characters
+		if (!~/^[a-zA-Z_]/.match(name))
+		{
+			return false;
+		}
+		// can't start with the string "xml" (case insensitive)
+		if (~/^[xX][mM][lL]/.match(name))
+		{
+			return false;
+		}
+		// can't contain invalid characters
+		if (!~/^[a-zA-Z0-9_\-\.]+$/.match(name))
+		{
+			return false;
+		}
+		return true;
+		#end
+	}
+
+	/**
+		Looks up a class that previously had an alias registered through a call
+		to the `registerClassAlias()` method.
+
+		This method does not interact with `getDefinitionByName()` method.
+	**/
+	public static function getClassByAlias(aliasName:String):Class<Dynamic>
+	{
+		#if flash
+		return untyped __global__["flash.net.getClassByAlias"](aliasName);
+		#else
+		if (!__registeredClassAliases.exists(aliasName))
+		{
+			throw new Error('Class $aliasName could not be found.');
+		}
+		return __registeredClassAliases.get(aliasName);
+		#end
+	}
+
+	/**
+		Preserves the class (type) of an object when the object is encoded in
+		Action Message Format (AMF). When you encode an object into AMF, this
+		function saves the alias for its class, so that you can recover the
+		class when decoding the object. If the encoding context did not register
+		an alias for an object's class, the object is encoded as an anonymous
+		object. Similarly, if the decoding context does not have the same alias
+		registered, an anonymous object is created for the decoded data.
+
+			 	LocalConnection, ByteArray, SharedObject, NetConnection and NetStream
+		are all examples of classes that encode objects in AMF.
+
+		The encoding and decoding contexts do not need to use the same class for
+		an alias; they can intentionally change classes, provided that the
+		destination class contains all of the members that the source class
+		serializes.
+	**/
+	public static function registerClassAlias(aliasName:String, classObject:Class<Dynamic>):Void
+	{
+		#if flash
+		untyped __global__["flash.net.registerClassAlias"](aliasName, classObject);
+		#else
+		if (classObject == null)
+		{
+			throw new TypeError("Parameter classObject must be non-null");
+		}
+		if (aliasName == null)
+		{
+			throw new TypeError("Parameter aliasName must be non-null");
+		}
+		__registeredClassAliases.set(aliasName, classObject);
+		#end
 	}
 
 	// Get & Set Methods

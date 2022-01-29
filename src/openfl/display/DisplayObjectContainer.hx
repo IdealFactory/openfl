@@ -94,7 +94,7 @@ class DisplayObjectContainer extends InteractiveObject
 	@:noCompletion private static function __init__()
 	{
 		untyped Object.defineProperty(DisplayObjectContainer.prototype, "numChildren", {
-			get: untyped __js__("function () { return this.get_numChildren (); }")
+			get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_numChildren (); }")
 		});
 	}
 	#end
@@ -112,8 +112,6 @@ class DisplayObjectContainer extends InteractiveObject
 	@:noCompletion private function new()
 	{
 		super();
-
-		__type = DISPLAY_OBJECT_CONTAINER;
 
 		mouseChildren = true;
 		__tabChildren = true;
@@ -234,28 +232,28 @@ class DisplayObjectContainer extends InteractiveObject
 
 			if (addedToStage)
 			{
-				this.__setStageReference(stage);
+				child.__setStageReference(stage);
 			}
 
 			child.__setTransformDirty();
 			child.__setRenderDirty();
 			__setRenderDirty();
 
-			#if !openfl_disable_event_pooling
-			var event = Event.__pool.get();
-			event.type = Event.ADDED;
-			#else
+			// #if !openfl_disable_event_pooling
+			// var event = Event.__pool.get();
+			// event.type = Event.ADDED;
+			// #else
 			var event = new Event(Event.ADDED);
-			#end
+			// #end
 			event.bubbles = true;
 
 			event.target = child;
 
 			child.__dispatchWithCapture(event);
 
-			#if !openfl_disable_event_pooling
-			Event.__pool.release(event);
-			#end
+			// #if !openfl_disable_event_pooling
+			// Event.__pool.release(event);
+			// #end
 
 			if (addedToStage)
 			{
@@ -746,7 +744,12 @@ class DisplayObjectContainer extends InteractiveObject
 
 			DisplayObject.__calculateAbsoluteTransform(child.__transform, matrix, childWorldTransform);
 
-			child.__getFilterBounds(rect, childWorldTransform);
+			var childRect = Rectangle.__pool.get();
+
+			child.__getFilterBounds(childRect, childWorldTransform);
+			rect.__expand(childRect.x, childRect.y, childRect.width, childRect.height);
+
+			Rectangle.__pool.release(childRect);
 		}
 
 		Matrix.__pool.release(childWorldTransform);
@@ -970,6 +973,7 @@ class DisplayObjectContainer extends InteractiveObject
 	}
 
 	// Get & Set Methods
+
 	@:noCompletion private function get_numChildren():Int
 	{
 		return __children.length;

@@ -1,7 +1,9 @@
 package openfl.events;
 
 #if !flash
-import openfl._internal.utils.ObjectPool;
+import openfl.utils.Object;
+
+// import openfl.utils.ObjectPool;
 
 /**
 	The Event class is used as the base class for the creation of Event
@@ -684,7 +686,7 @@ class Event
 		could be the node containing that button or one of its ancestors that has
 		registered an event listener for that event.
 	**/
-	public var currentTarget(default, null):#if (haxe_ver >= "3.4.2") Any #else IEventDispatcher #end;
+	public var currentTarget(default, null):Object;
 
 	/**
 		The current phase in the event flow. This property can contain the
@@ -701,15 +703,14 @@ class Event
 		a user clicks an OK button, the target node is the display list node
 		containing that button.
 	**/
-	public var target(default, null):#if (haxe_ver >= "3.4.2") Any #else IEventDispatcher #end;
+	public var target(default, null):Object;
 
 	/**
 		The type of event. The type is case-sensitive.
 	**/
 	public var type(default, null):String;
 
-	@:noCompletion private static var __pool:ObjectPool<Event> = new ObjectPool<Event>(function() return new Event(null), function(event) event.__init());
-
+	// @:noCompletion private static var __pool:ObjectPool<Event> = new ObjectPool<Event>(function() return new Event(null), function(event) event.__init());
 	@:noCompletion private var __isCanceled:Bool;
 	@:noCompletion private var __isCanceledNow:Bool;
 	@:noCompletion private var __preventDefault:Bool;
@@ -888,7 +889,7 @@ class Event
 		{
 			arg = Reflect.field(this, param);
 
-			if (Std.is(arg, String))
+			if ((arg is String))
 			{
 				output += ' $param="$arg"';
 			}

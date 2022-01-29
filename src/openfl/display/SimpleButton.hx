@@ -1,8 +1,6 @@
 package openfl.display;
 
 #if !flash
-import openfl._internal.formats.swf.SWFLite;
-import openfl._internal.symbols.ButtonSymbol;
 import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
 import openfl.events.MouseEvent;
@@ -30,16 +28,12 @@ import openfl.Vector;
 @:fileXml('tags="haxe,release"')
 @:noDebug
 #end
-@:access(openfl._internal.symbols.SWFSymbol)
 @:access(openfl.display.MovieClip)
 @:access(openfl.geom.Matrix)
 @:access(openfl.geom.Rectangle)
+@:autoBuild(openfl.utils._internal.AssetsMacro.initBinding())
 class SimpleButton extends InteractiveObject
 {
-	@:noCompletion private static var __constructor:SimpleButton->Void;
-	@:noCompletion private static var __initSWF:SWFLite;
-	@:noCompletion private static var __initSymbol:ButtonSymbol;
-
 	/**
 		Specifies a display object that is used as the visual object for the
 		button "Down" state  - the state that the button is in when the user
@@ -118,6 +112,8 @@ class SimpleButton extends InteractiveObject
 	**/
 	public var useHandCursor:Bool;
 
+	@:noCompletion private static var __constructor:SimpleButton->Void;
+
 	@:noCompletion private var __currentState(default, set):DisplayObject;
 	@:noCompletion private var __downState:DisplayObject;
 	@:noCompletion private var __hitTestState:DisplayObject;
@@ -125,7 +121,6 @@ class SimpleButton extends InteractiveObject
 	@:noCompletion private var __overState:DisplayObject;
 	@:noCompletion private var __previousStates:Vector<DisplayObject>;
 	@:noCompletion private var __soundTransform:SoundTransform;
-	@:noCompletion private var __symbol:ButtonSymbol;
 	@:noCompletion private var __upState:DisplayObject;
 
 	#if openfljs
@@ -133,24 +128,24 @@ class SimpleButton extends InteractiveObject
 	{
 		untyped Object.defineProperties(SimpleButton.prototype, {
 			"downState": {
-				get: untyped __js__("function () { return this.get_downState (); }"),
-				set: untyped __js__("function (v) { return this.set_downState (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_downState (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_downState (v); }")
 			},
 			"hitTestState": {
-				get: untyped __js__("function () { return this.get_hitTestState (); }"),
-				set: untyped __js__("function (v) { return this.set_hitTestState (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_hitTestState (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_hitTestState (v); }")
 			},
 			"overState": {
-				get: untyped __js__("function () { return this.get_overState (); }"),
-				set: untyped __js__("function (v) { return this.set_overState (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_overState (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_overState (v); }")
 			},
 			"soundTransform": {
-				get: untyped __js__("function () { return this.get_soundTransform (); }"),
-				set: untyped __js__("function (v) { return this.set_soundTransform (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_soundTransform (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_soundTransform (v); }")
 			},
 			"upState": {
-				get: untyped __js__("function () { return this.get_upState (); }"),
-				set: untyped __js__("function (v) { return this.set_upState (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_upState (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_upState (v); }")
 			},
 		});
 	}
@@ -170,8 +165,7 @@ class SimpleButton extends InteractiveObject
 	{
 		super();
 
-		__type = SIMPLE_BUTTON;
-
+		__drawableType = SIMPLE_BUTTON;
 		enabled = true;
 		trackAsMenu = false;
 		useHandCursor = true;
@@ -195,41 +189,6 @@ class SimpleButton extends InteractiveObject
 			__constructor = null;
 
 			method(this);
-		}
-		else if (__initSymbol != null)
-		{
-			var swf = __initSWF;
-			__symbol = __initSymbol;
-
-			__initSWF = null;
-			__initSymbol = null;
-
-			__fromSymbol(swf, __symbol);
-		}
-	}
-
-	@:noCompletion private function __fromSymbol(swf:SWFLite, symbol:ButtonSymbol):Void
-	{
-		__symbol = symbol;
-
-		if (symbol.downState != null)
-		{
-			downState = symbol.downState.__createObject(swf);
-		}
-
-		if (symbol.hitState != null)
-		{
-			hitTestState = symbol.hitState.__createObject(swf);
-		}
-
-		if (symbol.overState != null)
-		{
-			overState = symbol.overState.__createObject(swf);
-		}
-
-		if (symbol.upState != null)
-		{
-			upState = symbol.upState.__createObject(swf);
 		}
 	}
 
@@ -298,10 +257,11 @@ class SimpleButton extends InteractiveObject
 		}
 		else if (__currentState != null)
 		{
-			if (!hitObject.visible || __isMask || (interactiveOnly && !mouseEnabled)) return false;
-			if (mask != null && !mask.__hitTestMask(x, y)) return false;
-
-			if (__currentState.__hitTest(x, y, shapeFlag, stack, interactiveOnly, hitObject))
+			if (!hitObject.visible || __isMask || (interactiveOnly && !mouseEnabled) || (mask != null && !mask.__hitTestMask(x, y)))
+			{
+				hitTest = false;
+			}
+			else if (__currentState.__hitTest(x, y, shapeFlag, stack, interactiveOnly, hitObject))
 			{
 				hitTest = interactiveOnly;
 			}
@@ -585,4 +545,5 @@ class SimpleButton extends InteractiveObject
 }
 #else
 typedef SimpleButton = flash.display.SimpleButton;
+typedef SimpleButton2 = flash.display.SimpleButton.SimpleButton2;
 #end

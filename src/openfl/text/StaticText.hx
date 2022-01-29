@@ -17,7 +17,7 @@ import openfl.display.Graphics;
 	```haxe
 	for (i in 0...numChildren) {
 		var displayitem = getChildAt(i);
-		if (Std.is(displayitem, StaticText)) {
+		if ((displayitem is StaticText)) {
 			trace("a static text field is item " + i + " on the display list");
 			var myFieldLabel:StaticText = cast displayitem;
 			trace("and contains the text: " + myFieldLabel.text);
@@ -44,9 +44,11 @@ class StaticText extends DisplayObject
 	{
 		super();
 
+		__drawableType = SHAPE;
 		__graphics = new Graphics(this);
 	}
 }
 #else
 typedef StaticText = flash.text.StaticText;
+typedef StaticText2 = flash.text.StaticText.StaticText2;
 #end

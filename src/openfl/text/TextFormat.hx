@@ -226,6 +226,7 @@ class TextFormat
 
 	@:noCompletion private var __ascent:Null<Float>;
 	@:noCompletion private var __descent:Null<Float>;
+	@:noCompletion private var __cacheKey:String;
 
 	/**
 		Creates a TextFormat object with the specified properties. You can then
@@ -306,6 +307,8 @@ class TextFormat
 		newFormat.__ascent = __ascent;
 		newFormat.__descent = __descent;
 
+		newFormat.__cacheKey = __toCacheKey();
+
 		newFormat.useSVGFont = useSVGFont;
 
 		newFormat.stroke = stroke;
@@ -342,6 +345,13 @@ class TextFormat
 
 		if (format.stroke != null) stroke = format.stroke;
 		if (format.stroke != null) strokeWidth = format.strokeWidth;
+
+		__toCacheKey();
+	}
+
+	@:noCompletion private function __toCacheKey():String
+	{
+		return __cacheKey = '$font$size$bold$italic';
 	}
 }
 #else

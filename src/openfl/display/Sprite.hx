@@ -27,8 +27,13 @@ import openfl.ui.MouseCursor;
 @:access(openfl.display.Stage)
 @:access(openfl.geom.Matrix)
 @:access(openfl.geom.Point)
+#if !macro
+@:autoBuild(openfl.utils._internal.AssetsMacro.initBinding())
+#end
 class Sprite extends DisplayObjectContainer
 {
+	@:noCompletion private static var __constructor:Sprite->Void;
+
 	/**
 		Specifies the button mode of this sprite. If `true`, this
 		sprite behaves as a button, which means that it triggers the display of
@@ -127,10 +132,10 @@ class Sprite extends DisplayObjectContainer
 	{
 		untyped Object.defineProperties(Sprite.prototype, {
 			"buttonMode": {
-				get: untyped __js__("function () { return this.get_buttonMode (); }"),
-				set: untyped __js__("function (v) { return this.set_buttonMode (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_buttonMode (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_buttonMode (v); }")
 			},
-			"graphics": {get: untyped __js__("function () { return this.get_graphics (); }")},
+			"graphics": {get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_graphics (); }")},
 		});
 	}
 	#end
@@ -145,8 +150,30 @@ class Sprite extends DisplayObjectContainer
 	{
 		super();
 
+		__drawableType = SPRITE;
 		__buttonMode = false;
 		useHandCursor = true;
+
+		if (__constructor != null)
+		{
+			var method = __constructor;
+			__constructor = null;
+
+			method(this);
+		}
+	}
+
+	/**
+		Creates a new Sprite based upon the first frame of a Timeline instance.
+
+		@param timeline A Timeline object
+		@return A new Sprite
+	**/
+	public static function fromTimeline(timeline:Timeline):Sprite
+	{
+		var sprite = new Sprite();
+		timeline.initializeSprite(sprite);
+		return sprite;
 	}
 
 	/**

@@ -27,6 +27,11 @@ class AssetLibrary #if lime extends LimeAssetLibrary #end
 		#end
 	}
 
+	public function bind(className:String, instance:Dynamic = null):Bool
+	{
+		return false;
+	}
+
 	#if lime
 	public override function exists(id:String, type:String):Bool
 	{
@@ -48,7 +53,7 @@ class AssetLibrary #if lime extends LimeAssetLibrary #end
 
 		if (library != null)
 		{
-			if (Std.is(library, AssetLibrary))
+			if ((library is AssetLibrary))
 			{
 				return cast library;
 			}
@@ -93,7 +98,7 @@ class AssetLibrary #if lime extends LimeAssetLibrary #end
 
 		if (library != null)
 		{
-			if (Std.is(library, AssetLibrary))
+			if ((library is AssetLibrary))
 			{
 				return cast library;
 			}

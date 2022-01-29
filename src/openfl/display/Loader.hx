@@ -198,6 +198,8 @@ class Loader extends DisplayObjectContainer
 	{
 		super();
 
+		// Perhaps there should be a LOADER drawable type to make this clearer.
+		__drawableType = SPRITE;
 		contentLoaderInfo = LoaderInfo.create(this);
 		uncaughtErrorEvents = contentLoaderInfo.uncaughtErrorEvents;
 		__unloaded = true;
@@ -226,7 +228,7 @@ class Loader extends DisplayObjectContainer
 	**/
 	public function close():Void
 	{
-		openfl._internal.Lib.notImplemented();
+		openfl.utils._internal.Lib.notImplemented();
 	}
 	#end
 
@@ -568,8 +570,17 @@ class Loader extends DisplayObjectContainer
 	#if (openfl >= "9.0.0")
 	public override function removeChild(child:DisplayObject):DisplayObject
 	{
-		throw new Error("Error #2069: The Loader class does not implement this method.", 2069);
-		return null;
+		// TODO: Allow `displayObjectContainer.addChild(loader.content)` without
+		// the following work-around
+		if (child == content)
+		{
+			return super.removeChild(content);
+		}
+		else
+		{
+			throw new Error("Error #2069: The Loader class does not implement this method.", 2069);
+			return null;
+		}
 	}
 
 	public override function removeChildAt(index:Int):DisplayObject
@@ -771,7 +782,7 @@ class Loader extends DisplayObjectContainer
 				return;
 			}
 
-			if (Std.is(library, AssetLibrary))
+			if ((library is AssetLibrary))
 			{
 				library.load().onComplete(function(_)
 				{
@@ -789,7 +800,7 @@ class Loader extends DisplayObjectContainer
 					contentLoaderInfo.dispatchEvent(new Event(Event.COMPLETE));
 				}).onError(function(e)
 				{
-					__dispatchError(e);
+						__dispatchError(e);
 				});
 			}
 		}
@@ -805,7 +816,7 @@ class Loader extends DisplayObjectContainer
 			// script.innerHTML = loader.data;
 			// Browser.document.head.appendChild (script);
 
-			untyped __js__("eval")("(function () {" + loader.data + "})()");
+			untyped #if haxe4 js.Syntax.code #else __js__ #end ("eval")("(function () {" + loader.data + "})()");
 			#end
 
 			contentLoaderInfo.dispatchEvent(new Event(Event.COMPLETE));

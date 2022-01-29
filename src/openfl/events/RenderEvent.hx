@@ -1,6 +1,6 @@
 package openfl.events;
 
-import openfl._internal.utils.ObjectPool;
+// import openfl.utils.ObjectPool;
 import openfl.display.DisplayObjectRenderer;
 import openfl.geom.ColorTransform;
 import openfl.geom.Matrix;
@@ -128,10 +128,8 @@ import openfl.geom.Matrix;
 	**/
 	public var renderer(default, null):DisplayObjectRenderer;
 
-	#if !flash
-	@:noCompletion private static var __pool:ObjectPool<RenderEvent> = new ObjectPool<RenderEvent>(function() return new RenderEvent(null),
-	function(event) event.__init());
-	#end
+	// @:noCompletion private static var __pool:ObjectPool<RenderEvent> = new ObjectPool<RenderEvent>(function() return new RenderEvent(null),
+	// function(event) event.__init());
 
 	/**
 		Creates an Event object that contains information about render events.

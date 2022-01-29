@@ -3,8 +3,8 @@ package openfl.display;
 #if !flash
 import haxe.CallStack;
 import haxe.ds.ArraySort;
-import openfl._internal.utils.Log;
-import openfl._internal.utils.TouchData;
+import openfl.utils._internal.Log;
+import openfl.utils._internal.TouchData;
 import openfl.display3D.Context3D;
 import openfl.display.Application as OpenFLApplication;
 import openfl.errors.IllegalOperationError;
@@ -18,6 +18,7 @@ import openfl.events.MouseEvent;
 import openfl.events.TextEvent;
 import openfl.events.TouchEvent;
 import openfl.events.UncaughtErrorEvent;
+import openfl.events.UncaughtErrorEvents;
 import openfl.geom.Matrix;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
@@ -40,22 +41,12 @@ import lime.ui.KeyModifier;
 import lime.ui.MouseCursor as LimeMouseCursor;
 import lime.ui.MouseWheelMode;
 import lime.ui.Window;
-#if !display
-import openfl._internal.renderer.context3D.Context3DRenderer;
-#if lime_cairo
-import openfl._internal.renderer.cairo.CairoRenderer;
-#end
-#if (js && html5)
-import openfl._internal.renderer.canvas.CanvasRenderer;
-import openfl._internal.renderer.dom.DOMRenderer;
-#end
-#end
 #end
 #if hxtelemetry
 import openfl.profiler.Telemetry;
 #end
 #if gl_stats
-import openfl._internal.renderer.context3D.stats.Context3DStats;
+import openfl.display._internal.stats.Context3DStats;
 #end
 #if (js && html5)
 import js.html.Element;
@@ -184,14 +175,13 @@ typedef Element = Dynamic;
 @:fileXml('tags="haxe,release"')
 @:noDebug
 #end
-@:access(openfl._internal.renderer)
 @:access(openfl.display3D.Context3D)
-@:access(openfl.display.BitmapData)
 @:access(openfl.display.DisplayObjectRenderer)
 @:access(openfl.display.LoaderInfo)
 @:access(openfl.display.Sprite)
 @:access(openfl.display.Stage3D)
 @:access(openfl.events.Event)
+@:access(openfl.events.UncaughtErrorEvents)
 @:access(openfl.geom.Matrix)
 @:access(openfl.geom.Point)
 @:access(openfl.ui.GameInput)
@@ -910,6 +900,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	@:noCompletion private var __stack:Array<DisplayObject>;
 	@:noCompletion private var __touchData:Map<Int, TouchData>;
 	@:noCompletion private var __transparent:Bool;
+	@:noCompletion private var __uncaughtErrorEvents:UncaughtErrorEvents;
 	@:noCompletion private var __wasDirty:Bool;
 	@:noCompletion private var __wasFullscreen:Bool;
 	#if lime
@@ -921,37 +912,37 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	{
 		untyped Object.defineProperties(Stage.prototype, {
 			"color": {
-				get: untyped __js__("function () { return this.get_color (); }"),
-				set: untyped __js__("function (v) { return this.set_color (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_color (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_color (v); }")
 			},
 			"contentsScaleFactor": {
-				get: untyped __js__("function () { return this.get_contentsScaleFactor (); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_contentsScaleFactor (); }")
 			},
 			"displayState": {
-				get: untyped __js__("function () { return this.get_displayState (); }"),
-				set: untyped __js__("function (v) { return this.set_displayState (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_displayState (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_displayState (v); }")
 			},
 			"focus": {
-				get: untyped __js__("function () { return this.get_focus (); }"),
-				set: untyped __js__("function (v) { return this.set_focus (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_focus (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_focus (v); }")
 			},
 			"frameRate": {
-				get: untyped __js__("function () { return this.get_frameRate (); }"),
-				set: untyped __js__("function (v) { return this.set_frameRate (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_frameRate (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_frameRate (v); }")
 			},
 			"fullScreenHeight": {
-				get: untyped __js__("function () { return this.get_fullScreenHeight (); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_fullScreenHeight (); }")
 			},
 			"fullScreenWidth": {
-				get: untyped __js__("function () { return this.get_fullScreenWidth (); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_fullScreenWidth (); }")
 			},
 			"quality": {
-				get: untyped __js__("function () { return this.get_quality (); }"),
-				set: untyped __js__("function (v) { return this.set_quality (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_quality (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_quality (v); }")
 			},
 			"scaleMode": {
-				get: untyped __js__("function () { return this.get_scaleMode (); }"),
-				set: untyped __js__("function (v) { return this.set_scaleMode (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_scaleMode (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_scaleMode (v); }")
 			},
 		});
 	}
@@ -966,6 +957,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 		super();
 
+		__drawableType = STAGE;
 		this.name = null;
 
 		__color = 0xFFFFFFFF;
@@ -1006,7 +998,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		#if mac
 		__macKeyboard = true;
 		#elseif (js && html5)
-		__macKeyboard = untyped __js__("/AppleWebKit/.test (navigator.userAgent) && /Mobile\\/\\w+/.test (navigator.userAgent) || /Mac/.test (navigator.platform)");
+		__macKeyboard = untyped #if haxe4 js.Syntax.code #else __js__ #end ("/AppleWebKit/.test (navigator.userAgent) && /Mobile\\/\\w+/.test (navigator.userAgent) || /Mac/.test (navigator.platform)");
 		#end
 
 		__clearBeforeRender = true;
@@ -1033,7 +1025,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 			var resizable = (width == 0 && width == 0);
 
 			#if (js && html5)
-			element = Browser.document.createElement("div");
+			if (windowAttributes.element != null) element = Browser.document.createElement("div");
 
 			if (resizable)
 			{
@@ -1090,6 +1082,9 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		this.window = window;
 		this.color = color;
 		#end
+
+		// TODO: Do not rely on Lib.current
+		__uncaughtErrorEvents = Lib.current.__loaderInfo.uncaughtErrorEvents;
 
 		__contentsScaleFactor = window.scale;
 		__wasFullscreen = window.fullscreen;
@@ -1168,18 +1163,21 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 				if (dispatcher.stage == this || dispatcher.stage == null)
 				{
-					#if !openfl_disable_handle_error
-					try
+					if (__uncaughtErrorEvents.__enabled)
+					{
+						try
+						{
+							dispatcher.__dispatch(event);
+						}
+						catch (e:Dynamic)
+						{
+							__handleError(e);
+						}
+					}
+					else
 					{
 						dispatcher.__dispatch(event);
 					}
-					catch (e:Dynamic)
-					{
-						__handleError(e);
-					}
-					#else
-					dispatcher.__dispatch(event);
-					#end
 				}
 			}
 		}
@@ -1187,7 +1185,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __createRenderer():Void
 	{
-		#if (lime && !display)
+		#if lime
 		#if (js && html5)
 		var pixelRatio = 1;
 
@@ -1208,25 +1206,19 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				context3D = new Context3D(this);
 				context3D.configureBackBuffer(windowWidth, windowHeight, 0, true, true, true);
 				context3D.present();
-				if (BitmapData.__hardwareRenderer == null)
-				{
-					BitmapData.__hardwareRenderer = new Context3DRenderer(context3D);
-				}
-				__renderer = new Context3DRenderer(context3D);
+				__renderer = new OpenGLRenderer(context3D);
 				#end
 
 			case CANVAS:
 				#if (js && html5)
-				var renderer = new CanvasRenderer(window.context.canvas2D);
-				renderer.pixelRatio = pixelRatio;
-				__renderer = renderer;
+				__renderer = new CanvasRenderer(window.context.canvas2D);
+				cast(__renderer, CanvasRenderer).pixelRatio = pixelRatio;
 				#end
 
 			case DOM:
 				#if (js && html5)
-				var renderer = new DOMRenderer(window.context.dom);
-				renderer.pixelRatio = pixelRatio;
-				__renderer = renderer;
+				__renderer = new DOMRenderer(window.context.dom);
+				cast(__renderer, DOMRenderer).pixelRatio = pixelRatio;
 				#end
 
 			case CAIRO:
@@ -1251,21 +1243,24 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	@SuppressWarnings(["checkstyle:Dynamic", "checkstyle:LeftCurly"])
 	@:noCompletion private override function __dispatchEvent(event:Event):Bool
 	{
-		#if !openfl_disable_handle_error
-		try
+		var result:Bool;
+		if (__uncaughtErrorEvents.__enabled)
 		{
-		#end
-
-			return super.__dispatchEvent(event);
-
-		#if !openfl_disable_handle_error
+			try
+			{
+				result = super.__dispatchEvent(event);
+			}
+			catch (e:Dynamic)
+			{
+				__handleError(e);
+				result = false;
+			}
 		}
-		catch (e:Dynamic)
+		else
 		{
-			__handleError(e);
-			return false;
+			result = super.__dispatchEvent(event);
 		}
-		#end
+		return result;
 	}
 
 	@:noCompletion private function __dispatchPendingMouseEvent():Void
@@ -1280,11 +1275,70 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	@SuppressWarnings(["checkstyle:Dynamic", "checkstyle:LeftCurly"])
 	@:noCompletion private function __dispatchStack(event:Event, stack:Array<DisplayObject>):Void
 	{
-		#if !openfl_disable_handle_error
-		try
+		// TODO: Prevent repetition
+		if (__uncaughtErrorEvents.__enabled)
 		{
-		#end
+			try
+			{
+				var target:DisplayObject;
+				var length = stack.length;
 
+				if (length == 0)
+				{
+					event.eventPhase = EventPhase.AT_TARGET;
+					target = cast event.target;
+					target.__dispatch(event);
+				}
+				else
+				{
+					event.eventPhase = EventPhase.CAPTURING_PHASE;
+					event.target = stack[stack.length - 1];
+
+					for (i in 0...length - 1)
+					{
+						stack[i].__dispatch(event);
+
+						if (event.__isCanceled)
+						{
+							return;
+						}
+					}
+
+					event.eventPhase = EventPhase.AT_TARGET;
+					target = cast event.target;
+					target.__dispatch(event);
+
+					if (event.__isCanceled)
+					{
+						return;
+					}
+
+					if (event.bubbles)
+					{
+						event.eventPhase = EventPhase.BUBBLING_PHASE;
+						var i = length - 2;
+
+						while (i >= 0)
+						{
+							stack[i].__dispatch(event);
+
+							if (event.__isCanceled)
+							{
+								return;
+							}
+
+							i--;
+						}
+					}
+				}
+			}
+			catch (e:Dynamic)
+			{
+				__handleError(e);
+			}
+		}
+		else
+		{
 			var target:DisplayObject;
 			var length = stack.length;
 
@@ -1336,32 +1390,28 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 					}
 				}
 			}
-
-		#if !openfl_disable_handle_error
 		}
-		catch (e:Dynamic)
-		{
-			__handleError(e);
-		}
-		#end
 	}
 
 	@SuppressWarnings("checkstyle:Dynamic")
 	@:noCompletion private function __dispatchTarget(target:EventDispatcher, event:Event):Bool
 	{
-		#if !openfl_disable_handle_error
-		try
+		if (__uncaughtErrorEvents.__enabled)
+		{
+			try
+			{
+				return target.__dispatchEvent(event);
+			}
+			catch (e:Dynamic)
+			{
+				__handleError(e);
+				return false;
+			}
+		}
+		else
 		{
 			return target.__dispatchEvent(event);
 		}
-		catch (e:Dynamic)
-		{
-			__handleError(e);
-			return false;
-		}
-		#else
-		return target.__dispatchEvent(event);
-		#end
 	}
 
 	@:noCompletion private function __drag(mouse:Point):Void
@@ -1433,10 +1483,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 		if (!event.__preventDefault)
 		{
-			#if mobile
+			// #if mobile
 			Log.println(CallStack.toString(CallStack.exceptionStack()));
 			Log.println(Std.string(e));
-			#end
+			// #end
 
 			#if (cpp && !cppia)
 			untyped __cpp__("throw e");
@@ -1445,20 +1495,24 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 			#elseif js
 			try
 			{
+				#if (haxe >= "4.1.0")
+				var exc = e;
+				#else
 				var exc = @:privateAccess haxe.CallStack.lastException;
+				#end
 				if (exc != null && Reflect.hasField(exc, "stack") && exc.stack != null && exc.stack != "")
 				{
-					untyped __js__("console.log")(exc.stack);
+					untyped #if haxe4 js.Syntax.code #else __js__ #end ("console.log")(exc.stack);
 					e.stack = exc.stack;
 				}
 				else
 				{
 					var msg = CallStack.toString(CallStack.callStack());
-					untyped __js__("console.log")(msg);
+					untyped #if haxe4 js.Syntax.code #else __js__ #end ("console.log")(msg);
 				}
 			}
 			catch (e2:Dynamic) {}
-			untyped __js__("throw e");
+			untyped #if haxe4 js.Syntax.code #else __js__ #end ("throw e");
 			#elseif cs
 			throw e;
 			// cs.Lib.rethrow (e);
@@ -1496,6 +1550,33 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 			var keyLocation = Keyboard.__getKeyLocation(keyCode);
 			var keyCode = Keyboard.__convertKeyCode(keyCode);
 			var charCode = Keyboard.__getCharCode(keyCode, modifier.shiftKey);
+
+			if (type == KeyboardEvent.KEY_UP && (keyCode == Keyboard.SPACE || keyCode == Keyboard.ENTER) && (__focus is Sprite))
+			{
+				var sprite = cast(__focus, Sprite);
+				if (sprite.buttonMode && sprite.focusRect == true)
+				{
+					var localPoint = Point.__pool.get();
+					var targetPoint = Point.__pool.get();
+					targetPoint.x = __mouseX;
+					targetPoint.y = __mouseY;
+
+					#if openfl_pool_events
+					var clickEvent = MouseEvent.__pool.get(MouseEvent.CLICK, __mouseX, __mouseY, sprite.__globalToLocal(targetPoint, localPoint), sprite);
+					#else
+					var clickEvent = MouseEvent.__create(MouseEvent.CLICK, 0, __mouseX, __mouseY, sprite.__globalToLocal(targetPoint, localPoint), sprite);
+					#end
+
+					__dispatchStack(clickEvent, stack);
+
+					#if openfl_pool_events
+					MouseEvent.__pool.release(clickEvent);
+					#end
+
+					Point.__pool.release(targetPoint);
+					Point.__pool.release(localPoint);
+				}
+			}
 
 			// Flash Player events are not cancelable, should we make only some events (like APP_CONTROL_BACK) cancelable?
 
@@ -1536,15 +1617,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 							return a.tabIndex - b.tabIndex;
 						});
 
-						if (tabStack[tabStack.length - 1].tabIndex == -1)
+						if (tabStack[tabStack.length - 1].tabIndex != -1)
 						{
-							// all tabIndices are equal to -1
-							if (focus != null) nextIndex = 0;
-							else
-								nextIndex = __currentTabOrderIndex;
-						}
-						else
-						{
+							// if some tabIndices aren't equal to -1, remove all
+							// of the ones that are
 							var i = 0;
 							while (i < tabStack.length)
 							{
@@ -1556,19 +1632,58 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 								i++;
 							}
+						}
 
-							if (focus != null)
+						if (focus != null)
+						{
+							var current = focus;
+							var index = tabStack.indexOf(current);
+							while (index == -1 && current != null)
 							{
-								var index = tabStack.indexOf(focus);
-
-								if (index < 0) nextIndex = 0;
-								else
-									nextIndex = index + nextOffset;
+								// if the current focus is not in the tab stack,
+								// try to find the nearest object in the display
+								// list that is in the stack
+								var currentParent = current.parent;
+								if (currentParent != null && currentParent.tabChildren)
+								{
+									var currentIndex = currentParent.getChildIndex(current);
+									if (currentIndex == -1)
+									{
+										current = currentParent;
+										continue;
+									}
+									var i = currentIndex + nextOffset;
+									while (modifier.shiftKey ? (i >= 0) : (i < currentParent.numChildren))
+									{
+										var sibling = currentParent.getChildAt(i);
+										if ((sibling is InteractiveObject))
+										{
+											var interactiveSibling = cast(sibling, InteractiveObject);
+											index = tabStack.indexOf(interactiveSibling);
+											if (index != -1)
+											{
+												nextOffset = 0;
+												break;
+											}
+										}
+										i += nextOffset;
+									}
+								}
+								else if (modifier.shiftKey)
+								{
+									index = tabStack.indexOf(currentParent);
+									if (index != -1) nextOffset = 0;
+								}
+								current = currentParent;
 							}
+
+							if (index < 0) nextIndex = 0;
 							else
-							{
-								nextIndex = __currentTabOrderIndex;
-							}
+								nextIndex = index + nextOffset;
+						}
+						else
+						{
+							nextIndex = __currentTabOrderIndex;
 						}
 					}
 					else if (tabStack.length == 1)
@@ -1578,6 +1693,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 						if (focus == nextObject) nextObject = null;
 					}
 
+					var cancelTab = nextIndex >= 0 && nextIndex < tabStack.length;
 					if (tabStack.length == 1 || tabStack.length == 0 && focus != null)
 					{
 						nextIndex = 0;
@@ -1612,12 +1728,23 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 						stack.reverse();
 
 						__dispatchStack(focusEvent, stack);
+
+						if (focusEvent.isDefaultPrevented())
+						{
+							window.onKeyDown.cancel();
+						}
 					}
 
 					if (focusEvent == null || !focusEvent.isDefaultPrevented())
 					{
 						__currentTabOrderIndex = nextIndex;
 						if (nextObject != null) focus = nextObject;
+						if (cancelTab)
+						{
+							// ensure that the html5 target does not lose focus
+							// to the browser every time that tab is pressed
+							window.onKeyDown.cancel();
+						}
 
 						// TODO: handle border around focus
 					}
@@ -1666,66 +1793,78 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __onLimeGamepadAxisMove(gamepad:Gamepad, axis:GamepadAxis, value:Float):Void
 	{
-		#if !openfl_disable_handle_error
-		try
+		if (__uncaughtErrorEvents.__enabled)
+		{
+			try
+			{
+				GameInput.__onGamepadAxisMove(gamepad, axis, value);
+			}
+			catch (e:Dynamic)
+			{
+				__handleError(e);
+			}
+		}
+		else
 		{
 			GameInput.__onGamepadAxisMove(gamepad, axis, value);
 		}
-		catch (e:Dynamic)
-		{
-			__handleError(e);
-		}
-		#else
-		GameInput.__onGamepadAxisMove(gamepad, axis, value);
-		#end
 	}
 
 	@:noCompletion private function __onLimeGamepadButtonDown(gamepad:Gamepad, button:GamepadButton):Void
 	{
-		#if !openfl_disable_handle_error
-		try
+		if (__uncaughtErrorEvents.__enabled)
+		{
+			try
+			{
+				GameInput.__onGamepadButtonDown(gamepad, button);
+			}
+			catch (e:Dynamic)
+			{
+				__handleError(e);
+			}
+		}
+		else
 		{
 			GameInput.__onGamepadButtonDown(gamepad, button);
 		}
-		catch (e:Dynamic)
-		{
-			__handleError(e);
-		}
-		#else
-		GameInput.__onGamepadButtonDown(gamepad, button);
-		#end
 	}
 
 	@:noCompletion private function __onLimeGamepadButtonUp(gamepad:Gamepad, button:GamepadButton):Void
 	{
-		#if !openfl_disable_handle_error
-		try
+		if (__uncaughtErrorEvents.__enabled)
+		{
+			try
+			{
+				GameInput.__onGamepadButtonUp(gamepad, button);
+			}
+			catch (e:Dynamic)
+			{
+				__handleError(e);
+			}
+		}
+		else
 		{
 			GameInput.__onGamepadButtonUp(gamepad, button);
 		}
-		catch (e:Dynamic)
-		{
-			__handleError(e);
-		}
-		#else
-		GameInput.__onGamepadButtonUp(gamepad, button);
-		#end
 	}
 
 	@:noCompletion private function __onLimeGamepadConnect(gamepad:Gamepad):Void
 	{
-		#if !openfl_disable_handle_error
-		try
+		if (__uncaughtErrorEvents.__enabled)
+		{
+			try
+			{
+				GameInput.__onGamepadConnect(gamepad);
+			}
+			catch (e:Dynamic)
+			{
+				__handleError(e);
+			}
+		}
+		else
 		{
 			GameInput.__onGamepadConnect(gamepad);
 		}
-		catch (e:Dynamic)
-		{
-			__handleError(e);
-		}
-		#else
-		GameInput.__onGamepadConnect(gamepad);
-		#end
 
 		gamepad.onAxisMove.add(__onLimeGamepadAxisMove.bind(gamepad));
 		gamepad.onButtonDown.add(__onLimeGamepadButtonDown.bind(gamepad));
@@ -1735,18 +1874,21 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function __onLimeGamepadDisconnect(gamepad:Gamepad):Void
 	{
-		#if !openfl_disable_handle_error
-		try
+		if (__uncaughtErrorEvents.__enabled)
+		{
+			try
+			{
+				GameInput.__onGamepadDisconnect(gamepad);
+			}
+			catch (e:Dynamic)
+			{
+				__handleError(e);
+			}
+		}
+		else
 		{
 			GameInput.__onGamepadDisconnect(gamepad);
 		}
-		catch (e:Dynamic)
-		{
-			__handleError(e);
-		}
-		#else
-		GameInput.__onGamepadDisconnect(gamepad);
-		#end
 	}
 
 	@:noCompletion private function __onLimeKeyDown(window:Window, keyCode:KeyCode, modifier:KeyModifier):Void
@@ -1977,8 +2119,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				if (__renderer.__type == CAIRO)
 				{
 					#if lime_cairo
-					var renderer:CairoRenderer = cast __renderer;
-					renderer.cairo = context.cairo;
+					cast(__renderer, CairoRenderer).cairo = context.cairo;
 					#end
 				}
 
@@ -2010,14 +2151,9 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 					context3D.__present = false;
 					context3D.__cleared = false;
 				}
-
-				context3D.__bitmapDataPool.cleanup();
 			}
 
 			__renderer.__cleared = false;
-
-			// TODO: Run once for multi-stage application
-			BitmapData.__pool.cleanup();
 		}
 		#end
 
@@ -2090,28 +2226,29 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	@:noCompletion private function __onLimeTouchCancel(touch:Touch):Void
 	{
 		// TODO: Should we handle this differently?
-
-		if (__primaryTouch == touch)
+		var isPrimaryTouchPoint = __primaryTouch == touch;
+		if (isPrimaryTouchPoint)
 		{
 			__primaryTouch = null;
 		}
 
-		__onTouch(TouchEvent.TOUCH_END, touch);
+		__onTouch(TouchEvent.TOUCH_END, touch, isPrimaryTouchPoint);
 	}
 
 	@:noCompletion private function __onLimeTouchMove(touch:Touch):Void
 	{
-		__onTouch(TouchEvent.TOUCH_MOVE, touch);
+		__onTouch(TouchEvent.TOUCH_MOVE, touch, __primaryTouch == touch);
 	}
 
 	@:noCompletion private function __onLimeTouchEnd(touch:Touch):Void
 	{
-		if (__primaryTouch == touch)
+		var isPrimaryTouchPoint = __primaryTouch == touch;
+		if (isPrimaryTouchPoint)
 		{
 			__primaryTouch = null;
 		}
 
-		__onTouch(TouchEvent.TOUCH_END, touch);
+		__onTouch(TouchEvent.TOUCH_END, touch, isPrimaryTouchPoint);
 	}
 
 	@:noCompletion private function __onLimeTouchStart(touch:Touch):Void
@@ -2121,7 +2258,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 			__primaryTouch = touch;
 		}
 
-		__onTouch(TouchEvent.TOUCH_BEGIN, touch);
+		__onTouch(TouchEvent.TOUCH_BEGIN, touch, __primaryTouch == touch);
 	}
 
 	@:noCompletion private function __onLimeUpdate(deltaTime:Int):Void
@@ -2245,6 +2382,11 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		var currentFocus = focus;
 		focus = null;
 		__cacheFocus = currentFocus;
+
+		MouseEvent.__altKey = false;
+		MouseEvent.__commandKey = false;
+		MouseEvent.__ctrlKey = false;
+		MouseEvent.__shiftKey = false;
 	}
 
 	@:noCompletion private function __onLimeWindowFullscreen(window:Window):Void
@@ -2362,27 +2504,36 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		switch (type)
 		{
 			case MouseEvent.MOUSE_DOWN:
-				if (target.__allowMouseFocus())
+				if (focus != null)
 				{
-					if (focus != null)
+					if (focus != target)
 					{
 						var focusEvent = new FocusEvent(FocusEvent.MOUSE_FOCUS_CHANGE, true, true, target, false, 0);
-
-						__dispatchStack(focusEvent, stack);
+						focus.dispatchEvent(focusEvent);
 
 						if (!focusEvent.isDefaultPrevented())
 						{
-							focus = target;
+							if (target.__allowMouseFocus())
+							{
+								focus = target;
+							}
+							else
+							{
+								focus = null;
+							}
 						}
-					}
-					else
-					{
-						focus = target;
 					}
 				}
 				else
 				{
-					focus = null;
+					if (target.__allowMouseFocus())
+					{
+						focus = target;
+					}
+					else
+					{
+						focus = null;
+					}
 				}
 
 				__mouseDownLeft = target;
@@ -2511,7 +2662,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				{
 					cursor = target.__getCursor();
 
-					if (cursor != null)
+					if (cursor != null && window != null)
 					{
 						window.cursor = cursor;
 						break;
@@ -2519,7 +2670,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				}
 			}
 
-			if (cursor == null)
+			if (cursor == null && window != null)
 			{
 				window.cursor = ARROW;
 			}
@@ -2556,11 +2707,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 				__rollOutStack.remove(item);
 
 				#if openfl_pool_events
-				event = MouseEvent.__pool.get(MouseEvent.ROLL_OUT, __mouseX, __mouseY, __mouseOverTarget.__globalToLocal(targetPoint, localPoint),
-					cast __mouseOverTarget);
+				event = MouseEvent.__pool.get(MouseEvent.ROLL_OUT, __mouseX, __mouseY, __mouseOverTarget.__globalToLocal(targetPoint, localPoint), cast item);
 				#else
 				event = MouseEvent.__create(MouseEvent.ROLL_OUT, button, __mouseX, __mouseY, __mouseOverTarget.__globalToLocal(targetPoint, localPoint),
-					cast __mouseOverTarget);
+					cast item);
 				#end
 				event.bubbles = false;
 
@@ -2687,15 +2837,17 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		__displayMatrix.__transformInversePoint(targetPoint);
 		var delta = Std.int(deltaY);
 
-		__dispatchStack(MouseEvent.__create(MouseEvent.MOUSE_WHEEL, 0, __mouseX, __mouseY, target.__globalToLocal(targetPoint, targetPoint), target, delta),
-			stack);
+		var event = MouseEvent.__create(MouseEvent.MOUSE_WHEEL, 0, __mouseX, __mouseY, target.__globalToLocal(targetPoint, targetPoint), target, delta);
+		event.cancelable = true;
+		__dispatchStack(event, stack);
+		if (event.isDefaultPrevented()) window.onMouseWheel.cancel();
 
 		Point.__pool.release(targetPoint);
 	}
 	#end
 
 	#if lime
-	@:noCompletion private function __onTouch(type:String, touch:Touch):Void
+	@:noCompletion private function __onTouch(type:String, touch:Touch, isPrimaryTouchPoint:Bool):Void
 	{
 		var targetPoint = Point.__pool.get();
 		targetPoint.setTo(Math.round(touch.x * window.width * window.scale), Math.round(touch.y * window.height * window.scale));
@@ -2755,7 +2907,6 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		}
 
 		var localPoint = Point.__pool.get();
-		var isPrimaryTouchPoint:Bool = (__primaryTouch == touch);
 		var touchEvent = TouchEvent.__create(type, null, touchX, touchY, target.__globalToLocal(targetPoint, localPoint), cast target);
 		touchEvent.touchPointID = touchId;
 		touchEvent.isPrimaryTouchPoint = isPrimaryTouchPoint;

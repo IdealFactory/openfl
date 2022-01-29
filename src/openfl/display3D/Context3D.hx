@@ -1,15 +1,11 @@
 package openfl.display3D;
 
 #if !flash
-import openfl._internal.backend.gl.GLBuffer;
-import openfl._internal.backend.gl.GLFramebuffer;
-import openfl._internal.backend.gl.GLTexture;
-import openfl._internal.renderer.context3D.Context3DState;
-import openfl._internal.renderer.BitmapDataPool;
-import openfl._internal.renderer.SamplerState;
-import openfl._internal.utils.Float32Array;
-import openfl._internal.utils.UInt16Array;
-import openfl._internal.utils.UInt8Array;
+import openfl.display3D._internal.Context3DState;
+import openfl.display3D._internal.GLBuffer;
+import openfl.display3D._internal.GLFramebuffer;
+import openfl.display3D._internal.GLTexture;
+import openfl.display._internal.SamplerState;
 import openfl.display3D.textures.CubeTexture;
 import openfl.display3D.textures.RectangleTexture;
 import openfl.display3D.textures.TextureBase;
@@ -24,6 +20,9 @@ import openfl.events.EventDispatcher;
 import openfl.geom.Matrix3D;
 import openfl.geom.Point;
 import openfl.geom.Rectangle;
+import openfl.utils._internal.Float32Array;
+import openfl.utils._internal.UInt16Array;
+import openfl.utils._internal.UInt8Array;
 import openfl.utils.AGALMiniAssembler;
 import openfl.utils.ByteArray;
 #if lime
@@ -128,7 +127,7 @@ import lime.math.Vector2;
 @:fileXml('tags="haxe,release"')
 @:noDebug
 #end
-@:access(openfl._internal.renderer.context3D.Context3DState)
+@:access(openfl.display3D._internal.Context3DState)
 @:access(openfl.display3D.textures.CubeTexture)
 @:access(openfl.display3D.textures.RectangleTexture)
 @:access(openfl.display3D.textures.TextureBase)
@@ -242,19 +241,21 @@ import lime.math.Vector2;
 		Context3D.
 
 		API totalGPUMemory returns the total memory consumed by the above resources to
-		the user. Default value returned is 0.The total GPU memory returned is in bytes.
+		the user. Default value returned is 0. The total GPU memory returned is in bytes.
 		The information is only provided in Direct mode on mobile, and in Direct and
 		GPU modes on desktop. (On desktop, using `<renderMode>gpu</renderMode>` will
 		fall back to `<renderMode>direct</renderMode>`)
 
 		This API can be used when the SWF version is 32 or later.
 	**/
-	public var totalGPUMemory(default, null):Int = 0;
+	public var totalGPUMemory(get, never):Int;
 
 	@:noCompletion private static var __driverInfo:String;
 	@:noCompletion private static var __glDepthStencil:Int = -1;
 	@:noCompletion private static var __glMaxTextureMaxAnisotropy:Int = -1;
 	@:noCompletion private static var __glMaxViewportDims:Int = -1;
+	@:noCompletion private static var __glMemoryCurrentAvailable:Int = -1;
+	@:noCompletion private static var __glMemoryTotalAvailable:Int = -1;
 	@:noCompletion private static var __glTextureMaxAnisotropy:Int = -1;
 
 	@:noCompletion private var gl:#if lime WebGLRenderContext #else Dynamic #end;
@@ -262,7 +263,6 @@ import lime.math.Vector2;
 	@:noCompletion private var __backBufferTexture:RectangleTexture;
 	@:noCompletion private var __backBufferWantsBestResolution:Bool;
 	@:noCompletion private var __backBufferWantsBestResolutionOnBrowserZoom:Bool;
-	@:noCompletion private var __bitmapDataPool:BitmapDataPool;
 	@:noCompletion private var __cleared:Bool;
 	@:noCompletion private var __context:#if lime RenderContext #else Dynamic #end;
 	@:noCompletion private var __contextState:Context3DState;
@@ -320,9 +320,9 @@ import lime.math.Vector2;
 
 			#if (js && html5)
 			if (extension == null
-				|| extension.MAX_TEXTURE_MAX_ANISOTROPY_EXT == null) extension = gl.getExtension("MOZ_EXT_texture_filter_anisotropic");
+				|| !Reflect.hasField(extension, "MAX_TEXTURE_MAX_ANISOTROPY_EXT")) extension = gl.getExtension("MOZ_EXT_texture_filter_anisotropic");
 			if (extension == null
-				|| extension.MAX_TEXTURE_MAX_ANISOTROPY_EXT == null) extension = gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
+				|| !Reflect.hasField(extension, "MAX_TEXTURE_MAX_ANISOTROPY_EXT")) extension = gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic");
 			#end
 
 			if (extension != null)
@@ -369,6 +369,16 @@ import lime.math.Vector2;
 			}
 			#end
 		}
+
+		if (__glMemoryTotalAvailable == -1)
+		{
+			var extension = gl.getExtension("NVX_gpu_memory_info");
+			if (extension != null)
+			{
+				__glMemoryTotalAvailable = extension.GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX;
+				__glMemoryCurrentAvailable = extension.GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX;
+			}
+		}
 		#end
 
 		if (__driverInfo == null)
@@ -408,8 +418,6 @@ import lime.math.Vector2;
 		__quadIndexBuffer = createIndexBuffer(__quadIndexBufferCount);
 		__quadIndexBuffer.uploadFromTypedArray(data);
 		#end
-
-		__bitmapDataPool = new BitmapDataPool(30, this);
 	}
 
 	/**
@@ -1862,6 +1870,8 @@ import lime.math.Vector2;
 	**/
 	public function setVertexBufferAt(index:Int, buffer:VertexBuffer3D, bufferOffset:Int = 0, format:Context3DVertexBufferFormat = FLOAT_4):Void
 	{
+		if (index < 0) return;
+
 		if (buffer == null)
 		{
 			gl.disableVertexAttribArray(index);
@@ -2371,7 +2381,10 @@ import lime.math.Vector2;
 				else
 				{
 					__bindGLTexture2D(null);
-					gl.uniform1i(__state.program.__agalAlphaSamplerEnabled[sampler].location, 0);
+					if (__state.program.__agalAlphaSamplerEnabled[sampler] != null)
+					{
+						gl.uniform1i(__state.program.__agalAlphaSamplerEnabled[sampler].location, 0);
+					}
 				}
 			}
 
@@ -2401,19 +2414,19 @@ import lime.math.Vector2;
 			var width = 0, height = 0;
 
 			// TODO: Avoid use of Std.is
-			if (Std.is(__state.renderToTexture, Texture))
+			if ((__state.renderToTexture is Texture))
 			{
 				var texture2D:Texture = cast __state.renderToTexture;
 				width = texture2D.__width;
 				height = texture2D.__height;
 			}
-			else if (Std.is(__state.renderToTexture, RectangleTexture))
+			else if ((__state.renderToTexture is RectangleTexture))
 			{
 				var rectTexture:RectangleTexture = cast __state.renderToTexture;
 				width = rectTexture.__width;
 				height = rectTexture.__height;
 			}
-			else if (Std.is(__state.renderToTexture, CubeTexture))
+			else if ((__state.renderToTexture is CubeTexture))
 			{
 				var cubeTexture:CubeTexture = cast __state.renderToTexture;
 				width = cubeTexture.__size;
@@ -2654,6 +2667,22 @@ import lime.math.Vector2;
 	@:noCompletion private function set_enableErrorChecking(value:Bool):Bool
 	{
 		return __enableErrorChecking = value;
+	}
+
+	@:noCompletion private function get_totalGPUMemory():Int
+	{
+		if (__glMemoryCurrentAvailable != -1)
+		{
+			// TODO: Return amount used by this application only
+			var current = gl.getParameter(__glMemoryCurrentAvailable);
+			var total = gl.getParameter(__glMemoryTotalAvailable);
+
+			if (total > 0)
+			{
+				return (total - current) * 1024;
+			}
+		}
+		return 0;
 	}
 }
 #else
