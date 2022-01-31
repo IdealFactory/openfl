@@ -2,9 +2,6 @@ package openfl.text;
 
 #if !flash
 import haxe.Timer;
-import openfl._internal.formats.swf.SWFLite;
-import openfl._internal.symbols.DynamicTextSymbol;
-import openfl._internal.symbols.FontSymbol;
 import openfl.text._internal.HTMLParser;
 import openfl.text._internal.TextEngine;
 import openfl.text._internal.TextFormatRange;
@@ -34,11 +31,11 @@ import lime.ui.KeyCode;
 import lime.ui.KeyModifier;
 #end
 #if (js && html5)
-import openfl._internal.renderer.canvas.CanvasGraphics;
-import openfl._internal.renderer.canvas.CanvasTextField;
+import openfl.display._internal.CanvasGraphics;
+import openfl.display._internal.CanvasTextField;
 import js.html.DivElement;
 #elseif lime_cffi
-import openfl._internal.renderer.cairo.CairoGraphics;
+import openfl.display._internal.CairoGraphics;
 #end
 
 /**

@@ -11,7 +11,7 @@ import openfl.display3D.Context3DProgramType;
 import openfl.geom.Matrix3D;
 import openfl.utils.AGALMiniAssembler;
 #end
-import openfl._internal.renderer.context3D.Context3DState;
+import openfl.display3D._internal.Context3DState;
 import openfl.display3D.textures.TextureBase;
 import openfl.events.Event;
 import openfl.events.KeyboardEvent;
@@ -138,7 +138,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		super();
 
 		#if !flash
-		__type = HEAPS_CONTAINER;
+		//TODO  Unknown identifier : __type migration from haxe 4.0.5 to 4.2.4
+//		__type = HEAPS_CONTAINER;
 		#end
 
 		var attributes = Lib.application.window.context.attributes;
@@ -203,7 +204,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		if (__rttQueue != null && __rttQueue.length > 0)
 		{
 			var ctx3d = Lib.current.stage.context3D;
-			var __stateStore:openfl._internal.renderer.context3D.Context3DState = null;
+			var __stateStore:openfl.display3D._internal.Context3DState = null;
 			if (ctx3d.__state != null) __stateStore = ctx3d.__state.clone();
 
 			#if !android

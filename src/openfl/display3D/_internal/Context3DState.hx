@@ -53,6 +53,7 @@ class Context3DState
 	public var textures:Array<TextureBase>;
 	// vertex buffer at?
 	public var shader:Shader; // TODO: Merge shader/program3d
+	public var stateDirty:Bool = false;
 
 	private var __currentGLArrayBuffer:GLBuffer;
 	private var __currentGLElementArrayBuffer:GLBuffer;
@@ -101,6 +102,84 @@ class Context3DState
 
 		#if lime
 		__glBlendEquation = GL.FUNC_ADD;
+		#end
+	}
+
+	public function clone() : Context3DState
+	{
+		var clone = new Context3DState();
+		clone.backBufferEnableDepthAndStencil = backBufferEnableDepthAndStencil;
+		clone.blendDestinationAlphaFactor = blendDestinationAlphaFactor;
+		clone.blendSourceAlphaFactor = blendSourceAlphaFactor;
+		clone.blendDestinationRGBFactor = blendDestinationRGBFactor;
+		clone.blendSourceRGBFactor = blendSourceRGBFactor;
+		clone.colorMaskRed = colorMaskRed;
+		clone.colorMaskGreen = colorMaskGreen;
+		clone.colorMaskBlue = colorMaskBlue;
+		clone.colorMaskAlpha = colorMaskAlpha;
+		clone.culling = culling;
+		clone.depthCompareMode = depthCompareMode;
+		clone.depthMask = depthMask;
+		clone.program = program;
+		clone.renderToTexture = renderToTexture;
+		clone.renderToTextureAntiAlias = renderToTextureAntiAlias;
+		clone.renderToTextureDepthStencil = renderToTextureDepthStencil;
+		clone.renderToTextureSurfaceSelector = renderToTextureSurfaceSelector;
+		clone.samplerStates = samplerStates;
+		clone.scissorEnabled = scissorEnabled;
+		clone.scissorRectangle = scissorRectangle;
+		clone.stencilCompareMode = stencilCompareMode;
+		clone.stencilDepthFail = stencilDepthFail;
+		clone.stencilFail = stencilFail;
+		clone.stencilPass = stencilPass;
+		clone.stencilReadMask = stencilReadMask;
+		clone.stencilReferenceValue = stencilReferenceValue;
+		clone.stencilTriangleFace = stencilTriangleFace;
+		clone.stencilWriteMask = stencilWriteMask;
+		clone.textures = textures;
+		clone.shader = shader;
+		clone.__frontFaceGLCCW = __frontFaceGLCCW;
+		#if lime
+		clone.__glBlendEquation = __glBlendEquation;
+		#end
+		return clone;
+	}
+
+	public function fromState( src:Context3DState)
+	{
+		backBufferEnableDepthAndStencil = src.backBufferEnableDepthAndStencil;
+		blendDestinationAlphaFactor = src.blendDestinationAlphaFactor;
+		blendSourceAlphaFactor = src.blendSourceAlphaFactor;
+		blendDestinationRGBFactor = src.blendDestinationRGBFactor;
+		blendSourceRGBFactor = src.blendSourceRGBFactor;
+		colorMaskRed = src.colorMaskRed;
+		colorMaskGreen = src.colorMaskGreen;
+		colorMaskBlue = src.colorMaskBlue;
+		colorMaskAlpha = src.colorMaskAlpha;
+		culling = src.culling;
+		depthCompareMode = src.depthCompareMode;
+		depthMask = src.depthMask;
+		program = src.program;
+		renderToTexture = src.renderToTexture;
+		renderToTextureAntiAlias = src.renderToTextureAntiAlias;
+		renderToTextureDepthStencil = src.renderToTextureDepthStencil;
+		renderToTextureSurfaceSelector = src.renderToTextureSurfaceSelector;
+		samplerStates = src.samplerStates;
+		scissorEnabled = src.scissorEnabled;
+		scissorRectangle = src.scissorRectangle;
+		stencilCompareMode = src.stencilCompareMode;
+		stencilDepthFail = src.stencilDepthFail;
+		stencilFail = src.stencilFail;
+		stencilPass = src.stencilPass;
+		stencilReadMask = src.stencilReadMask;
+		stencilReferenceValue = src.stencilReferenceValue;
+		stencilTriangleFace = src.stencilTriangleFace;
+		stencilWriteMask = src.stencilWriteMask;
+		textures = src.textures;
+		shader = src.shader;
+		__frontFaceGLCCW = src.__frontFaceGLCCW;
+		#if lime
+		__glBlendEquation = src.__glBlendEquation;
 		#end
 	}
 }

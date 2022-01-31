@@ -2099,7 +2099,7 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 					__renderer.__clear();
 				}
 
-				var ctx:Context3DRenderer = cast __renderer;
+				var ctx:OpenGLRenderer = cast __renderer;
 				HeapsContainer.syncedRenderCalls();
 
 				for (heapsLayer in heapsLayers)

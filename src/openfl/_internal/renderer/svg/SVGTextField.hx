@@ -1,6 +1,6 @@
 package openfl._internal.renderer.svg;
 
-import openfl._internal.text.TextEngine;
+import openfl.text._internal.TextEngine;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.Graphics;
@@ -14,7 +14,7 @@ import openfl.text.SVGFont;
 import js.Browser;
 #end
 
-@:access(openfl._internal.text.TextEngine)
+@:access(openfl.text._internal.TextEngine)
 @:access(openfl.display.Graphics)
 @:access(openfl.geom.Matrix)
 @:access(openfl.text.TextField)

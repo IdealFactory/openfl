@@ -386,7 +386,7 @@ class TextEngine
 
 	public static function getFormatHeight(format:TextFormat):Float
 	{
-		var ascent:Float, descent:Float, leading:Int;
+		var ascent:Float, descent:Float, leading:Float;
 
 		#if (js && html5)
 		__context.font = getFont(format);
@@ -563,7 +563,7 @@ class TextEngine
 
 		var currentLineAscent = 0.0;
 		var currentLineDescent = 0.0;
-		var currentLineLeading:Null<Int> = null;
+		var currentLineLeading:Null<Float> = null;
 		var currentLineHeight = 0.0;
 		var currentLineWidth = 0.0;
 		var currentTextHeight = 0.0;
@@ -726,7 +726,7 @@ class TextEngine
 		var currentFormat = TextField.__defaultTextFormat.clone();
 
 		// line metrics
-		var leading = 0; // the leading of the 0th character in a line is what's used for the whole line
+		var leading = 0.0; // the leading of the 0th character in a line is what's used for the whole line
 		var ascent = 0.0, maxAscent = 0.0;
 		var descent = 0.0;
 
