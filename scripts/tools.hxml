@@ -4,6 +4,7 @@
 -lib hxp
 -lib lime
 -lib format
+-lib svg
 -D lime-cairo
 -D lime-cffi
 -D optional-cffi

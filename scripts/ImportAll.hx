@@ -201,6 +201,7 @@ import openfl.text.FontStyle;
 import openfl.text.FontType;
 import openfl.text.GridFitType;
 import openfl.text.StaticText;
+import openfl.text.SVGFont;
 import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.TextFieldType;
