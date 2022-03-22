@@ -24,7 +24,9 @@ import openfl.net.URLRequest;
 import openfl.ui.Keyboard;
 import openfl.ui.MouseCursor;
 import openfl.Lib;
+#if svg
 import openfl._internal.renderer.svg.SVGTextField;
+#end
 #if lime
 import lime.system.Clipboard;
 import lime.ui.KeyCode;
@@ -1971,6 +1973,7 @@ class TextField extends InteractiveObject
 
 		if (defaultTextFormat.useSVGFont)
 		{
+			#if svg
 			if (__textEngine.bounds.contains(px, py))
 			{
 				if (stack != null && !transparentHitTest)
@@ -1998,7 +2001,7 @@ class TextField extends InteractiveObject
 				}
 				return true;
 			}
-
+			#end
 			return false;
 		}
 		else

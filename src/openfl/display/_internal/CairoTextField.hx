@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+import openfl._internal.renderer.svg.SVGTextField;
 import openfl.text._internal.TextEngine;
 import openfl.display.BitmapData;
 import openfl.display.CairoRenderer;
@@ -441,8 +442,28 @@ class CairoTextField
 		}
 		else
 		{
-			CairoTextField.render(textField, renderer, textField.__worldTransform);
+			if (textField.defaultTextFormat.useSVGFont)
+			{
+				SVGTextField.render(textField, renderer, textField.__worldTransform);
+			}
+			else
+			{
+				CairoTextField.render(textField, renderer, textField.__worldTransform);
+			}
+
+			if (textField.defaultTextFormat.useSVGFont)
+			{
+				renderer.__pushMaskRect(new openfl.geom.Rectangle(0, 0, textField.__svgClipWidth, textField.__svgClipHeight), textField.__renderTransform);
+			}
 			CairoDisplayObject.render(textField, renderer);
+			if (textField.defaultTextFormat.useSVGFont)
+			{
+				renderer.__popMaskRect();
+
+				textField.__dirty = false;
+				textField.__graphics.__softwareDirty = false;
+				textField.__graphics.__dirty = false;
+			}
 		}
 
 		renderer.__renderEvent(textField);

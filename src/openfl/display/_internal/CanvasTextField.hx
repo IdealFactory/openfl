@@ -1,5 +1,6 @@
 package openfl.display._internal;
 
+import openfl._internal.renderer.svg.SVGTextField;
 import openfl.text._internal.HTMLParser;
 import openfl.text._internal.TextEngine;
 import openfl.display.BitmapData;
@@ -416,7 +417,14 @@ class CanvasTextField
 			}
 			else
 			{
-				CanvasTextField.render(textField, renderer, textField.__worldTransform);
+				if (textField.defaultTextFormat.useSVGFont)
+				{
+					SVGTextField.render(textField, renderer, textField.__worldTransform);
+				}
+				else
+				{
+					CanvasTextField.render(textField, renderer, textField.__worldTransform);
+				}
 
 				var smoothingEnabled = false;
 
@@ -430,7 +438,19 @@ class CanvasTextField
 					}
 				}
 
+				if (textField.defaultTextFormat.useSVGFont)
+				{
+					renderer.__pushMaskRect(new openfl.geom.Rectangle(0, 0, textField.__svgClipWidth, textField.__svgClipHeight), textField.__renderTransform);
+				}
 				CanvasDisplayObject.render(textField, renderer);
+				if (textField.defaultTextFormat.useSVGFont)
+				{
+					renderer.__popMaskRect();
+
+					textField.__dirty = false;
+					textField.__graphics.__softwareDirty = false;
+					textField.__graphics.__dirty = false;
+				}
 
 				if (smoothingEnabled)
 				{

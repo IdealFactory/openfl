@@ -253,14 +253,14 @@ class TextEngine
 			if (group.offsetY < y) y = group.offsetY;
 		}
 
-		if (x >= width) x = 2;
-		if (y >= height) y = 2;
+		if (x >= width) x = GUTTER;
+		if (y >= height) y = GUTTER;
 
 		#if (js && html5)
 		var textHeight = textHeight * 1.185; // measurement isn't always accurate, add padding
 		#end
 
-		textBounds.setTo(Math.max(x - 2, 0), Math.max(y - 2, 0), Math.min(textWidth + 4, bounds.width + 4), Math.min(textHeight + 4, bounds.height + 4));
+		textBounds.setTo(Math.max(x - GUTTER, 0), Math.max(y - GUTTER, 0), Math.min(textWidth + GUTTER * 2, bounds.width + GUTTER * 2), Math.min(textHeight + GUTTER * 2, bounds.height + GUTTER * 2));
 	}
 
 	private static function getDefaultFont(name:String, bold:Bool, italic:Bool):Font
@@ -601,18 +601,18 @@ class TextEngine
 			}
 			else
 			{
-				currentLineLeading = Std.int(Math.max(currentLineLeading, group.leading));
+				currentLineLeading = Math.max(currentLineLeading, group.leading);
 			}
 
 			currentLineHeight = Math.max(currentLineHeight, group.height);
-			currentLineWidth = group.offsetX - 2 + group.width;
+			currentLineWidth = group.offsetX - GUTTER + group.width;
 
 			if (currentLineWidth > textWidth)
 			{
 				textWidth = currentLineWidth;
 			}
 
-			currentTextHeight = Math.ceil(group.offsetY - 2 + group.ascent + group.descent);
+			currentTextHeight = group.offsetY - GUTTER + group.ascent + group.descent;
 
 			if (currentTextHeight > textHeight)
 			{
@@ -650,13 +650,13 @@ class TextEngine
 
 			leading = currentFormat.leading;
 
-			heightValue = Math.ceil(ascent + descent + leading);
+			heightValue = ascent + descent + leading;
 
 			currentLineAscent = ascent;
 			currentLineDescent = descent;
 			currentLineLeading = leading;
 
-			currentTextHeight = Math.ceil(ascent + descent);
+			currentTextHeight = ascent + descent;
 			textHeight = currentTextHeight;
 		}
 
@@ -689,21 +689,21 @@ class TextEngine
 			switch (autoSize)
 			{
 				case LEFT, RIGHT, CENTER:
-					if (!wordWrap /*&& (width < textWidth + 4)*/)
+					if (!wordWrap /*&& (width < textWidth + GUTTER * 2)*/)
 					{
-						width = textWidth + 4;
+						width = textWidth + GUTTER * 2;
 					}
 
-					height = textHeight + 4;
+					height = textHeight + GUTTER * 2;
 					bottomScrollV = numLines;
 
 				default:
 			}
 		}
 
-		if (textWidth > width - 4)
+		if (textWidth > width - GUTTER * 2)
 		{
-			maxScrollH = Std.int(textWidth - width + 4); // TODO: incorrect
+			maxScrollH = Std.int(textWidth - width + GUTTER * 2); // TODO: incorrect
 		}
 		else
 		{
@@ -742,7 +742,7 @@ class TextEngine
 		var tabStops = null; // TODO: maybe there's a better init value (not sure what this actually is)
 
 		var layoutGroup:TextLayoutGroup = null, positions = null;
-		var widthValue = 0.0, heightValue = 0, maxHeightValue = 0;
+		var widthValue = 0.0, heightValue = 0.0, maxHeightValue = 0.0;
 		var previousSpaceIndex = -2; // -1 equals not found, -2 saves extra comparison in `breakIndex == previousSpaceIndex`
 		var previousBreakIndex = -1;
 		var spaceIndex = text.indexOf(" ");
@@ -761,6 +761,7 @@ class TextEngine
 		{
 			// TODO: optimize
 
+			var positions = [];
 			var letterSpacing = 0.0;
 
 			if (formatRange.format.letterSpacing != null)
@@ -768,101 +769,136 @@ class TextEngine
 				letterSpacing = formatRange.format.letterSpacing;
 			}
 
-			#if (js && html5)
-			function html5Positions():Array<Float>
+			var f = cast font;
+			var fName:String = f == null ? "" : f.name;
+			var svgFont;
+
+			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(fName)) != null)
 			{
-				var positions = [];
+				var fScale = 1 / svgFont.fontFace.unitsPerEm * formatRange.format.size;
 
-				if (__useIntAdvances == null)
+				for (i in startIndex...endIndex)
 				{
-					__useIntAdvances = ~/Trident\/7.0/.match(Browser.navigator.userAgent); // IE
-				}
-
-				if (__useIntAdvances)
-				{
-					// slower, but more accurate if browser returns Int measurements
-
-					var previousWidth = 0.0;
-					var width;
-
-					for (i in startIndex...endIndex)
+					var g = SVGFont.getGlyph(text.substring(i, i + 1), fName);
+					var advance = 0.;
+					if (g != null)
 					{
-						width = __context.measureText(text.substring(startIndex, i + 1)).width;
-						// if (i > 0) width += letterSpacing;
-
-						positions.push(width - previousWidth);
-
-						previousWidth = width;
+						advance = g.horizAdvX * fScale;
+						if (i != endIndex - 1) advance += (letterSpacing * fScale);
 					}
-				}
-				else
-				{
-					for (i in startIndex...endIndex)
+					#if (js && html5)
+					positions.push(advance);
+					#else
+					if (g != null)
 					{
-						var advance;
-
-						if (i < text.length - 1)
-						{
-							// Advance can be less for certain letter combinations, e.g. 'Yo' vs. 'Do'
-							var nextWidth = __context.measureText(text.charAt(i + 1)).width;
-							var twoWidths = __context.measureText(text.substr(i, 2)).width;
-							advance = twoWidths - nextWidth;
-						}
-						else
-						{
-							advance = __context.measureText(text.charAt(i)).width;
-						}
-
-						// if (i > 0) advance += letterSpacing;
-
-						positions.push(advance);
+						var g = new lime.text.Glyph(g.unicode.charCodeAt(0));
+						var v = new lime.math.Vector2(advance, 0);
+						var glyph = new GlyphPosition(g, v);
+						positions.push(glyph);
 					}
+					#end
 				}
-
 				return positions;
 			}
-			// TODO: Smarter caching for justify
-			if (currentFormat.align == JUSTIFY)
+			else
 			{
-				return html5Positions();
+				#if (js && html5)
+				function html5Positions():Array<Float>
+				{
+					var positions = [];
+
+					if (__useIntAdvances == null)
+					{
+						__useIntAdvances = ~/Trident\/7.0/.match(Browser.navigator.userAgent); // IE
+					}
+
+					if (__useIntAdvances)
+					{
+						// slower, but more accurate if browser returns Int measurements
+
+						var previousWidth = 0.0;
+						var width;
+
+						for (i in startIndex...endIndex)
+						{
+							width = __context.measureText(text.substring(startIndex, i + 1)).width;
+							// if (i > 0) width += letterSpacing;
+
+							positions.push(width - previousWidth);
+
+							previousWidth = width;
+						}
+					}
+					else
+					{
+						for (i in startIndex...endIndex)
+						{
+							var advance;
+
+							if (i < text.length - 1)
+							{
+								// Advance can be less for certain letter combinations, e.g. 'Yo' vs. 'Do'
+								var nextWidth = __context.measureText(text.charAt(i + 1)).width;
+								var twoWidths = __context.measureText(text.substr(i, 2)).width;
+								advance = twoWidths - nextWidth;
+							}
+							else
+							{
+								advance = __context.measureText(text.charAt(i)).width;
+							}
+
+							// if (i > 0) advance += letterSpacing;
+
+							positions.push(advance);
+						}
+					}
+
+					return positions;
+				}
+				// TODO: Smarter caching for justify
+				if (currentFormat.align == JUSTIFY)
+				{
+					return html5Positions();
+				}
+
+				return __shapeCache.cache(formatRange, html5Positions, text.substring(startIndex, endIndex));
+				#else
+				if (__textLayout == null)
+				{
+					__textLayout = new TextLayout();
+				}
+
+				var width = 0.0;
+
+				__textLayout.text = null;
+				__textLayout.font = font;
+
+				if (formatRange.format.size != null)
+				{
+					__textLayout.size = formatRange.format.size;
+				}
+
+				__textLayout.letterSpacing = letterSpacing;
+				__textLayout.autoHint = (antiAliasType != ADVANCED || sharpness < 400);
+
+				// __textLayout.direction = RIGHT_TO_LEFT;
+				// __textLayout.script = ARABIC;
+
+				__textLayout.text = text.substring(startIndex, endIndex);
+
+				// TODO:Smarter caching for justify
+				if (currentFormat.align == JUSTIFY)
+				{
+					return __textLayout.positions;
+				}
+
+				return __shapeCache.cache(formatRange, __textLayout);
+				#end
 			}
-
-			return __shapeCache.cache(formatRange, html5Positions, text.substring(startIndex, endIndex));
-			#else
-			if (__textLayout == null)
-			{
-				__textLayout = new TextLayout();
-			}
-
-			var width = 0.0;
-
-			__textLayout.text = null;
-			__textLayout.font = font;
-
-			if (formatRange.format.size != null)
-			{
-				__textLayout.size = formatRange.format.size;
-			}
-
-			__textLayout.letterSpacing = letterSpacing;
-			__textLayout.autoHint = (antiAliasType != ADVANCED || sharpness < 400);
-
-			// __textLayout.direction = RIGHT_TO_LEFT;
-			// __textLayout.script = ARABIC;
-
-			__textLayout.text = text.substring(startIndex, endIndex);
-
-			// TODO:Smarter caching for justify
-			if (currentFormat.align == JUSTIFY)
-			{
-				return __textLayout.positions;
-			}
-
-			return __shapeCache.cache(formatRange, __textLayout);
-			#end
 		}
 
-		#if !js inline #end function getPositionsWidth(positions:#if (js && html5) Array<Float> #else Array<GlyphPosition> #end):Float
+		/*#if !js inline #end*/
+		function getPositionsWidth(positions:#if (js && html5) Array<Float> #else Array<GlyphPosition> #end):Float
 
 		{
 			var width = 0.0;
@@ -879,7 +915,8 @@ class TextEngine
 			return width;
 		}
 
-		#if !js inline #end function getTextWidth(text:String):Float
+		/*#if !js inline #end*/
+		function getTextWidth(text:String):Float
 
 		{
 			#if (js && html5)
@@ -914,21 +951,24 @@ class TextEngine
 			#end
 		}
 
-		#if !js inline #end function getBaseX():Float
+		/*#if !js inline #end*/
+		function getBaseX():Float
 
 		{
 			// TODO: swap margins in RTL
 			return GUTTER + leftMargin + blockIndent + (firstLineOfParagraph ? indent : 0);
 		}
 
-		#if !js inline #end function getWrapWidth():Float
+		/*#if !js inline #end*/
+		function getWrapWidth():Float
 
 		{
 			// TODO: swap margins in RTL
 			return width - GUTTER - rightMargin - getBaseX();
 		}
 
-		#if !js inline #end function nextLayoutGroup(startIndex, endIndex):Void
+		/*#if !js inline #end*/
+		function nextLayoutGroup(startIndex, endIndex):Void
 
 		{
 			if (layoutGroup == null || layoutGroup.startIndex != layoutGroup.endIndex)
@@ -944,10 +984,20 @@ class TextEngine
 			}
 		}
 
-		#if !js inline #end function setLineMetrics():Void
+		/*#if !js inline #end*/
+		function setLineMetrics():Void
 
 		{
-			if (currentFormat.__ascent != null)
+			var svgFont;
+			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(currentFormat.font)) != null)
+			{
+				ascent = currentFormat.size;
+				descent = currentFormat.size * 0.185;
+				// OR
+				// ascent = (svgFont.fontFace.ascent / svgFont.fontFace.unitsPerEm) * currentFormat.size;
+				// descent = Math.abs((svgFont.fontFace.descent / svgFont.fontFace.unitsPerEm) * currentFormat.size);
+			}
+			else if (currentFormat.__ascent != null)
 			{
 				ascent = currentFormat.size * currentFormat.__ascent;
 				descent = currentFormat.size * currentFormat.__descent;
@@ -967,7 +1017,7 @@ class TextEngine
 
 			leading = currentFormat.leading;
 
-			heightValue = Math.ceil(ascent + descent + leading);
+			heightValue = ascent + descent + leading;
 
 			if (heightValue > maxHeightValue)
 			{
@@ -980,7 +1030,8 @@ class TextEngine
 			}
 		}
 
-		#if !js inline #end function setParagraphMetrics():Void
+		/*#if !js inline #end*/
+		function setParagraphMetrics():Void
 
 		{
 			firstLineOfParagraph = true;
@@ -1002,7 +1053,8 @@ class TextEngine
 			}
 		}
 
-		#if !js inline #end function nextFormatRange():Bool
+		/*#if !js inline #end*/
+		function nextFormatRange():Bool
 
 		{
 			if (rangeIndex < textFormatRanges.length - 1)
@@ -1023,7 +1075,8 @@ class TextEngine
 			return false;
 		}
 
-		#if !js inline #end function setFormattedPositions(startIndex:Int, endIndex:Int)
+		/*#if !js inline #end*/
+		function setFormattedPositions(startIndex:Int, endIndex:Int)
 
 		{
 			// sets the positions of the text from start to end, including format changes if there are any
@@ -1079,7 +1132,8 @@ class TextEngine
 			}
 		}
 
-		#if !js inline #end function placeFormattedText(endIndex:Int):Void
+		/*#if !js inline #end*/
+		function placeFormattedText(endIndex:Int):Void
 
 		{
 			if (endIndex <= formatRange.end)
@@ -1157,7 +1211,8 @@ class TextEngine
 			textIndex = endIndex;
 		}
 
-		#if !js inline #end function alignBaseline():Void
+		/*#if !js inline #end*/
+		function alignBaseline():Void
 
 		{
 			// aligns the baselines of all characters in a single line
@@ -1188,7 +1243,8 @@ class TextEngine
 			firstLineOfParagraph = false; // TODO: need to thoroughly test this
 		}
 
-		#if !js inline #end function breakLongWords(endIndex:Int):Void
+		/*#if !js inline #end*/
+		function breakLongWords(endIndex:Int):Void
 
 		{
 			// breaks up words that are too long to fit in a single line
@@ -1267,7 +1323,8 @@ class TextEngine
 			// positions only contains the final unbroken line at the end
 		}
 
-		#if !js inline #end function placeText(endIndex:Int):Void
+		/*#if !js inline #end*/
+		function placeText(endIndex:Int):Void
 
 		{
 			if (width >= GUTTER * 2 && wordWrap)
@@ -1619,7 +1676,7 @@ class TextEngine
 	{
 		var lineIndex = -1;
 		var offsetX = 0.0;
-		var totalWidth = this.width - 4; // TODO: do margins and stuff affect this?
+		var totalWidth = this.width -  GUTTER * 2; // TODO: do margins and stuff affect this?
 		var group, lineLength;
 		var lineMeasurementsDirty = false;
 
@@ -1637,7 +1694,7 @@ class TextEngine
 					case CENTER:
 						if (lineWidths[lineIndex] < totalWidth)
 						{
-							offsetX = Math.round((totalWidth - lineWidths[lineIndex]) / 2);
+							offsetX =(totalWidth - lineWidths[lineIndex]) / 2;
 						}
 						else
 						{
@@ -1647,7 +1704,7 @@ class TextEngine
 					case RIGHT:
 						if (lineWidths[lineIndex] < totalWidth)
 						{
-							offsetX = Math.round(totalWidth - lineWidths[lineIndex]);
+							offsetX = totalWidth - lineWidths[lineIndex];
 						}
 						else
 						{

@@ -309,7 +309,9 @@ class TextFormat
 
 		newFormat.__cacheKey = __toCacheKey();
 
+		#if svg
 		newFormat.useSVGFont = useSVGFont;
+		#end
 
 		newFormat.stroke = stroke;
 		newFormat.strokeWidth = strokeWidth;
@@ -341,7 +343,9 @@ class TextFormat
 		if (format.__ascent != null) __ascent = format.__ascent;
 		if (format.__descent != null) __descent = format.__descent;
 
+		#if svg
 		if (format.useSVGFont != null) useSVGFont = format.useSVGFont;
+		#end
 
 		if (format.stroke != null) stroke = format.stroke;
 		if (format.stroke != null) strokeWidth = format.strokeWidth;
