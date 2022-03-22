@@ -260,7 +260,8 @@ class TextEngine
 		var textHeight = textHeight * 1.185; // measurement isn't always accurate, add padding
 		#end
 
-		textBounds.setTo(Math.max(x - GUTTER, 0), Math.max(y - GUTTER, 0), Math.min(textWidth + GUTTER * 2, bounds.width + GUTTER * 2), Math.min(textHeight + GUTTER * 2, bounds.height + GUTTER * 2));
+		textBounds.setTo(Math.max(x - GUTTER, 0), Math.max(y - GUTTER, 0), Math.min(textWidth + GUTTER * 2, bounds.width + GUTTER * 2),
+			Math.min(textHeight + GUTTER * 2, bounds.height + GUTTER * 2));
 	}
 
 	private static function getDefaultFont(name:String, bold:Bool, italic:Bool):Font
@@ -897,9 +898,7 @@ class TextEngine
 			}
 		}
 
-		/*#if !js inline #end*/
-		function getPositionsWidth(positions:#if (js && html5) Array<Float> #else Array<GlyphPosition> #end):Float
-
+		#if !js inline #end function getPositionsWidth(positions:#if (js && html5) Array<Float> #else Array<GlyphPosition> #end):Float
 		{
 			var width = 0.0;
 
@@ -915,9 +914,7 @@ class TextEngine
 			return width;
 		}
 
-		/*#if !js inline #end*/
-		function getTextWidth(text:String):Float
-
+		#if !js inline #end function getTextWidth(text:String):Float
 		{
 			#if (js && html5)
 			return __context.measureText(text).width;
@@ -951,25 +948,19 @@ class TextEngine
 			#end
 		}
 
-		/*#if !js inline #end*/
-		function getBaseX():Float
-
+		#if !js inline #end function getBaseX():Float
 		{
 			// TODO: swap margins in RTL
 			return GUTTER + leftMargin + blockIndent + (firstLineOfParagraph ? indent : 0);
 		}
 
-		/*#if !js inline #end*/
-		function getWrapWidth():Float
-
+		#if !js inline #end function getWrapWidth():Float
 		{
 			// TODO: swap margins in RTL
 			return width - GUTTER - rightMargin - getBaseX();
 		}
 
-		/*#if !js inline #end*/
-		function nextLayoutGroup(startIndex, endIndex):Void
-
+		#if !js inline #end function nextLayoutGroup(startIndex, endIndex):Void
 		{
 			if (layoutGroup == null || layoutGroup.startIndex != layoutGroup.endIndex)
 			{
@@ -984,9 +975,7 @@ class TextEngine
 			}
 		}
 
-		/*#if !js inline #end*/
-		function setLineMetrics():Void
-
+		#if !js inline #end function setLineMetrics():Void
 		{
 			var svgFont;
 			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(currentFormat.font)) != null)
@@ -1030,9 +1019,7 @@ class TextEngine
 			}
 		}
 
-		/*#if !js inline #end*/
-		function setParagraphMetrics():Void
-
+		#if !js inline #end function setParagraphMetrics():Void
 		{
 			firstLineOfParagraph = true;
 
@@ -1053,9 +1040,7 @@ class TextEngine
 			}
 		}
 
-		/*#if !js inline #end*/
-		function nextFormatRange():Bool
-
+		#if !js inline #end function nextFormatRange():Bool
 		{
 			if (rangeIndex < textFormatRanges.length - 1)
 			{
@@ -1075,9 +1060,7 @@ class TextEngine
 			return false;
 		}
 
-		/*#if !js inline #end*/
-		function setFormattedPositions(startIndex:Int, endIndex:Int)
-
+		#if !js inline #end function setFormattedPositions(startIndex:Int, endIndex:Int)
 		{
 			// sets the positions of the text from start to end, including format changes if there are any
 			if (startIndex >= endIndex)
@@ -1132,9 +1115,7 @@ class TextEngine
 			}
 		}
 
-		/*#if !js inline #end*/
-		function placeFormattedText(endIndex:Int):Void
-
+		#if !js inline #end function placeFormattedText(endIndex:Int):Void
 		{
 			if (endIndex <= formatRange.end)
 			{
@@ -1211,9 +1192,7 @@ class TextEngine
 			textIndex = endIndex;
 		}
 
-		/*#if !js inline #end*/
-		function alignBaseline():Void
-
+		#if !js inline #end function alignBaseline():Void
 		{
 			// aligns the baselines of all characters in a single line
 
@@ -1243,9 +1222,7 @@ class TextEngine
 			firstLineOfParagraph = false; // TODO: need to thoroughly test this
 		}
 
-		/*#if !js inline #end*/
-		function breakLongWords(endIndex:Int):Void
-
+		#if !js inline #end function breakLongWords(endIndex:Int):Void
 		{
 			// breaks up words that are too long to fit in a single line
 
@@ -1323,9 +1300,7 @@ class TextEngine
 			// positions only contains the final unbroken line at the end
 		}
 
-		/*#if !js inline #end*/
-		function placeText(endIndex:Int):Void
-
+		#if !js inline #end function placeText(endIndex:Int):Void
 		{
 			if (width >= GUTTER * 2 && wordWrap)
 			{
@@ -1676,7 +1651,7 @@ class TextEngine
 	{
 		var lineIndex = -1;
 		var offsetX = 0.0;
-		var totalWidth = this.width -  GUTTER * 2; // TODO: do margins and stuff affect this?
+		var totalWidth = this.width - GUTTER * 2; // TODO: do margins and stuff affect this?
 		var group, lineLength;
 		var lineMeasurementsDirty = false;
 
@@ -1694,7 +1669,7 @@ class TextEngine
 					case CENTER:
 						if (lineWidths[lineIndex] < totalWidth)
 						{
-							offsetX =(totalWidth - lineWidths[lineIndex]) / 2;
+							offsetX = (totalWidth - lineWidths[lineIndex]) / 2;
 						}
 						else
 						{
