@@ -90,7 +90,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	@:noCompletion private var __heapsDirty:Bool = true;
 
 	@:noCompletion private var __mousePoint:Point = new Point();
-	@:noCompletion private var __touchMoveInitialPoints:Array<Point> = [];
+	@:noCompletion private var __touchMoveInitialPoints:Map<Int, Point> = [];
 	@:noCompletion private var __touchMoveDistance:Float = 10;
 	@:noCompletion private var __localPoint:Point = new Point();
 	#if flash
@@ -136,11 +136,6 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		__rttCallbackQueue = [];
 
 		super();
-
-		#if !flash
-		//TODO  Unknown identifier : __type migration from haxe 4.0.5 to 4.2.4
-//		__type = HEAPS_CONTAINER;
-		#end
 
 		var attributes = Lib.application.window.context.attributes;
 		h3d.Engine.ANTIALIASING = attributes.antialiasing;
