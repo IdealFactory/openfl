@@ -902,13 +902,15 @@ class TextEngine
 		{
 			var width = 0.0;
 
+			var posIdx = 0;
 			for (position in positions)
 			{
 				#if (js && html5)
-				width += position;
+				width += position + (posIdx == positions.length - 1 ? 0 : formatRange.format.letterSpacing);
 				#else
-				width += position.advance.x;
+				width += position.advance.x + (posIdx == positions.length - 1 ? 0 : formatRange.format.letterSpacing);
 				#end
+				posIdx++;
 			}
 
 			return width;
@@ -1652,9 +1654,21 @@ class TextEngine
 		var lineIndex = -1;
 		var offsetX = 0.0;
 		var totalWidth = this.width - GUTTER * 2; // TODO: do margins and stuff affect this?
+		var maxTotalWidth = totalWidth;
 		var group, lineLength;
 		var lineMeasurementsDirty = false;
 
+		for (i in 0...layoutGroups.length)
+		{
+			group = layoutGroups[i];
+			if (group.lineIndex != lineIndex)
+			{
+				lineIndex = group.lineIndex;
+				if (lineWidths[lineIndex] > maxTotalWidth) maxTotalWidth = lineWidths[lineIndex];
+			}
+		}
+
+		lineIndex = -1;
 		for (i in 0...layoutGroups.length)
 		{
 			group = layoutGroups[i];
@@ -1667,9 +1681,9 @@ class TextEngine
 				switch (group.format.align)
 				{
 					case CENTER:
-						if (lineWidths[lineIndex] < totalWidth)
+						if (lineWidths[lineIndex] < maxTotalWidth)
 						{
-							offsetX = (totalWidth - lineWidths[lineIndex]) / 2;
+							offsetX = (maxTotalWidth - lineWidths[lineIndex]) / 2;
 						}
 						else
 						{
@@ -1677,9 +1691,9 @@ class TextEngine
 						}
 
 					case RIGHT:
-						if (lineWidths[lineIndex] < totalWidth)
+						if (lineWidths[lineIndex] < maxTotalWidth)
 						{
-							offsetX = totalWidth - lineWidths[lineIndex];
+							offsetX = maxTotalWidth - lineWidths[lineIndex];
 						}
 						else
 						{
