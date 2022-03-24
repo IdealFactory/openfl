@@ -1186,16 +1186,6 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 	@:noCompletion private function __createRenderer():Void
 	{
 		#if lime
-		#if (js && html5)
-		var pixelRatio = 1;
-
-		if (window.scale > 1)
-		{
-			// TODO: Does this check work?
-			pixelRatio = untyped window.devicePixelRatio || 1;
-		}
-		#end
-
 		var windowWidth = Std.int(window.width * window.scale);
 		var windowHeight = Std.int(window.height * window.scale);
 
@@ -1212,13 +1202,11 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 			case CANVAS:
 				#if (js && html5)
 				__renderer = new CanvasRenderer(window.context.canvas2D);
-				cast(__renderer, CanvasRenderer).pixelRatio = pixelRatio;
 				#end
 
 			case DOM:
 				#if (js && html5)
 				__renderer = new DOMRenderer(window.context.dom);
-				cast(__renderer, DOMRenderer).pixelRatio = pixelRatio;
 				#end
 
 			case CAIRO:
@@ -1232,8 +1220,13 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		if (__renderer != null)
 		{
 			__renderer.__allowSmoothing = (quality != LOW);
+			__renderer.__pixelRatio = #if openfl_disable_hdpi 1 #else window.scale #end;
 			__renderer.__worldTransform = __displayMatrix;
 			__renderer.__stage = this;
+
+			#if (js && html5 && dom && !openfl_disable_hdpi)
+			__renderer.__pixelRatio = Browser.window.devicePixelRatio;
+			#end
 
 			__renderer.__resize(windowWidth, windowHeight);
 		}
@@ -3040,15 +3033,14 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		var windowWidth = Std.int(window.width * window.scale);
 		var windowHeight = Std.int(window.height * window.scale);
 
-		#if (js && html5)
-		__logicalWidth = windowWidth;
-		__logicalHeight = windowHeight;
-		#end
-
 		__displayMatrix.identity();
+
+		// Assuming `fullScreenSourceRect` ignores `stageScaleMode`
 
 		if (fullScreenSourceRect != null && window.fullscreen)
 		{
+			// Should stageWidth / stageHeight be changed?
+
 			stageWidth = Std.int(fullScreenSourceRect.width);
 			stageHeight = Std.int(fullScreenSourceRect.height);
 
@@ -3062,28 +3054,74 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 		}
 		else
 		{
-			if (__logicalWidth == 0 && __logicalHeight == 0)
+			if (__logicalWidth == 0 || __logicalHeight == 0 || scaleMode == NO_SCALE || windowWidth == 0 || windowHeight == 0)
 			{
+				#if openfl_dpi_aware
 				stageWidth = windowWidth;
 				stageHeight = windowHeight;
+				#else
+				stageWidth = Math.round(windowWidth / window.scale);
+				stageHeight = Math.round(windowHeight / window.scale);
+
+				__displayMatrix.scale(window.scale, window.scale);
+				#end
+
+				__displayRect.setTo(0, 0, stageWidth, stageHeight);
 			}
 			else
 			{
 				stageWidth = __logicalWidth;
 				stageHeight = __logicalHeight;
 
-				var scaleX = windowWidth / stageWidth;
-				var scaleY = windowHeight / stageHeight;
-				var targetScale = Math.min(scaleX, scaleY);
+				switch (scaleMode)
+				{
+					case EXACT_FIT:
+						var displayScaleX = windowWidth / stageWidth;
+						var displayScaleY = windowHeight / stageHeight;
 
-				var offsetX = Math.round((windowWidth - (stageWidth * targetScale)) / 2);
-				var offsetY = Math.round((windowHeight - (stageHeight * targetScale)) / 2);
+						__displayMatrix.scale(displayScaleX, displayScaleY);
+						__displayRect.setTo(0, 0, stageWidth, stageHeight);
 
-				__displayMatrix.scale(targetScale, targetScale);
-				__displayMatrix.translate(offsetX, offsetY);
+					case NO_BORDER:
+						var scaleX = windowWidth / stageWidth;
+						var scaleY = windowHeight / stageHeight;
+
+						var scale = Math.max(scaleX, scaleY);
+
+						var scaledWidth = stageWidth * scale;
+						var scaledHeight = stageHeight * scale;
+
+						var visibleWidth = stageWidth - Math.round((scaledWidth - windowWidth) / scale);
+						var visibleHeight = stageHeight - Math.round((scaledHeight - windowHeight) / scale);
+						var visibleX = Math.round((stageWidth - visibleWidth) / 2);
+						var visibleY = Math.round((stageHeight - visibleHeight) / 2);
+
+						__displayMatrix.translate(-visibleX, -visibleY);
+						__displayMatrix.scale(scale, scale);
+
+						__displayRect.setTo(visibleX, visibleY, visibleWidth, visibleHeight);
+
+					default: // SHOW_ALL
+
+						var scaleX = windowWidth / stageWidth;
+						var scaleY = windowHeight / stageHeight;
+
+						var scale = Math.min(scaleX, scaleY);
+
+						var scaledWidth = stageWidth * scale;
+						var scaledHeight = stageHeight * scale;
+
+						var visibleWidth = stageWidth - Math.round((scaledWidth - windowWidth) / scale);
+						var visibleHeight = stageHeight - Math.round((scaledHeight - windowHeight) / scale);
+						var visibleX = Math.round((stageWidth - visibleWidth) / 2);
+						var visibleY = Math.round((stageHeight - visibleHeight) / 2);
+
+						__displayMatrix.translate(-visibleX, -visibleY);
+						__displayMatrix.scale(scale, scale);
+
+						__displayRect.setTo(visibleX, visibleY, visibleWidth, visibleHeight);
+				}
 			}
-
-			__displayRect.setTo(0, 0, stageWidth, stageHeight);
 		}
 
 		if (context3D != null)
@@ -3101,9 +3139,10 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 			__renderer.__resize(windowWidth, windowHeight);
 		}
 
+		__renderDirty = true;
+
 		if (stageWidth != cacheWidth || stageHeight != cacheHeight)
 		{
-			__renderDirty = true;
 			__setTransformDirty();
 
 			var event:Event = null;
@@ -3454,9 +3493,13 @@ class Stage extends DisplayObjectContainer #if lime implements IModule #end
 
 	@:noCompletion private function set_scaleMode(value:StageScaleMode):StageScaleMode
 	{
-		// TODO
+		if (value != __scaleMode)
+		{
+			__scaleMode = value;
+			__resize();
+		}
 
-		return __scaleMode = value;
+		return value;
 	}
 
 	@:noCompletion private override function set_scaleX(value:Float):Float

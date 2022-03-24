@@ -90,6 +90,7 @@ import js.html.CanvasRenderingContext2D;
 	@SuppressWarnings("checkstyle:Dynamic") @:noCompletion private var __cairo:#if lime Cairo #else Dynamic #end;
 	#end
 	@:noCompletion private var __bitmap:BitmapData;
+	@:noCompletion private var __bitmapScale:Float;
 	@:noCompletion private var __svgOffsetX:Float = 0;
 	@:noCompletion private var __svgOffsetY:Float = 0;
 
@@ -106,6 +107,8 @@ import js.html.CanvasRenderingContext2D;
 		__worldTransform = new Matrix();
 		__width = 0;
 		__height = 0;
+
+		__bitmapScale = 1;
 
 		__shaderBufferPool = new ObjectPool<ShaderBuffer>(function() return new ShaderBuffer());
 

@@ -383,7 +383,9 @@ class URLLoader extends EventDispatcher
 
 		__httpRequest.followRedirects = request.followRedirects;
 		__httpRequest.timeout = Std.int(request.idleTimeout);
-		__httpRequest.withCredentials = request.manageCookies;
+		#if (lime >= "8.0.0")
+		__httpRequest.manageCookies = request.manageCookies;
+		#end
 
 		// TODO: Better user agent?
 		var userAgent = request.userAgent;
@@ -399,6 +401,8 @@ class URLLoader extends EventDispatcher
 	{
 		__dispatchStatus();
 
+		#if !hl
+		// can't compare a string against an integer in HashLink
 		if (error == 403)
 		{
 			var event = new SecurityErrorEvent(SecurityErrorEvent.SECURITY_ERROR);
@@ -406,6 +410,7 @@ class URLLoader extends EventDispatcher
 			dispatchEvent(event);
 		}
 		else
+		#end
 		{
 			var event = new IOErrorEvent(IOErrorEvent.IO_ERROR);
 			event.text = Std.string(error);
