@@ -17,6 +17,8 @@ class Context3DTextField
 {
 	public static function render(textField:TextField, renderer:OpenGLRenderer):Void
 	{
+		renderer.__softwareRenderer.__pixelRatio = renderer.__pixelRatio;
+
 		if (textField.defaultTextFormat.useSVGFont)
 		{
 			SVGTextField.render(textField, cast renderer.__softwareRenderer, textField.__worldTransform);
