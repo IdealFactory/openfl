@@ -775,33 +775,6 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		}
 	}
 
-	// var window = Lib.current.stage.window;
-	// var windowWidth = Std.int(window.width * window.scale);
-	// var windowHeight = Std.int(window.height * window.scale);
-	// __width = __width == 0 ? __window.width : __width;
-	// __height = __height == 0 ? __window.height : __height;
-	// if (appInstance != null && __engine != null && __engine.mem != null)
-	// {
-	// 	#if flash
-	// 	setupRenderTarget();
-	// 	#end
-	// 	__engine.width = Std.int(window.width * window.scale);
-	// 	__engine.height = Std.int(window.height * window.scale);
-	// 	#if flash
-	// 	var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
-	// 	@:privateAccess driver.ctx.configureBackBuffer(windowWidth, windowHeight, driver.antiAlias);
-	// 	driver.width = __width;
-	// 	driver.height = __height;
-	// 	#else
-	// 	trace("WINDOW: xy:" + x + "/" + y + " win.wh:" + window.width + "/" + window.height + " win.sc:" + window.scale);
-	// 	__engine.offset(Std.int(x), (window.height - __height - Std.int(y)));
-	// 	__engine.resize(Std.int(windowWidth), Std.int(windowHeight));
-	// 	#end
-	// 	__window.windowWidth = windowWidth;
-	// 	__window.windowHeight = windowHeight;
-	// 	__engine.onWindowResize();
-	// }
-
 	@:keep @:noCompletion private function __onMouseDown(me:MouseEvent):Void
 	{
 		__mousePoint.x = me.localX;
