@@ -744,6 +744,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 	@:keep @:noCompletion private function __onResize(e:openfl.events.Event)
 	{
+		var window = Lib.current.stage.window;
 		__width = __width == 0 ? Lib.current.stage.stageWidth : __width;
 		__height = __height == 0 ? Lib.current.stage.stageHeight : __height;
 
@@ -753,22 +754,53 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			setupRenderTarget();
 			#end
 
-			__engine.width = __width;
-			__engine.height = __height;
+			var scaledDPIWid = Std.int(__width * window.scale);
+			var scaledDPIHgt = Std.int(__height * window.scale);
+			__engine.width = scaledDPIWid;
+			__engine.height = scaledDPIHgt;
+			var offX = Std.int(x * window.scale);
+			var offY = Std.int((Lib.current.stage.stageHeight - __height - y) * window.scale);
 			#if flash
 			var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
-			@:privateAccess driver.ctx.configureBackBuffer(Std.int(Lib.current.stage.stageWidth), Std.int(Lib.current.stage.stageHeight), driver.antiAlias);
-			driver.width = __width;
-			driver.height = __height;
+			@:privateAccess driver.ctx.configureBackBuffer(window.width, window.height, driver.antiAlias);
+			driver.width = scaledDPIWid;
+			driver.height = scaledDPIHgt;
 			#else
-			__engine.offset(Std.int(x), Lib.current.stage.stageHeight - __height - Std.int(y));
-			__engine.resize(__width, __height);
+			__engine.offset(offX, offY);
+			__engine.resize(scaledDPIWid, scaledDPIHgt);
 			#end
-			__window.windowWidth = __width;
-			__window.windowHeight = __height;
+			__window.windowWidth = scaledDPIWid;
+			__window.windowHeight = scaledDPIHgt;
 			__engine.onWindowResize();
 		}
 	}
+
+	// var window = Lib.current.stage.window;
+	// var windowWidth = Std.int(window.width * window.scale);
+	// var windowHeight = Std.int(window.height * window.scale);
+	// __width = __width == 0 ? __window.width : __width;
+	// __height = __height == 0 ? __window.height : __height;
+	// if (appInstance != null && __engine != null && __engine.mem != null)
+	// {
+	// 	#if flash
+	// 	setupRenderTarget();
+	// 	#end
+	// 	__engine.width = Std.int(window.width * window.scale);
+	// 	__engine.height = Std.int(window.height * window.scale);
+	// 	#if flash
+	// 	var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
+	// 	@:privateAccess driver.ctx.configureBackBuffer(windowWidth, windowHeight, driver.antiAlias);
+	// 	driver.width = __width;
+	// 	driver.height = __height;
+	// 	#else
+	// 	trace("WINDOW: xy:" + x + "/" + y + " win.wh:" + window.width + "/" + window.height + " win.sc:" + window.scale);
+	// 	__engine.offset(Std.int(x), (window.height - __height - Std.int(y)));
+	// 	__engine.resize(Std.int(windowWidth), Std.int(windowHeight));
+	// 	#end
+	// 	__window.windowWidth = windowWidth;
+	// 	__window.windowHeight = windowHeight;
+	// 	__engine.onWindowResize();
+	// }
 
 	@:keep @:noCompletion private function __onMouseDown(me:MouseEvent):Void
 	{
