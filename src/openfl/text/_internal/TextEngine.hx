@@ -801,6 +801,7 @@ class TextEngine
 			var fName:String = f == null ? "" : f.name;
 			var svgFont;
 
+			#if svg
 			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(fName)) != null)
 			{
 				var fScale = 1 / svgFont.fontFace.unitsPerEm * formatRange.format.size;
@@ -829,6 +830,7 @@ class TextEngine
 				return positions;
 			}
 			else
+			#end
 			{
 				#if (js && html5)
 				function html5Positions():Array<Float>
@@ -1013,6 +1015,7 @@ class TextEngine
 
 		{
 			var svgFont;
+			#if svg
 			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(currentFormat.font)) != null)
 			{
 				ascent = currentFormat.size;
@@ -1021,23 +1024,24 @@ class TextEngine
 				// ascent = (svgFont.fontFace.ascent / svgFont.fontFace.unitsPerEm) * currentFormat.size;
 				// descent = Math.abs((svgFont.fontFace.descent / svgFont.fontFace.unitsPerEm) * currentFormat.size);
 			}
-			else if (currentFormat.__ascent != null)
-			{
+			else
+			#end if (currentFormat.__ascent != null)
+		{
 				ascent = currentFormat.size * currentFormat.__ascent;
 				descent = currentFormat.size * currentFormat.__descent;
-			}
-			else if (#if lime font != null && font.unitsPerEM != 0 #else false #end)
-			{
+		}
+		else if (#if lime font != null && font.unitsPerEM != 0 #else false #end)
+		{
 				#if lime
 				ascent = (font.ascender / font.unitsPerEM) * currentFormat.size;
 				descent = Math.abs((font.descender / font.unitsPerEM) * currentFormat.size);
 				#end
-			}
-			else
-			{
+		}
+		else
+		{
 				ascent = currentFormat.size;
 				descent = currentFormat.size * 0.185;
-			}
+		}
 
 			leading = currentFormat.leading;
 

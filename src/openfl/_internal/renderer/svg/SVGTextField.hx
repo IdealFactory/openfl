@@ -1,13 +1,14 @@
 package openfl._internal.renderer.svg;
 
+import openfl.text.TextField;
+import openfl.geom.Matrix;
+#if svg
 import openfl.text._internal.TextEngine;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.Graphics;
-import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
 import openfl.geom.Point;
-import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.SVGFont;
 #if js
@@ -286,3 +287,9 @@ class SVGTextField
 		return svg;
 	}
 }
+#else
+class SVGTextField
+{
+	public static inline function render(textField:TextField, renderer:Dynamic, transform:Matrix):Void {}
+}
+#end

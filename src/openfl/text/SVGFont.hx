@@ -1,5 +1,6 @@
 package openfl.text;
 
+#if svg
 import haxe.xml.Access;
 import format.SVG;
 import format.svg.Font;
@@ -205,3 +206,6 @@ class SVGFontProcessor
 		return inDef;
 	}
 }
+#else
+class SVGFont {}
+#end
