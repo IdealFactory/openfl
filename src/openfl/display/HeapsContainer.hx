@@ -246,6 +246,10 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				__x = Std.int(x);
 				__y = Std.int(y);
 
+				__engine.drawTriangles = 0;
+				__engine.shaderSwitches = 0;
+				__engine.drawCalls = 0;
+
 				__engine.driver.begin(hxd.Timer.frameCount);
 
 				#if (!js && !flash)
