@@ -246,10 +246,6 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				__x = Std.int(x);
 				__y = Std.int(y);
 
-				__engine.drawTriangles = 0;
-				__engine.shaderSwitches = 0;
-				__engine.drawCalls = 0;
-
 				__engine.driver.begin(hxd.Timer.frameCount);
 
 				#if (!js && !flash)
@@ -275,6 +271,14 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 				var stg = Lib.current.stage;
 				var ctx = Lib.current.stage.context3D;
+				if (ctx.__contextState.shader != null)
+				{
+					@:privateAccess ctx.__contextState.shader.__disable();
+				}
+				if (ctx.__contextState.program != null)
+				{
+					@:privateAccess ctx.__contextState.program.__disable();
+				}
 
 				// Ensure all the cached render states are cleared for a new render
 				@:privateAccess __engine.needFlushTarget = true;
@@ -749,8 +753,10 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	@:keep @:noCompletion private function __onResize(e:openfl.events.Event)
 	{
 		var window = Lib.current.stage.window;
-		__width = __width == 0 ? Lib.current.stage.stageWidth : __width;
-		__height = __height == 0 ? Lib.current.stage.stageHeight : __height;
+		trace("OnResize-Start: xy:" + x + "/" + y + " stage.wh:" + window.width + "/" + window.height + " win.sc:" + window.scale + " __wh:" + __width + "/"
+			+ __height);
+		__width = __width == 0 ? Lib.current.stage.stageWidth * 2 : __width;
+		__height = __height == 0 ? Lib.current.stage.stageHeight * 2 : __height;
 
 		if (appInstance != null && __engine != null && __engine.mem != null)
 		{
@@ -758,26 +764,51 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			setupRenderTarget();
 			#end
 
-			var scaledDPIWid = Std.int(__width * window.scale);
-			var scaledDPIHgt = Std.int(__height * window.scale);
-			__engine.width = scaledDPIWid;
-			__engine.height = scaledDPIHgt;
-			var offX = Std.int(x * window.scale);
-			var offY = Std.int((Lib.current.stage.stageHeight - __height - y) * window.scale);
+			__engine.width = __width;
+			__engine.height = __height;
 			#if flash
 			var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
 			@:privateAccess driver.ctx.configureBackBuffer(window.width, window.height, driver.antiAlias);
-			driver.width = scaledDPIWid;
-			driver.height = scaledDPIHgt;
+			driver.width = __width;
+			driver.height = __height;
 			#else
-			__engine.offset(offX, offY);
-			__engine.resize(scaledDPIWid, scaledDPIHgt);
+			__engine.offset(Std.int(x), (window.height * 2) - __height - Std.int(y));
+			__engine.resize(__width, __height);
 			#end
-			__window.windowWidth = scaledDPIWid;
-			__window.windowHeight = scaledDPIHgt;
+			__window.windowWidth = __width;
+			__window.windowHeight = __height;
 			__engine.onWindowResize();
+			trace("OnResize-End: xy:" + x + "/" + y + " stage.wh:" + window.width + "/" + window.height + " win.sc:" + window.scale + " __wh:" + __width
+				+ "/" + __height);
 		}
 	}
+
+	// var window = Lib.current.stage.window;
+	// var windowWidth = Std.int(window.width * window.scale);
+	// var windowHeight = Std.int(window.height * window.scale);
+	// __width = __width == 0 ? __window.width : __width;
+	// __height = __height == 0 ? __window.height : __height;
+	// if (appInstance != null && __engine != null && __engine.mem != null)
+	// {
+	// 	#if flash
+	// 	setupRenderTarget();
+	// 	#end
+	// 	__engine.width = Std.int(window.width * window.scale);
+	// 	__engine.height = Std.int(window.height * window.scale);
+	// 	#if flash
+	// 	var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
+	// 	@:privateAccess driver.ctx.configureBackBuffer(windowWidth, windowHeight, driver.antiAlias);
+	// 	driver.width = __width;
+	// 	driver.height = __height;
+	// 	#else
+	// 	trace("WINDOW: xy:" + x + "/" + y + " win.wh:" + window.width + "/" + window.height + " win.sc:" + window.scale);
+	// 	__engine.offset(Std.int(x), (window.height - __height - Std.int(y)));
+	// 	__engine.resize(Std.int(windowWidth), Std.int(windowHeight));
+	// 	#end
+	// 	__window.windowWidth = windowWidth;
+	// 	__window.windowHeight = windowHeight;
+	// 	__engine.onWindowResize();
+	// }
 
 	@:keep @:noCompletion private function __onMouseDown(me:MouseEvent):Void
 	{
@@ -786,7 +817,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(EPush, __mousePoint.x * Lib.current.stage.window.scale, __mousePoint.y * Lib.current.stage.window.scale);
+			var e = new Event(EPush, __mousePoint.x, __mousePoint.y);
 			appInstance.sevents.onEvent(e);
 		}
 	}
@@ -798,15 +829,13 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var evMouseX = __mousePoint.x * Lib.current.stage.window.scale;
-			var evMouseY = __mousePoint.y * Lib.current.stage.window.scale;
 			#if (js || flash)
-			@:privateAccess __window.openFLMouseX = evMouseX;
-			@:privateAccess __window.openFLMouseY = evMouseY;
+			@:privateAccess __window.openFLMouseX = __mousePoint.x;
+			@:privateAccess __window.openFLMouseY = __mousePoint.y;
 			#else
-			appInstance.sevents.setMousePos(evMouseX, evMouseY);
+			appInstance.sevents.setMousePos(__mousePoint.x, __mousePoint.y);
 			#end
-			appInstance.sevents.onEvent(new Event(EMove, evMouseX, evMouseY));
+			appInstance.sevents.onEvent(new Event(EMove, __mousePoint.x, __mousePoint.y));
 			__heapsDirty = true;
 		}
 	}
@@ -818,7 +847,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(ERelease, __mousePoint.x * Lib.current.stage.window.scale, __mousePoint.y * Lib.current.stage.window.scale);
+			var e = new Event(ERelease, __mousePoint.x, __mousePoint.y);
 			appInstance.sevents.onEvent(e);
 		}
 	}
@@ -829,7 +858,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		{
 			if (me.delta != 0)
 			{
-				var e = new Event(EWheel, __mousePoint.x * Lib.current.stage.window.scale, __mousePoint.y * Lib.current.stage.window.scale);
+				var e = new Event(EWheel, __mousePoint.x, __mousePoint.y);
 				e.wheelDelta = -me.delta #if js / 120 #end; // Similar division as in Heaps hxd.Window.js.hx onMouseWheel method.
 				appInstance.sevents.onEvent(e);
 			}
@@ -843,7 +872,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(EPush, __mousePoint.x * Lib.current.stage.window.scale, __mousePoint.y * Lib.current.stage.window.scale);
+			var e = new Event(EPush, __mousePoint.x, __mousePoint.y);
 			e.touchId = te.touchPointID;
 
 			if (isGestureTouchPoints.indexOf(te.touchPointID) == -1) isGestureTouchPoints.push(te.touchPointID);
@@ -861,26 +890,20 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var evMouseX = __mousePoint.x * Lib.current.stage.window.scale;
-			var evMouseY = __mousePoint.y * Lib.current.stage.window.scale;
 			#if (js || flash)
-			@:privateAccess __window.openFLMouseX = evMouseX;
-			@:privateAccess __window.openFLMouseY = evMouseY;
+			@:privateAccess __window.openFLMouseX = __mousePoint.x;
+			@:privateAccess __window.openFLMouseY = __mousePoint.y;
 			#else
-			appInstance.sevents.setMousePos(evMouseX, evMouseY);
+			appInstance.sevents.setMousePos(__mousePoint.x, __mousePoint.y);
 			#end
 
-			trace("TouchPointID: id=" + te.touchPointID + " exists=" + __touchMoveInitialPoints.exists(te.touchPointID));
-			if (__touchMoveInitialPoints.exists(te.touchPointID))
-			{
-				var d = Point.distance(__mousePoint, __touchMoveInitialPoints[te.touchPointID]);
+			var d = Point.distance(__mousePoint, __touchMoveInitialPoints[te.touchPointID]);
 
-				if (d > __touchMoveDistance)
-				{
-					var e = new Event(EMove, evMouseX, evMouseY);
-					e.touchId = te.touchPointID;
-					appInstance.sevents.onEvent(e);
-				}
+			if (d > __touchMoveDistance)
+			{
+				var e = new Event(EMove, __mousePoint.x, __mousePoint.y);
+				e.touchId = te.touchPointID;
+				appInstance.sevents.onEvent(e);
 			}
 		}
 	}
@@ -892,7 +915,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(ERelease, __mousePoint.x * Lib.current.stage.window.scale, __mousePoint.y * Lib.current.stage.window.scale);
+			var e = new Event(ERelease, __mousePoint.x, __mousePoint.y);
 			e.touchId = te.touchPointID;
 			if (isGestureTouchPoints.indexOf(te.touchPointID) != -1) isGestureTouchPoints.remove(te.touchPointID);
 			appInstance.sevents.onEvent(e);
@@ -901,14 +924,14 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 	@:keep @:noCompletion private function __onKeyDown(ke:KeyboardEvent)
 	{
-		var e = new Event(EKeyDown, __mousePoint.x * Lib.current.stage.window.scale, __mousePoint.y * Lib.current.stage.window.scale);
+		var e = new Event(EKeyDown, __mousePoint.x, __mousePoint.y);
 		e.keyCode = ke.keyCode;
 		hxd.Window.getInstance().event(e);
 	}
 
 	@:keep @:noCompletion private function __onKeyUp(ke:KeyboardEvent):Void
 	{
-		var e = new Event(EKeyUp, __mousePoint.x * Lib.current.stage.window.scale, __mousePoint.y * Lib.current.stage.window.scale);
+		var e = new Event(EKeyUp, __mousePoint.x, __mousePoint.y);
 		e.keyCode = ke.keyCode;
 		hxd.Window.getInstance().event(e);
 	}
