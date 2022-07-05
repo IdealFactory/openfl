@@ -2100,6 +2100,7 @@ class TextField extends InteractiveObject
 
 		if (defaultTextFormat.useSVGFont)
 		{
+			#if svg
 			if (__textEngine.bounds.contains(px, py))
 			{
 				if (stack != null && !transparentHitTest)
@@ -2127,7 +2128,7 @@ class TextField extends InteractiveObject
 				}
 				return true;
 			}
-
+			#end
 			return false;
 		}
 		else

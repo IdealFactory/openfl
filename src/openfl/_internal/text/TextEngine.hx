@@ -10,7 +10,9 @@ import openfl.geom.Rectangle;
 import openfl.text.AntiAliasType;
 import openfl.text.Font;
 import openfl.text.GridFitType;
+#if svg
 import openfl.text.SVGFont;
+#end
 import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.TextFieldType;
@@ -553,10 +555,17 @@ class TextEngine
 		}
 		#elseif (mac || ios || tvos)
 		fontList = [
-			systemFontDirectory + "/Georgia.ttf", systemFontDirectory + "/Times.ttf", systemFontDirectory + "/Times New Roman.ttf",
-			systemFontDirectory + "/Cache/Georgia.ttf", systemFontDirectory + "/Cache/Times.ttf", systemFontDirectory + "/Cache/Times New Roman.ttf",
-			systemFontDirectory + "/Core/Georgia.ttf", systemFontDirectory + "/Core/Times.ttf", systemFontDirectory + "/Core/Times New Roman.ttf",
-			systemFontDirectory + "/CoreAddition/Georgia.ttf", systemFontDirectory + "/CoreAddition/Times.ttf",
+			systemFontDirectory + "/Georgia.ttf",
+			systemFontDirectory + "/Times.ttf",
+			systemFontDirectory + "/Times New Roman.ttf",
+			systemFontDirectory + "/Cache/Georgia.ttf",
+			systemFontDirectory + "/Cache/Times.ttf",
+			systemFontDirectory + "/Cache/Times New Roman.ttf",
+			systemFontDirectory + "/Core/Georgia.ttf",
+			systemFontDirectory + "/Core/Times.ttf",
+			systemFontDirectory + "/Core/Times New Roman.ttf",
+			systemFontDirectory + "/CoreAddition/Georgia.ttf",
+			systemFontDirectory + "/CoreAddition/Times.ttf",
 			systemFontDirectory + "/CoreAddition/Times New Roman.ttf"
 		];
 		#elseif linux
@@ -820,7 +829,7 @@ class TextEngine
 		#if !js
 		inline
 		#end
-		function getPositions(text:UTF8String, startIndex:Int, endIndex:Int):Array<#if (js && html5) Float #else GlyphPosition #end>
+		function getPositions(text:UTF8String, startIndex:Int, endIndex:Int):Array< #if (js && html5) Float #else GlyphPosition #end>
 		{
 			// TODO: optimize
 
@@ -836,6 +845,7 @@ class TextEngine
 			var fName:String = f == null ? "" : f.name;
 			var svgFont;
 
+			#if svg
 			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(fName)) != null)
 			{
 				var fScale = 1 / svgFont.fontFace.unitsPerEm * formatRange.format.size;
@@ -865,6 +875,7 @@ class TextEngine
 			}
 			else
 			{
+			#end
 				#if (js && html5)
 				if (__useIntAdvances == null)
 				{
@@ -946,7 +957,9 @@ class TextEngine
 
 				return __textLayout.positions;
 				#end
+			#if svg
 			}
+			#end
 		}
 
 		function getPositionsWidth(positions:#if (js && html5) Array<Float> #else Array<GlyphPosition> #end):Float
@@ -1037,6 +1050,7 @@ class TextEngine
 
 		{
 			var svgFont;
+			#if svg
 			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(currentFormat.font)) != null)
 			{
 				ascent = currentFormat.size;
@@ -1045,7 +1059,9 @@ class TextEngine
 				// ascent = (svgFont.fontFace.ascent / svgFont.fontFace.unitsPerEm) * currentFormat.size;
 				// descent = Math.abs((svgFont.fontFace.descent / svgFont.fontFace.unitsPerEm) * currentFormat.size);
 			}
-			else if (currentFormat.__ascent != null)
+			else
+			#end
+			if (currentFormat.__ascent != null)
 			{
 				ascent = currentFormat.size * currentFormat.__ascent;
 				descent = currentFormat.size * currentFormat.__descent;

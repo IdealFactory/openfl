@@ -57,8 +57,9 @@ class SVGFont
 		return svgFont.getSupportedFontChars();
 	}
 
-	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0, stroke:Null<UInt> = null,
-			strokeWidth:Null<Float> = null, splitStrokeFill:Bool = false):String
+	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0, alpha:Float = 1,
+			stroke:Null<UInt> = null, strokeAlpha:Null<Float> = null, strokeWidth:Null<Float> = null, splitStrokeFill:Bool = false,
+			gradient:Null<String> = null, strokeGradient:Null<String> = null):String
 	{
 		if (text == null || text == "" || font == null || !fontCache.exists(font)) return "";
 
@@ -68,7 +69,7 @@ class SVGFont
 		var fallbackFScale = 1.;
 		if (fallbackFont != null) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
 
-		var content = svgGroup(svgFont, text, x, y, size, spacing, color, stroke, strokeWidth, splitStrokeFill);
+		var content = svgGroup(svgFont, text, x, y, size, spacing, color, alpha, stroke, strokeAlpha, strokeWidth, splitStrokeFill, gradient, strokeGradient);
 
 		#if svgfont_debug
 		trace("SVGContent:\n" + content);
@@ -77,20 +78,36 @@ class SVGFont
 		return content;
 	}
 
-	public static function renderText(text:String, font:String, g:Graphics, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0,
-			stroke:Null<UInt> = null, strokeWidth:Null<Float> = null)
+	public static function renderText(text:String, font:String, g:Graphics, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0, alpha:Float = 1,
+			stroke:Null<UInt> = null, strokeAlpha:Null<Float> = null, strokeWidth:Null<Float> = null, gradient:Null<String>, strokeGradient:Null<String>)
 	{
 		if (text == null || text == "" || font == null || !fontCache.exists(font) || g == null) return;
 
 		var svgFont = fontCache[font];
 
+		var gradientID = null;
+		var ereg_id = ~/id=['|"]([_a-zA-Z0-9]*)['|"]/g;
+		if (gradient != null)
+		{
+			if (ereg_id.match(gradient)) gradientID = ereg_id.matched(1);
+		}
+
+		var strokeGradientID = null;
+		if (strokeGradient != null)
+		{
+			if (ereg_id.match(strokeGradient))
+			{
+				strokeGradientID = ereg_id.matched(1);
+			}
+		}
+
 		var content = '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0" y="0" viewBox="0 0 1000 1000">'
 			+ "\n"
-			+ "<defs>\n" // + "<clipPath id='cut-off-bottom'>\n"
-			// + "  <rect x='0' y='0' width='200' height='100' />\n"
-			// + "</clipPath>\n"
+			+ "<defs>\n"
+			+ (gradient != null ? gradient + "\n" : "")
+			+ (strokeGradient != null ? strokeGradient + "\n" : "")
 			+ "</defs>\n";
-		content += svgGroup(svgFont, text, x, y, size, spacing, color, stroke, strokeWidth);
+		content += svgGroup(svgFont, text, x, y, size, spacing, color, alpha, stroke, strokeAlpha, strokeWidth, false, gradientID, strokeGradientID);
 		content += '</svg>' + "\n";
 
 		#if svgfont_debug
@@ -102,11 +119,12 @@ class SVGFont
 
 		var data = new SVGData(xml);
 		var renderer = new SVGRenderer(data);
+		g.clear();
 		renderer.render(g);
 	}
 
-	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt, stroke:Null<UInt>, strokeWidth:Null<Float>,
-			splitStrokeFill:Bool = false):String
+	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt, alpha:Float, stroke:Null<UInt>,
+			strokeAlpha:Null<Float>, strokeWidth:Null<Float>, splitStrokeFill:Bool = false, gradientID:Null<String>, strokeGradientID:Null<String>):String
 	{
 		var xOffset = 0.;
 		var yOffset = 0.;
@@ -128,13 +146,23 @@ class SVGFont
 		if (strokeWidth != null && strokeWidth > 0)
 		{
 			var strokeCol = stroke != null ? stroke : 0;
-			strokeSVG = 'stroke="' + "#" + StringTools.hex(strokeCol & 0xFFFFFF, 6) + '" stroke-width="' + (strokeWidth / fScale)
+			strokeSVG = 'stroke="'
+				+ (strokeGradientID == null ? ("#" + StringTools.hex(strokeCol & 0xFFFFFF, 6)) : "url(#" + strokeGradientID + ")")
+				+ '" '
+				+ (strokeAlpha != 1 && strokeGradientID == null ? 'stroke-opacity="' + strokeAlpha + '"' : '')
+				+ ' stroke-width="'
+				+ (strokeWidth / fScale)
 				+ (splitStrokeFill ? '" ' : '" paint-order="stroke fill" ');
 		}
 
-		var fill = 'fill="#' + StringTools.hex(color & 0xFFFFFF, 6) + '" ';
+		var fill = gradientID == null ? 'fill="#' + StringTools.hex(color & 0xFFFFFF, 6) + '" ' : 'fill="url(#' + gradientID + ')" ';
+		if (alpha != 1 && gradientID == null)
+		{
+			fill += 'opacity="' + alpha + '" ';
+		}
 
 		var content = '<g transform="matrix(' + fScale + ' 0 0 -' + fScale + ' ' + x + ' ' + y + ')">' + "\n";
+		var textPath = "";
 		for (cIdx in 0...text.length)
 		{
 			var c = text.substr(cIdx, 1);
@@ -157,24 +185,70 @@ class SVGFont
 
 			if (glyph != null)
 			{
-				content += '    <g transform="matrix(' + scale + ' 0 0 ' + scale + ' ' + xOffset + ' ' + yOffset + ')" >' + "\n";
 				if (splitStrokeFill)
 				{
-					content += '        <path ' + strokeSVG + 'd="' + glyph.path + '" />' + "\n";
-					content += '        <path ' + fill + 'd="' + glyph.path + '" />' + "\n";
+					var p = glyph.path;
+					p = offsetPath(p, xOffset, yOffset);
+					textPath += p + " ";
 				}
 				else
 				{
-					content += '        <path ' + strokeSVG + fill + 'd="' + glyph.path + '" />' + "\n";
+					var p = glyph.path;
+					p = offsetPath(p, xOffset, yOffset);
+					textPath += p + " ";
 				}
-				content += '    </g>' + "\n";
 				xOffset += (glyph.horizAdvX * scale);
 				xOffset += spacing / fScale;
 			}
 		}
+		if (splitStrokeFill)
+		{
+			content += '        <path ' + strokeSVG + 'd="' + textPath + '" />' + "\n";
+			content += '        <path ' + fill + 'd="' + textPath + '" />' + "\n";
+		}
+		else
+		{
+			content += '    <path ' + strokeSVG + fill + 'd="' + textPath + '" />' + "\n";
+		}
 		content += '</g>' + "\n";
 
 		return content;
+	}
+
+	static function offsetPath(p:String, xOff:Float, yOff:Float):String
+	{
+		var ereg_HV = ~/([H|V])([\-0-9\.]+)/g;
+		var ereg_MLT = ~/([M|L|T])([\-0-9\.]+)[\s,]([\-0-9\.]+)/g;
+		var ereg_SQ = ~/([S|Q])([\-0-9\.]+)[\s,]([\-0-9\.]+)([\-0-9\.]+)[\s,]([\-0-9\.]+)/g;
+		var ereg_C = ~/([C])([\-0-9\.]+)[\s,]([\-0-9\.]+)([\-0-9\.]+)[\s,]([\-0-9\.]+)([\-0-9\.]+)[\s,]([\-0-9\.]+)/g;
+		var ereg_A = ~/([A])([\-0-9\.]+)[\s,]([\-0-9\.]+)([\-0-9\.]+)[\s,]([\-0-9\.]+)[\s,]([\-0-9\.]+)[\s,]([\-0-9\.]+)[\s,]([\-0-9\.]+)/g;
+
+		var input = p;
+		// Match H & V - single parameter
+		while (ereg_HV.match(input))
+		{
+			var m = ereg_HV.matched(0);
+			var cmd = ereg_HV.matched(1);
+			var x = Std.parseFloat(ereg_HV.matched(2)) + xOff;
+			trace("Match-HV: m=" + m + " new=" + cmd + x + " offsets=" + xOff);
+			p = StringTools.replace(p, m, cmd + x);
+			input = ereg_HV.matchedRight();
+		}
+
+		// Match M, L, & T - x & y parameters
+		while (ereg_MLT.match(input))
+		{
+			var m = ereg_MLT.matched(0);
+			var cmd = ereg_MLT.matched(1);
+			var x = Std.parseFloat(ereg_MLT.matched(2)) + xOff;
+			var y = Std.parseFloat(ereg_MLT.matched(3)) + yOff;
+			trace("Match-MLT: m=" + m + " new=" + cmd + x + " " + y + " offsets=" + xOff + "/" + yOff);
+			p = StringTools.replace(p, m, cmd + x + " " + y);
+			input = ereg_MLT.matchedRight();
+		}
+
+		// TODO : ereg_SQ, ereg_C & ereg_A
+		return p;
 	}
 }
 

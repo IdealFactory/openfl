@@ -1,13 +1,14 @@
 package openfl._internal.renderer.svg;
 
+import openfl.geom.Matrix;
+import openfl.text.TextField;
+#if svg
 import openfl._internal.text.TextEngine;
 import openfl.display.Bitmap;
 import openfl.display.BitmapData;
 import openfl.display.Graphics;
-import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
 import openfl.geom.Point;
-import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.SVGFont;
 #if js
@@ -124,7 +125,8 @@ class SVGTextField
 						var ty = group.offsetY + group.ascent;
 
 						SVGFont.renderText(groupText, group.format.font, graphics, tx, ty, group.format.size, group.format.letterSpacing, group.format.color,
-							group.format.stroke, group.format.strokeWidth);
+							textField.alpha, group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, group.format.gradient,
+							group.format.strokeGradient);
 
 						if (textField.__caretIndex > -1 && textEngine.selectable)
 						{
@@ -196,8 +198,9 @@ class SVGTextField
 
 									// TODO: fill only once
 									SVGFont.renderText(text.substring(selectionStart, selectionEnd), group.format.font, textField.__graphics, start.x,
-										group.offsetY + group.ascent, group.format.size, group.format.letterSpacing, 0xffffff, group.format.stroke,
-										group.format.strokeWidth);
+										group.offsetY + group.ascent, group.format.size, group.format.letterSpacing, 0xffffff, textField.alpha,
+										group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, group.format.gradient,
+										group.format.strokeGradient);
 								}
 							}
 						}
@@ -280,9 +283,15 @@ class SVGTextField
 			var ty = group.offsetY + group.ascent;
 
 			svg += SVGFont.renderSVGGroup(groupText, group.format.font, tx, ty, group.format.size, group.format.letterSpacing, group.format.color,
-				group.format.stroke, group.format.strokeWidth, splitStrokeFill);
+				group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, splitStrokeFill, group.format.gradient, group.format.strokeGradient);
 		}
 
 		return svg;
 	}
 }
+#else
+class SVGTextField
+{
+	public static inline function render(textField:TextField, renderer:Dynamic, transform:Matrix):Void {}
+}
+#end

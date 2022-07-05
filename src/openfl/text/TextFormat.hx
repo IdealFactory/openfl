@@ -220,9 +220,24 @@ class TextFormat
 	public var stroke:Null<UInt>;
 
 	/**
+	 * SVG Font stroke color
+	 */
+	public var strokeAlpha:Null<Float>;
+
+	/**
 	 * SVG Font stroke width
 	 */
 	public var strokeWidth:Null<Float>;
+
+	/**
+	 * SVG Font gradient fill
+	 */
+	public var gradient:Null<String>;
+
+	/**
+	 * SVG Font stroke gradient
+	 */
+	public var strokeGradient:Null<String>;
 
 	@:noCompletion private var __ascent:Null<Float>;
 	@:noCompletion private var __descent:Null<Float>;
@@ -309,7 +324,10 @@ class TextFormat
 		newFormat.useSVGFont = useSVGFont;
 
 		newFormat.stroke = stroke;
+		newFormat.strokeAlpha = strokeAlpha;
 		newFormat.strokeWidth = strokeWidth;
+		newFormat.gradient = gradient;
+		newFormat.strokeGradient = strokeGradient;
 
 		return newFormat;
 	}
@@ -318,7 +336,11 @@ class TextFormat
 	{
 		if (format.font != null) font = format.font;
 		if (format.size != null) size = format.size;
-		if (format.color != null) color = format.color;
+		if (format.color != null)
+		{
+			color = format.color;
+			gradient = null;
+		}
 		if (format.bold != null) bold = format.bold;
 		if (format.italic != null) italic = format.italic;
 		if (format.underline != null) underline = format.underline;
@@ -340,8 +362,23 @@ class TextFormat
 
 		if (format.useSVGFont != null) useSVGFont = format.useSVGFont;
 
-		if (format.stroke != null) stroke = format.stroke;
-		if (format.stroke != null) strokeWidth = format.strokeWidth;
+		if (format.stroke != null)
+		{
+			stroke = format.stroke;
+			strokeGradient = null;
+		}
+		if (format.strokeAlpha != null) strokeAlpha = format.strokeAlpha;
+		if (format.strokeWidth != null) strokeWidth = format.strokeWidth;
+		if (format.gradient != null)
+		{
+			gradient = format.gradient;
+			color = null;
+		}
+		if (format.strokeGradient != null)
+		{
+			strokeGradient = format.strokeGradient;
+			stroke = null;
+		}
 	}
 }
 #else
