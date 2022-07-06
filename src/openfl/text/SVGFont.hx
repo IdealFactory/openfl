@@ -69,7 +69,27 @@ class SVGFont
 		var fallbackFScale = 1.;
 		if (fallbackFont != null) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
 
-		var content = svgGroup(svgFont, text, x, y, size, spacing, color, alpha, stroke, strokeAlpha, strokeWidth, splitStrokeFill, gradient, strokeGradient);
+		var gradientID = null;
+		var ereg_id = ~/id=['|"]([_a-zA-Z0-9]*)['|"]/g;
+		if (gradient != null)
+		{
+			if (ereg_id.match(gradient)) gradientID = ereg_id.matched(1);
+		}
+
+		var strokeGradientID = null;
+		if (strokeGradient != null)
+		{
+			if (ereg_id.match(strokeGradient))
+			{
+				strokeGradientID = ereg_id.matched(1);
+			}
+		}
+		var content = "<defs>\n"
+			+ (gradient != null ? gradient + "\n" : "")
+			+ (strokeGradient != null ? strokeGradient + "\n" : "")
+			+ "</defs>\n";
+
+		content += svgGroup(svgFont, text, x, y, size, spacing, color, alpha, stroke, strokeAlpha, strokeWidth, splitStrokeFill, gradientID, strokeGradientID);
 
 		#if svgfont_debug
 		trace("SVGContent:\n" + content);
@@ -203,7 +223,7 @@ class SVGFont
 		}
 		if (splitStrokeFill)
 		{
-			content += '        <path ' + strokeSVG + 'd="' + textPath + '" />' + "\n";
+			content += '        <path ' + strokeSVG + 'd="' + textPath + '" fill-opacity="0" />' + "\n";
 			content += '        <path ' + fill + 'd="' + textPath + '" />' + "\n";
 		}
 		else

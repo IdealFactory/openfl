@@ -283,7 +283,8 @@ class SVGTextField
 			var ty = group.offsetY + group.ascent;
 
 			svg += SVGFont.renderSVGGroup(groupText, group.format.font, tx, ty, group.format.size, group.format.letterSpacing, group.format.color,
-				group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, splitStrokeFill, group.format.gradient, group.format.strokeGradient);
+				textField.alpha, group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, splitStrokeFill, group.format.gradient,
+				group.format.strokeGradient);
 		}
 
 		return svg;
