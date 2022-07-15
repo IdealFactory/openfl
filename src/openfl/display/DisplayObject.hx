@@ -1,9 +1,9 @@
 package openfl.display;
 
 #if !flash
-import openfl._internal.renderer.DisplayObjectType;
-import openfl._internal.utils.ObjectPool;
-import openfl._internal.Lib;
+import openfl.display._internal.IBitmapDrawableType;
+import openfl.utils.ObjectPool;
+import openfl.utils._internal.Lib;
 import openfl.errors.TypeError;
 import openfl.events.Event;
 import openfl.events.EventDispatcher;
@@ -164,8 +164,8 @@ import js.html.CSSStyleDeclaration;
 #end
 @:access(lime.graphics.Image)
 @:access(lime.graphics.ImageBuffer)
-@:access(openfl._internal.renderer.context3D.Context3DState)
-@:access(openfl._internal.renderer.context3D.Context3DGraphics)
+@:access(openfl.display3D._internal.Context3DState)
+@:access(openfl.display._internal.Context3DGraphics)
 @:access(openfl.events.Event)
 @:access(openfl.display3D.Context3D)
 @:access(openfl.display.Bitmap)
@@ -178,6 +178,7 @@ import js.html.CSSStyleDeclaration;
 @:access(openfl.geom.ColorTransform)
 @:access(openfl.geom.Matrix)
 @:access(openfl.geom.Rectangle)
+@:access(openfl.geom.Transform)
 class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (openfl_dynamic && haxe_ver < "4.0.0") implements Dynamic<DisplayObject> #end
 {
 	@:noCompletion private static var __broadcastEvents:Map<String, Array<DisplayObject>> = new Map();
@@ -778,7 +779,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		property of the `scrollRect` Rectangle object. You can scroll
 		an object up and down by setting the `y` property of the
 		`scrollRect` Rectangle object. If the display object is rotated
-		90° and you scroll it left and right, the display object actually scrolls
+		90� and you scroll it left and right, the display object actually scrolls
 		up and down.
 	**/
 	public var scrollRect(get, set):Rectangle;
@@ -869,9 +870,9 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		to the local coordinates of the parent DisplayObjectContainer. If the
 		object is inside a DisplayObjectContainer that has transformations, it is
 		in the local coordinate system of the enclosing DisplayObjectContainer.
-		Thus, for a DisplayObjectContainer rotated 90° counterclockwise, the
+		Thus, for a DisplayObjectContainer rotated 90� counterclockwise, the
 		DisplayObjectContainer's children inherit a coordinate system that is
-		rotated 90° counterclockwise. The object's coordinates refer to the
+		rotated 90� counterclockwise. The object's coordinates refer to the
 		registration point position.
 	**/
 	@:keep public var x(get, set):Float;
@@ -881,9 +882,9 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		to the local coordinates of the parent DisplayObjectContainer. If the
 		object is inside a DisplayObjectContainer that has transformations, it is
 		in the local coordinate system of the enclosing DisplayObjectContainer.
-		Thus, for a DisplayObjectContainer rotated 90° counterclockwise, the
+		Thus, for a DisplayObjectContainer rotated 90� counterclockwise, the
 		DisplayObjectContainer's children inherit a coordinate system that is
-		rotated 90° counterclockwise. The object's coordinates refer to the
+		rotated 90� counterclockwise. The object's coordinates refer to the
 		registration point position.
 	**/
 	@:keep public var y(get, set):Float;
@@ -899,14 +900,13 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	@:noCompletion private var __cacheBitmapData:BitmapData;
 	@:noCompletion private var __cacheBitmapData2:BitmapData;
 	@:noCompletion private var __cacheBitmapData3:BitmapData;
-	@:noCompletion private var __cacheBitmapDataTexture:BitmapData;
 	@:noCompletion private var __cacheBitmapMatrix:Matrix;
-	@:noCompletion private var __cacheBitmapRendererHW:DisplayObjectRenderer;
-	@:noCompletion private var __cacheBitmapRendererSW:DisplayObjectRenderer;
+	@:noCompletion private var __cacheBitmapRenderer:DisplayObjectRenderer;
 	@SuppressWarnings("checkstyle:Dynamic") @:noCompletion private var __cairo:#if lime Cairo #else Dynamic #end;
 	@:noCompletion private var __children:Array<DisplayObject>;
 	@:noCompletion private var __customRenderClear:Bool;
 	@:noCompletion private var __customRenderEvent:RenderEvent;
+	@:noCompletion private var __drawableType:IBitmapDrawableType;
 	@:noCompletion private var __filters:Array<BitmapFilter>;
 	@:noCompletion private var __graphics:Graphics;
 	@:noCompletion private var __interactive:Bool;
@@ -934,7 +934,6 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	@:noCompletion private var __tempPoint:Point;
 	@:noCompletion private var __transform:Matrix;
 	@:noCompletion private var __transformDirty:Bool;
-	@:noCompletion private var __type:DisplayObjectType;
 	@:noCompletion private var __visible:Bool;
 	@:noCompletion private var __worldAlpha:Float;
 	@:noCompletion private var __worldAlphaChanged:Bool;
@@ -960,88 +959,88 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	{
 		untyped Object.defineProperties(DisplayObject.prototype, {
 			"alpha": {
-				get: untyped __js__("function () { return this.get_alpha (); }"),
-				set: untyped __js__("function (v) { return this.set_alpha (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_alpha (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_alpha (v); }")
 			},
 			"blendMode": {
-				get: untyped __js__("function () { return this.get_blendMode (); }"),
-				set: untyped __js__("function (v) { return this.set_blendMode (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_blendMode (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_blendMode (v); }")
 			},
 			"cacheAsBitmap": {
-				get: untyped __js__("function () { return this.get_cacheAsBitmap (); }"),
-				set: untyped __js__("function (v) { return this.set_cacheAsBitmap (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_cacheAsBitmap (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_cacheAsBitmap (v); }")
 			},
 			"cacheAsBitmapMatrix": {
-				get: untyped __js__("function () { return this.get_cacheAsBitmapMatrix (); }"),
-				set: untyped __js__("function (v) { return this.set_cacheAsBitmapMatrix (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_cacheAsBitmapMatrix (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_cacheAsBitmapMatrix (v); }")
 			},
 			"filters": {
-				get: untyped __js__("function () { return this.get_filters (); }"),
-				set: untyped __js__("function (v) { return this.set_filters (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_filters (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_filters (v); }")
 			},
 			"height": {
-				get: untyped __js__("function () { return this.get_height (); }"),
-				set: untyped __js__("function (v) { return this.set_height (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_height (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_height (v); }")
 			},
 			"loaderInfo": {
-				get: untyped __js__("function () { return this.get_loaderInfo (); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_loaderInfo (); }")
 			},
 			"mask": {
-				get: untyped __js__("function () { return this.get_mask (); }"),
-				set: untyped __js__("function (v) { return this.set_mask (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_mask (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_mask (v); }")
 			},
 			"mouseX": {
-				get: untyped __js__("function () { return this.get_mouseX (); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_mouseX (); }")
 			},
 			"mouseY": {
-				get: untyped __js__("function () { return this.get_mouseY (); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_mouseY (); }")
 			},
 			"name": {
-				get: untyped __js__("function () { return this.get_name (); }"),
-				set: untyped __js__("function (v) { return this.set_name (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_name (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_name (v); }")
 			},
 			"root": {
-				get: untyped __js__("function () { return this.get_root (); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_root (); }")
 			},
 			"rotation": {
-				get: untyped __js__("function () { return this.get_rotation (); }"),
-				set: untyped __js__("function (v) { return this.set_rotation (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_rotation (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_rotation (v); }")
 			},
 			"scaleX": {
-				get: untyped __js__("function () { return this.get_scaleX (); }"),
-				set: untyped __js__("function (v) { return this.set_scaleX (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_scaleX (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_scaleX (v); }")
 			},
 			"scaleY": {
-				get: untyped __js__("function () { return this.get_scaleY (); }"),
-				set: untyped __js__("function (v) { return this.set_scaleY (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_scaleY (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_scaleY (v); }")
 			},
 			"scrollRect": {
-				get: untyped __js__("function () { return this.get_scrollRect (); }"),
-				set: untyped __js__("function (v) { return this.set_scrollRect (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_scrollRect (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_scrollRect (v); }")
 			},
 			"shader": {
-				get: untyped __js__("function () { return this.get_shader (); }"),
-				set: untyped __js__("function (v) { return this.set_shader (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_shader (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_shader (v); }")
 			},
 			"transform": {
-				get: untyped __js__("function () { return this.get_transform (); }"),
-				set: untyped __js__("function (v) { return this.set_transform (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_transform (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_transform (v); }")
 			},
 			"visible": {
-				get: untyped __js__("function () { return this.get_visible (); }"),
-				set: untyped __js__("function (v) { return this.set_visible (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_visible (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_visible (v); }")
 			},
 			"width": {
-				get: untyped __js__("function () { return this.get_width (); }"),
-				set: untyped __js__("function (v) { return this.set_width (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_width (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_width (v); }")
 			},
 			"x": {
-				get: untyped __js__("function () { return this.get_x (); }"),
-				set: untyped __js__("function (v) { return this.set_x (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_x (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_x (v); }")
 			},
 			"y": {
-				get: untyped __js__("function () { return this.get_y (); }"),
-				set: untyped __js__("function (v) { return this.set_y (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_y (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_y (v); }")
 			},
 		});
 	}
@@ -1051,7 +1050,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 	{
 		super();
 
-		__type = DISPLAY_OBJECT;
+		__drawableType = DISPLAY_OBJECT;
 
 		__alpha = 1;
 		__blendMode = NORMAL;
@@ -1118,13 +1117,13 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 	public override function dispatchEvent(event:Event):Bool
 	{
-		if (Std.is(event, MouseEvent))
+		if ((event is MouseEvent))
 		{
 			var mouseEvent:MouseEvent = cast event;
 			mouseEvent.stageX = __getRenderTransform().__transformX(mouseEvent.localX, mouseEvent.localY);
 			mouseEvent.stageY = __getRenderTransform().__transformY(mouseEvent.localX, mouseEvent.localY);
 		}
-		else if (Std.is(event, TouchEvent))
+		else if ((event is TouchEvent))
 		{
 			var touchEvent:TouchEvent = cast event;
 			touchEvent.stageX = __getRenderTransform().__transformX(touchEvent.localX, touchEvent.localY);
@@ -1387,28 +1386,10 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 			__cacheBitmap = null;
 		}
 
-		if (__cacheBitmapDataTexture != null)
-		{
-			__cacheBitmapDataTexture.dispose();
-			__cacheBitmapDataTexture = null;
-		}
-
 		if (__cacheBitmapData != null)
 		{
 			__cacheBitmapData.dispose();
 			__cacheBitmapData = null;
-		}
-
-		if (__cacheBitmapData2 != null)
-		{
-			__cacheBitmapData2.dispose();
-			__cacheBitmapData2 = null;
-		}
-
-		if (__cacheBitmapData3 != null)
-		{
-			__cacheBitmapData3.dispose();
-			__cacheBitmapData3 = null;
 		}
 	}
 
@@ -1769,7 +1750,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 				if (__objectTransform != null)
 				{
-					__worldColorTransform.__copyFrom(__objectTransform.colorTransform);
+					__worldColorTransform.__copyFrom(__objectTransform.__colorTransform);
 					__worldColorTransform.__combine(renderParent.__worldColorTransform);
 				}
 				else
@@ -1819,7 +1800,7 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 
 				if (__objectTransform != null)
 				{
-					__worldColorTransform.__copyFrom(__objectTransform.colorTransform);
+					__worldColorTransform.__copyFrom(__objectTransform.__colorTransform);
 				}
 				else
 				{
@@ -2285,10 +2266,10 @@ class DisplayObject extends EventDispatcher implements IBitmapDrawable #if (open
 		__setTransformDirty();
 		__objectTransform.matrix = value.matrix;
 
-		if (!__objectTransform.colorTransform.__equals(value.colorTransform, true)
-			|| (!cacheAsBitmap && __objectTransform.colorTransform.alphaMultiplier != value.colorTransform.alphaMultiplier))
+		if (!__objectTransform.__colorTransform.__equals(value.__colorTransform, true)
+			|| (!cacheAsBitmap && __objectTransform.__colorTransform.alphaMultiplier != value.__colorTransform.alphaMultiplier))
 		{
-			__objectTransform.colorTransform.__copyFrom(value.colorTransform);
+			__objectTransform.__colorTransform.__copyFrom(value.colorTransform);
 			__setRenderDirty();
 		}
 

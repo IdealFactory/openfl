@@ -48,8 +48,8 @@ class Font #if lime extends LimeFont #end
 	@:noCompletion private static function __init__()
 	{
 		untyped Object.defineProperty(Font.prototype, "fontName", {
-			get: untyped __js__("function () { return this.get_fontName (); }"),
-			set: untyped __js__("function (v) { return this.set_fontName (v); }")
+			get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_fontName (); }"),
+			set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_fontName (v); }")
 		});
 	}
 	#end
@@ -76,6 +76,18 @@ class Font #if lime extends LimeFont #end
 	**/
 	public static function enumerateFonts(enumerateDeviceFonts:Bool = false):Array<Font>
 	{
+		#if (lime && native)
+		if (enumerateDeviceFonts)
+		{
+			var _allFonts = __registeredFonts.copy();
+			var files = sys.FileSystem.readDirectory(lime.system.System.fontsDirectory);
+			for (file in files)
+			{
+				if (file.toLowerCase().indexOf('.ttf') != -1) _allFonts.push(fromFile(lime.system.System.fontsDirectory + file));
+			}
+			return _allFonts;
+		}
+		#end
 		return __registeredFonts;
 	}
 
@@ -252,7 +264,7 @@ class Font #if lime extends LimeFont #end
 		{
 			if (src != null)
 			{
-				if (Std.is(src, String))
+				if (Std.isOfType(src, String))
 				{
 					if (src.substr(-4) == ".svg")
 					{

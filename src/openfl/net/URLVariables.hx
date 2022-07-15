@@ -85,18 +85,33 @@ abstract URLVariables(Dynamic) from Dynamic to Dynamic
 		for (f in fields)
 		{
 			var value:Dynamic = Reflect.field(this, f);
-			if (f.indexOf("[]") > -1 && Std.is(value, Array)) {
-				var arrayValue:String = Lambda.map(value, function(v:String) {
+			if (f.indexOf("[]") > -1 && (value is Array))
+			{
+				var arrayValue:String = Lambda.map(value, function(v:String)
+				{
 					return StringTools.urlEncode(v);
 				}).join('&amp;${f}=');
 				result.push(StringTools.urlEncode(f) + "=" + arrayValue);
 			}
-			else {
+			else
+			{
 				result.push(StringTools.urlEncode(f) + "=" + StringTools.urlEncode(value));
 			}
 		}
 
 		return result.join("&");
+	}
+
+	@SuppressWarnings("checkstyle:FieldDocComment")
+	@:arrayAccess private inline function __get(key:String):Dynamic
+	{
+		return Reflect.field(this, key);
+	}
+
+	@SuppressWarnings("checkstyle:FieldDocComment")
+	@:arrayAccess private inline function __set(key:String, value:String):Void
+	{
+		Reflect.setField(this, key, value);
 	}
 }
 #else

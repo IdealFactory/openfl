@@ -13,6 +13,7 @@ import openfl.events.EventDispatcher;
 import openfl.geom.Matrix3D;
 import openfl.Vector;
 #if lime
+import lime.graphics.opengl.GL;
 import lime.graphics.RenderContext;
 #end
 #if (js && html5)
@@ -24,7 +25,7 @@ import js.Browser;
 
 /**
 	The Stage class represents the main drawing area.
-	For SWF content running in the browser (in Flash<sup>஼/sup> Player), the
+	For SWF content running in the browser (in Flash<sup>®</sup> Player), the
 	Stage represents the entire area where Flash content is shown. For content
 	running in AIR on desktop operating systems, each NativeWindow object has
 	a corresponding Stage object.
@@ -136,7 +137,6 @@ import js.Browser;
 @:access(openfl.display3D.Program3D)
 @:access(openfl.display.Bitmap)
 @:access(openfl.display.BitmapData)
-@:access(openfl.display.DisplayObjectRenderer)
 @:access(openfl.display.Stage)
 class Stage3D extends EventDispatcher
 {
@@ -196,8 +196,14 @@ class Stage3D extends EventDispatcher
 	@:noCompletion private static function __init__()
 	{
 		untyped Object.defineProperties(Stage3D.prototype, {
-			"x": {get: untyped __js__("function () { return this.get_x (); }"), set: untyped __js__("function (v) { return this.set_x (v); }")},
-			"y": {get: untyped __js__("function () { return this.get_y (); }"), set: untyped __js__("function (v) { return this.set_y (v); }")},
+			"x": {
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_x (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_x (v); }")
+			},
+			"y": {
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_y (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_y (v); }")
+			},
 		});
 	}
 	#end
@@ -368,75 +374,102 @@ class Stage3D extends EventDispatcher
 
 	@:noCompletion private function __createContext():Void
 	{
-		if (__stage.context3D != null)
+		#if lime
+		var stage = __stage;
+		var renderer = stage.__renderer;
+
+		if (renderer.__type == CAIRO || renderer.__type == CANVAS)
+		{
+			__dispatchError();
+			return;
+		}
+
+		if (renderer.__type == OPENGL)
 		{
 			#if openfl_share_context
-			context3D = __stage.context3D;
+			context3D = stage.context3D;
 			#else
-			context3D = new Context3D(__stage, __stage.context3D.__contextState, this);
+			context3D = new Context3D(stage, stage.context3D.__contextState, this);
 			#end
 			__dispatchCreate();
 		}
-		#if (lime && (js && html5))
-		else if (false && __stage.window.context.type == DOM)
+		else if (renderer.__type == DOM)
 		{
-			// TODO
+			// TODO: Do not set Stage.context3D, create separate canvas elements for each Context3D
 
-			// __canvas = cast Browser.document.createElement("canvas");
-			// __canvas.width = stage.stageWidth;
-			// __canvas.height = stage.stageHeight;
+			#if (js && html5)
+			if (stage.context3D == null)
+			{
+				__canvas = cast Browser.document.createElement("canvas");
+				__canvas.width = stage.stageWidth;
+				__canvas.height = stage.stageHeight;
 
-			// var window = stage.window;
-			// var attributes = @:privateAccess window.__attributes;
+				var window = stage.window;
+				var attributes = stage.window.context.attributes;
 
-			// var transparentBackground = Reflect.hasField(attributes, "background") && attributes.background == null;
-			// var colorDepth = Reflect.hasField(attributes, "colorDepth") ? attributes.colorDepth : 32;
+				var transparentBackground = Reflect.hasField(attributes, "background") && attributes.background == null;
+				var colorDepth = Reflect.hasField(attributes, "colorDepth") ? attributes.colorDepth : 32;
 
-			// var options = {
-			// 	alpha: (transparentBackground || colorDepth > 16) ? true : false,
-			// 	antialias: Reflect.hasField(attributes, "antialiasing") ? attributes.antialiasing > 0 : false,
-			// 	depth: true,
-			// 	premultipliedAlpha: true,
-			// 	stencil: true,
-			// 	preserveDrawingBuffer: false
-			// };
+				var options = {
+					alpha: (transparentBackground || colorDepth > 16) ? true : false,
+					antialias: Reflect.hasField(attributes, "antialiasing") ? attributes.antialiasing > 0 : false,
+					depth: true,
+					premultipliedAlpha: true,
+					stencil: true,
+					preserveDrawingBuffer: false
+				};
 
-			// __webgl = cast __canvas.getContextWebGL(options);
+				__webgl = cast __canvas.getContextWebGL(options);
 
-			// if (__webgl != null)
-			// {
-			// 	#if webgl_debug
-			// 	__webgl = untyped WebGLDebugUtils.makeDebugContext(__webgl);
-			// 	#end
+				if (__webgl != null)
+				{
+					#if webgl_debug
+					__webgl = untyped WebGLDebugUtils.makeDebugContext(__webgl);
+					#end
 
-			// 	// TODO: Need to handle renderer/context better
+					if (GL.context == null)
+					{
+						GL.context = cast __webgl;
+						GL.type = WEBGL;
+						// GL.version = isWebGL2 ? 2 : 1;
+						GL.version = 1;
+						// stage.window.context.webgl = GL.context;
+					}
 
-			// 	// TODO
+					stage.context3D = new Context3D(stage);
+					stage.context3D.configureBackBuffer(stage.window.width, stage.window.height, 0, true, true, true);
+					stage.context3D.present();
 
-			// 	// __renderContext = new GLRenderContext (cast __webgl);
-			// 	// GL.context = __renderContext;
+					var renderer:DOMRenderer = cast renderer;
+					renderer.element.appendChild(__canvas);
 
-			// 	// context3D = new Context3D (stage, this);
+					__style = __canvas.style;
+					__style.setProperty("position", "absolute", null);
+					__style.setProperty("top", "0", null);
+					__style.setProperty("left", "0", null);
+					__style.setProperty(renderer.__transformOriginProperty, "0 0 0", null);
+					__style.setProperty("z-index", "-1", null);
+				}
 
-			// 	// var renderer:DOMRenderer = cast renderer;
-			// 	// renderer.element.appendChild (__canvas);
+				if (stage.context3D != null)
+				{
+					#if openfl_share_context
+					context3D = stage.context3D;
+					#else
+					context3D = new Context3D(stage, stage.context3D.__contextState, this);
+					#end
+				}
 
-			// 	// __style = __canvas.style;
-			// 	// __style.setProperty ("position", "absolute", null);
-			// 	// __style.setProperty ("top", "0", null);
-			// 	// __style.setProperty ("left", "0", null);
-			// 	// __style.setProperty (renderer.__transformOriginProperty, "0 0 0", null);
-			// 	// __style.setProperty ("z-index", "-1", null);
-
-			// 	// __dispatchCreate ();
-			// 	__dispatchError();
-			// }
+				__dispatchCreate();
+				// __dispatchError();
+			}
+			else
+			{
+				__dispatchError();
+			}
+			#end
 		}
 		#end
-		else
-		{
-			__dispatchError();
-		}
 	}
 
 	@:noCompletion private function __dispatchError():Void
@@ -478,7 +511,22 @@ class Stage3D extends EventDispatcher
 			#end
 
 			__projectionTransform.copyRawDataFrom(new Vector<Float>([
-				2.0 / (width > 0 ? width : 1), 0.0, 0.0, 0.0, 0.0, -2.0 / (height > 0 ? height : 1), 0.0, 0.0, 0.0, 0.0, -2.0 / 2000, 0.0, -1.0, 1.0, 0.0, 1.0
+				2.0 / (width > 0 ? width : 1),
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				-2.0 / (height > 0 ? height : 1),
+				0.0,
+				0.0,
+				0.0,
+				0.0,
+				-2.0 / 2000,
+				0.0,
+				-1.0,
+				1.0,
+				0.0,
+				1.0
 			]));
 
 			__renderTransform.identity();

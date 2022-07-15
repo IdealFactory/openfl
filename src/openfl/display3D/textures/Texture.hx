@@ -3,10 +3,10 @@ package openfl.display3D.textures;
 #if !flash
 import haxe.io.Bytes;
 import haxe.Timer;
-import openfl._internal.formats.atf.ATFReader;
-import openfl._internal.renderer.SamplerState;
-import openfl._internal.utils.ArrayBufferView;
-import openfl._internal.utils.UInt8Array;
+import openfl.utils._internal.ArrayBufferView;
+import openfl.utils._internal.UInt8Array;
+import openfl.display3D._internal.ATFReader;
+import openfl.display._internal.SamplerState;
 import openfl.display.BitmapData;
 import openfl.events.Event;
 import openfl.utils.ByteArray;
@@ -99,7 +99,8 @@ import openfl.utils.ByteArray;
 				var event:Event = null;
 
 				#if openfl_pool_events
-				event = Event.__pool.get(Event.TEXTURE_READY);
+				event = Event.__pool.get();
+				event.type = Event.TEXTURE_READY;
 				#else
 				event = new Event(Event.TEXTURE_READY);
 				#end

@@ -72,7 +72,7 @@ class URLRequestDefaults
 
 		The default value is `true`.
 	**/
-	public static var manageCookies:Bool = false;
+	public static var manageCookies:Bool = true;
 
 	// public static var useCache:Bool;
 
@@ -96,7 +96,7 @@ class URLRequestDefaults
 	public static var userAgent:String;
 
 	// public static function setLoginCredentialsForHost (hostname:String, user:String, password:String):Dynamic {
-	// 	openfl._internal.Lib.notImplemented ();
+	// 	openfl.utils._internal.Lib.notImplemented ();
 	// 	return null;
 	// }
 }

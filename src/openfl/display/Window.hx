@@ -1,6 +1,6 @@
 package openfl.display;
 
-import openfl._internal.Lib;
+import openfl.utils._internal.Lib;
 #if lime
 import lime.app.Application;
 import lime.ui.Window as LimeWindow;
@@ -62,9 +62,11 @@ class Window #if lime extends LimeWindow #end
 			catch (e:Dynamic) {}
 		}
 
+		stage.__setLogicalSize(attributes.width, attributes.height);
+
 		if (Reflect.hasField(attributes, "resizable") && !attributes.resizable)
 		{
-			stage.__setLogicalSize(attributes.width, attributes.height);
+			stage.scaleMode = StageScaleMode.SHOW_ALL;
 		}
 
 		#if lime

@@ -1,26 +1,23 @@
 package openfl.display;
 
 #if !flash
-import openfl._internal.renderer.context3D.Context3DBuffer;
-import openfl._internal.renderer.DrawCommandBuffer;
-import openfl._internal.renderer.DrawCommandReader;
-import openfl._internal.renderer.ShaderBuffer;
-import openfl._internal.utils.Float32Array;
-import openfl._internal.utils.ObjectPool;
-import openfl._internal.utils.UInt16Array;
+import openfl.display._internal.CairoGraphics;
+import openfl.display._internal.CanvasGraphics;
+import openfl.display._internal.Context3DBuffer;
+import openfl.display._internal.DrawCommandBuffer;
+import openfl.display._internal.DrawCommandReader;
+import openfl.display._internal.ShaderBuffer;
 import openfl.display3D.IndexBuffer3D;
 import openfl.display3D.VertexBuffer3D;
 import openfl.errors.ArgumentError;
 import openfl.geom.Matrix;
 import openfl.geom.Rectangle;
+import openfl.utils._internal.Float32Array;
+import openfl.utils._internal.UInt16Array;
+import openfl.utils.ObjectPool;
 import openfl.Vector;
 #if lime
 import lime.graphics.cairo.Cairo;
-#if (js && html5)
-import openfl._internal.renderer.canvas.CanvasGraphics;
-#elseif lime_cffi
-import openfl._internal.renderer.cairo.CairoGraphics;
-#end
 #end
 #if (js && html5)
 import js.html.CanvasElement;
@@ -93,6 +90,7 @@ import js.html.CanvasRenderingContext2D;
 	@SuppressWarnings("checkstyle:Dynamic") @:noCompletion private var __cairo:#if lime Cairo #else Dynamic #end;
 	#end
 	@:noCompletion private var __bitmap:BitmapData;
+	@:noCompletion private var __bitmapScale:Float;
 	@:noCompletion private var __svgOffsetX:Float = 0;
 	@:noCompletion private var __svgOffsetY:Float = 0;
 
@@ -109,6 +107,8 @@ import js.html.CanvasRenderingContext2D;
 		__worldTransform = new Matrix();
 		__width = 0;
 		__height = 0;
+
+		__bitmapScale = 1;
 
 		__shaderBufferPool = new ObjectPool<ShaderBuffer>(function() return new ShaderBuffer());
 
@@ -625,21 +625,6 @@ import js.html.CanvasRenderingContext2D;
 		__dirty = true;
 	}
 
-	/**
-		Draws a circle. Set the line style, fill, or both before you call the
-		`drawCircle()` method, by calling the `linestyle()`,
-		`lineGradientStyle()`, `beginFill()`,
-		`beginGradientFill()`, or `beginBitmapFill()`
-		method.
-
-		@param x      The _x_ location of the center of the circle relative
-					  to the registration point of the parent display object(in
-					  pixels).
-		@param y      The _y_ location of the center of the circle relative
-					  to the registration point of the parent display object(in
-					  pixels).
-		@param radius The radius of the circle(in pixels).
-	**/
 	public function drawCircle(x:Float, y:Float, radius:Float):Void
 	{
 		if (radius <= 0) return;
@@ -1495,11 +1480,11 @@ import js.html.CanvasRenderingContext2D;
 		{
 			if (joints == JointStyle.MITER)
 			{
-				if (thickness > __strokePadding) __strokePadding = thickness;
+				if (thickness > __strokePadding) __strokePadding = Math.ceil(thickness);
 			}
 			else
 			{
-				if (thickness / 2 > __strokePadding) __strokePadding = thickness / 2;
+				if (thickness / 2 > __strokePadding) __strokePadding = Math.ceil(thickness / 2);
 			}
 		}
 
@@ -1630,13 +1615,15 @@ import js.html.CanvasRenderingContext2D;
 		return graphicsData;
 	}
 
-	@:noCompletion private function __calculateBezierCubicPoint(t:Float, p1:Float, p2:Float, p3:Float, p4:Float):Float
+	@:noCompletion
+	private #if !js inline #end function __calculateBezierCubicPoint(t:Float, p1:Float, p2:Float, p3:Float, p4:Float):Float
 	{
 		var iT = 1 - t;
 		return p1 * (iT * iT * iT) + 3 * p2 * t * (iT * iT) + 3 * p3 * iT * (t * t) + p4 * (t * t * t);
 	}
 
-	@:noCompletion private function __calculateBezierQuadPoint(t:Float, p1:Float, p2:Float, p3:Float):Float
+	@:noCompletion
+	private #if !js inline #end function __calculateBezierQuadPoint(t:Float, p1:Float, p2:Float, p3:Float):Float
 	{
 		var iT = 1 - t;
 		return iT * iT * p1 + 2 * iT * t * p2 + t * t * p3;
@@ -1944,11 +1931,11 @@ import js.html.CanvasRenderingContext2D;
 		var tx = x * parentTransform.a + y * parentTransform.c + parentTransform.tx;
 		var ty = x * parentTransform.b + y * parentTransform.d + parentTransform.ty;
 
-		// Floor the world position for crisp graphics rendering
-		__worldTransform.tx = Math.ffloor(tx);
-		__worldTransform.ty = Math.ffloor(ty);
+		// round the world position for crisp graphics rendering
+		__worldTransform.tx = Math.fround(tx);
+		__worldTransform.ty = Math.fround(ty);
 
-		// Offset the rendering with the subpixel offset removed by Math.floor above
+		// Offset the rendering with the subpixel offset removed by Math.round above
 		__renderTransform.tx = __worldTransform.__transformInverseX(tx, ty);
 		__renderTransform.ty = __worldTransform.__transformInverseY(tx, ty);
 

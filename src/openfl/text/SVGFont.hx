@@ -1,5 +1,6 @@
 package openfl.text;
 
+#if svg
 import haxe.xml.Access;
 import format.SVG;
 import format.svg.Font;
@@ -139,7 +140,7 @@ class SVGFont
 
 		var data = new SVGData(xml);
 		var renderer = new SVGRenderer(data);
-		g.clear();
+		// g.clear();
 		renderer.render(g);
 	}
 
@@ -154,7 +155,7 @@ class SVGFont
 		if (fallbackFont != null) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
 
 		#if svgfont_debug
-		trace("SVGFont.renderText: text:" + text);
+		trace("SVGFont.renderText: text:" + text + " x=" + x + " y=" + y + " size=" + size + " spacing=" + spacing);
 		trace("Font: " + svgFont.id + " hOrig=" + svgFont.horizOriginX + "/" + svgFont.horizOriginY + " adv=" + svgFont.horizAdvX + "/" + svgFont.vertAdvY
 			+ " vert=" + svgFont.vertOriginX + "/" + svgFont.vertOriginY);
 		trace("Face: unitsPerEm=" + svgFont.fontFace.unitsPerEm + " ascent=" + svgFont.fontFace.ascent + " descent=" + svgFont.fontFace.descent
@@ -262,7 +263,7 @@ class SVGFont
 			var cmd = ereg_MLT.matched(1);
 			var x = Std.parseFloat(ereg_MLT.matched(2)) + xOff;
 			var y = Std.parseFloat(ereg_MLT.matched(3)) + yOff;
-			trace("Match-MLT: m=" + m + " new=" + cmd + x + " " + y + " offsets=" + xOff + "/" + yOff);
+			// trace("Match-MLT: m=" + m + " new=" + cmd + x + " " + y + " offsets=" + xOff + "/" + yOff);
 			p = StringTools.replace(p, m, cmd + x + " " + y);
 			input = ereg_MLT.matchedRight();
 		}
@@ -299,3 +300,6 @@ class SVGFontProcessor
 		return inDef;
 	}
 }
+#else
+class SVGFont {}
+#end

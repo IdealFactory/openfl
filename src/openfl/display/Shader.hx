@@ -1,11 +1,11 @@
 package openfl.display;
 
 #if !flash
-import openfl._internal.backend.gl.GLProgram;
-import openfl._internal.backend.gl.GLShader;
-import openfl._internal.renderer.ShaderBuffer;
-import openfl._internal.utils.Float32Array;
-import openfl._internal.utils.Log;
+import openfl.display3D._internal.GLProgram;
+import openfl.display3D._internal.GLShader;
+import openfl.display._internal.ShaderBuffer;
+import openfl.utils._internal.Float32Array;
+import openfl.utils._internal.Log;
 import openfl.display3D.Context3D;
 import openfl.display3D.Program3D;
 import openfl.utils.ByteArray;
@@ -119,7 +119,7 @@ import openfl.utils.ByteArray;
 @:access(openfl.display.ShaderParameter)
 // #if (!display && !macro)
 #if !macro
-@:autoBuild(openfl._internal.macros.ShaderMacro.build())
+@:autoBuild(openfl.utils._internal.ShaderMacro.build())
 #end
 class Shader
 {
@@ -211,8 +211,6 @@ class Shader
 	public var program:Program3D;
 
 	@:noCompletion private var __alpha:ShaderParameter<Float>;
-	@:noCompletion private var __alphaTexture:ShaderInput<BitmapData>;
-	@:noCompletion private var __alphaTextureMatrix:ShaderParameter<Float>;
 	@:noCompletion private var __bitmap:ShaderInput<BitmapData>;
 	@:noCompletion private var __colorMultiplier:ShaderParameter<Float>;
 	@:noCompletion private var __colorOffset:ShaderParameter<Float>;
@@ -238,14 +236,17 @@ class Shader
 	@:noCompletion private static function __init__()
 	{
 		untyped Object.defineProperties(Shader.prototype, {
-			"data": {get: untyped __js__("function () { return this.get_data (); }"), set: untyped __js__("function (v) { return this.set_data (v); }")},
+			"data": {
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_data (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_data (v); }")
+			},
 			"glFragmentSource": {
-				get: untyped __js__("function () { return this.get_glFragmentSource (); }"),
-				set: untyped __js__("function (v) { return this.set_glFragmentSource (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_glFragmentSource (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_glFragmentSource (v); }")
 			},
 			"glVertexSource": {
-				get: untyped __js__("function () { return this.get_glVertexSource (); }"),
-				set: untyped __js__("function (v) { return this.set_glVertexSource (v); }")
+				get: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function () { return this.get_glVertexSource (); }"),
+				set: untyped #if haxe4 js.Syntax.code #else __js__ #end ("function (v) { return this.set_glVertexSource (v); }")
 			},
 		});
 	}
@@ -321,13 +322,17 @@ class Shader
 		var shader = gl.createShader(type);
 		gl.shaderSource(shader, source);
 		gl.compileShader(shader);
+		var shaderInfoLog = gl.getShaderInfoLog(shader);
+		var compileStatus = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
 
-		if (gl.getShaderParameter(shader, gl.COMPILE_STATUS) == 0)
+		if (shaderInfoLog != null || compileStatus == 0)
 		{
-			var message = (type == gl.VERTEX_SHADER) ? "Error compiling vertex shader" : "Error compiling fragment shader";
-			message += "\n" + gl.getShaderInfoLog(shader);
+			var message = (compileStatus == 0) ? "Error" : "Info";
+			message += (type == gl.VERTEX_SHADER) ? " compiling vertex shader" : " compiling fragment shader";
+			message += "\n" + shaderInfoLog;
 			message += "\n" + source;
-			Log.error(message);
+			if (compileStatus == 0) Log.error(message);
+			else if (shaderInfoLog != null) Log.debug(message);
 		}
 
 		return shader;
@@ -384,6 +389,7 @@ class Shader
 		{
 			input.__disableGL(__context, textureCount);
 			textureCount++;
+			if (textureCount == gl.MAX_TEXTURE_IMAGE_UNITS) break;
 		}
 
 		for (parameter in __paramBool)
@@ -475,24 +481,24 @@ class Shader
 		{
 			var gl = __context.gl;
 
-			#if useGLSL300es
-			var renderContext = __context.__context;
-			var glslVersion = "#version " + renderContext.shaderVersion + (renderContext.glES != null ? " es" : "") + "\n";
-			#else
-			var glslVersion = "";
-			#end
+            #if useGLSL300es
+            var renderContext = __context.__context;
+            var glslVersion = "#version " + renderContext.shaderVersion + (renderContext.glES != null ? " es" : "") + "\n";
+            #else
+            var glslVersion = "";
+            #end
 
-			var prefix = glslVersion
-				+ "#ifdef GL_ES
-				"
-				+ (precisionHint == FULL ? "#ifdef GL_FRAGMENT_PRECISION_HIGH
-				precision highp float;
-				#else
-				precision mediump float;
-				#endif" : "precision lowp float;")
-				+ "
-				#endif
-				";
+			#if (js && html5)
+			var prefix = (precisionHint == FULL ? "precision mediump float;\n" : "precision lowp float;\n");
+			#else
+			var prefix = "#ifdef GL_ES\n"
+				+ (precisionHint == FULL ? "#ifdef GL_FRAGMENT_PRECISION_HIGH\n"
+					+ "precision highp float;\n"
+					+ "#else\n"
+					+ "precision mediump float;\n"
+					+ "#endif\n" : "precision lowp float;\n")
+				+ "#endif\n\n";
+			#end
 
 			var vertex = prefix + glVertexSource;
 			var fragment = prefix + glFragmentSource;
@@ -607,8 +613,6 @@ class Shader
 
 				switch (name)
 				{
-					case "openfl_AlphaTexture":
-						__alphaTexture = input;
 					case "openfl_Texture":
 						__texture = input;
 					case "bitmap":
@@ -715,7 +719,6 @@ class Shader
 							switch (name)
 							{
 								case "openfl_Alpha": __alpha = parameter;
-								case "openfl_AlphaTextureMatrix": __alphaTextureMatrix = parameter;
 								case "openfl_ColorMultiplier": __colorMultiplier = parameter;
 								case "openfl_ColorOffset": __colorOffset = parameter;
 								case "openfl_Matrix": __matrix = parameter;

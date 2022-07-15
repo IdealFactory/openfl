@@ -1,15 +1,15 @@
 package openfl.display3D.textures;
 
 #if !flash
-import openfl._internal.backend.gl.GLFramebuffer;
-import openfl._internal.backend.gl.GLRenderbuffer;
-import openfl._internal.backend.gl.GLTexture;
-import openfl._internal.formats.atf.ATFGPUFormat;
-import openfl._internal.renderer.SamplerState;
+import openfl.display3D._internal.GLFramebuffer;
+import openfl.display3D._internal.GLRenderbuffer;
+import openfl.display3D._internal.GLTexture;
+import openfl.display3D._internal.ATFGPUFormat;
+import openfl.display._internal.SamplerState;
 import openfl.display.BitmapData;
 import openfl.events.EventDispatcher;
 import openfl.errors.Error;
-import openfl._internal.utils.Log;
+import openfl.utils._internal.Log;
 #if lime
 import lime._internal.graphics.ImageCanvasUtil;
 import lime.graphics.Image;
@@ -29,7 +29,7 @@ import lime.graphics.opengl.GL;
 @:fileXml('tags="haxe,release"')
 @:noDebug
 #end
-@:access(openfl._internal.renderer.SamplerState)
+@:access(openfl.display._internal.SamplerState)
 @:access(openfl.display3D.Context3D)
 @:access(openfl.display.BitmapData)
 @:access(openfl.display.Stage)
@@ -161,23 +161,31 @@ class TextureBase extends EventDispatcher
 		if (__alphaTexture != null)
 		{
 			__alphaTexture.dispose();
+			__alphaTexture = null;
 		}
 
-		gl.deleteTexture(__textureID);
+		if (__textureID != null)
+		{
+			gl.deleteTexture(__textureID);
+			__textureID = null;
+		}
 
 		if (__glFramebuffer != null)
 		{
 			gl.deleteFramebuffer(__glFramebuffer);
+			__glFramebuffer = null;
 		}
 
 		if (__glDepthRenderbuffer != null)
 		{
 			gl.deleteRenderbuffer(__glDepthRenderbuffer);
+			__glDepthRenderbuffer = null;
 		}
 
 		if (__glStencilRenderbuffer != null)
 		{
 			gl.deleteRenderbuffer(__glStencilRenderbuffer);
+			__glStencilRenderbuffer = null;
 		}
 	}
 

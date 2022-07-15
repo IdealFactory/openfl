@@ -11,7 +11,7 @@ import openfl.display3D.Context3DProgramType;
 import openfl.geom.Matrix3D;
 import openfl.utils.AGALMiniAssembler;
 #end
-import openfl._internal.renderer.context3D.Context3DState;
+import openfl.display3D._internal.Context3DState;
 import openfl.display3D.textures.TextureBase;
 import openfl.events.Event;
 import openfl.events.KeyboardEvent;
@@ -90,7 +90,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	@:noCompletion private var __heapsDirty:Bool = true;
 
 	@:noCompletion private var __mousePoint:Point = new Point();
-	@:noCompletion private var __touchMoveInitialPoints:Array<Point> = [];
+	@:noCompletion private var __touchMoveInitialPoints:Map<Int, Point> = [];
 	@:noCompletion private var __touchMoveDistance:Float = 10;
 	@:noCompletion private var __localPoint:Point = new Point();
 	#if flash
@@ -136,10 +136,6 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		__rttCallbackQueue = [];
 
 		super();
-
-		#if !flash
-		__type = HEAPS_CONTAINER;
-		#end
 
 		var attributes = Lib.application.window.context.attributes;
 		h3d.Engine.ANTIALIASING = attributes.antialiasing;
@@ -203,7 +199,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		if (__rttQueue != null && __rttQueue.length > 0)
 		{
 			var ctx3d = Lib.current.stage.context3D;
-			var __stateStore:openfl._internal.renderer.context3D.Context3DState = null;
+			var __stateStore:Context3DState = null;
 			if (ctx3d.__state != null) __stateStore = ctx3d.__state.clone();
 
 			#if !android
@@ -245,7 +241,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			{
 				__heapsDirty = false;
 
-				if (Std.int(x) != __x || Std.int(y) != __y) __engine.offset(Std.int(x), Lib.current.stage.stageHeight - __height - Std.int(y));
+				if (Std.int(x) != __x || Std.int(y) != __y) offset(x, y);
 
 				__x = Std.int(x);
 				__y = Std.int(y);
@@ -275,6 +271,14 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 				var stg = Lib.current.stage;
 				var ctx = Lib.current.stage.context3D;
+				if (ctx.__contextState.shader != null)
+				{
+					@:privateAccess ctx.__contextState.shader.__disable();
+				}
+				if (ctx.__contextState.program != null)
+				{
+					@:privateAccess ctx.__contextState.program.__disable();
+				}
 
 				// Ensure all the cached render states are cleared for a new render
 				@:privateAccess __engine.needFlushTarget = true;
@@ -556,8 +560,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		__heapsRenderbufferTexture.uploadFromBitmapData(__bitmapData);
 
 		__vertexBuffer = __context3D.createVertexBuffer(4, 5);
-		__vertexBufferData[10] = __vertexBufferData[15] = __width;
-		__vertexBufferData[1] = __vertexBufferData[16] = __height;
+		__vertexBufferData[10] = __vertexBufferData[15] = __width * window.scale;
+		__vertexBufferData[1] = __vertexBufferData[16] = __height * window.scale;
 		__vertexBuffer.uploadFromVector(__vertexBufferData, 0, 4);
 		__indexBuffer = __context3D.createIndexBuffer(6);
 		__indexBuffer.uploadFromVector(__indexBufferData, 0, 6);
@@ -748,6 +752,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 	@:keep @:noCompletion private function __onResize(e:openfl.events.Event)
 	{
+		var window = Lib.current.stage.window;
 		__width = __width == 0 ? Lib.current.stage.stageWidth : __width;
 		__height = __height == 0 ? Lib.current.stage.stageHeight : __height;
 
@@ -757,21 +762,27 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			setupRenderTarget();
 			#end
 
-			__engine.width = __width;
-			__engine.height = __height;
+			__engine.width = Std.int(__width * window.scale);
+			__engine.height = Std.int(__height * window.scale);
 			#if flash
 			var driver:h3d.impl.Stage3dDriver = cast Engine.getCurrent().driver;
-			@:privateAccess driver.ctx.configureBackBuffer(Std.int(Lib.current.stage.stageWidth), Std.int(Lib.current.stage.stageHeight), driver.antiAlias);
+			@:privateAccess driver.ctx.configureBackBuffer(window.width, window.height, driver.antiAlias);
 			driver.width = __width;
 			driver.height = __height;
 			#else
-			__engine.offset(Std.int(x), Lib.current.stage.stageHeight - __height - Std.int(y));
+			offset(x, y);
 			__engine.resize(__width, __height);
 			#end
-			__window.windowWidth = __width;
-			__window.windowHeight = __height;
+			__window.windowWidth = Std.int(__width * window.scale);
+			__window.windowHeight = Std.int(__height * window.scale);
 			__engine.onWindowResize();
 		}
+	}
+
+	function offset(x:Float, y:Float)
+	{
+		var window = Lib.current.stage.window;
+		__engine.offset(Std.int(x * window.scale), Std.int((Lib.current.stage.stageHeight - __height - y) * window.scale));
 	}
 
 	@:keep @:noCompletion private function __onMouseDown(me:MouseEvent):Void

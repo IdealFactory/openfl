@@ -32,8 +32,8 @@ import cpp.vm.Gc;
 	#if false
 	/**
 		The amount of memory (in bytes) that is allocated to
-		Adobe<sup>஼/sup> Flash<sup>஼/sup> Player or Adobe<sup>஼/sup>
-		AIR<sup>஼/sup> and that is not in use. This unused portion of
+		Adobe<sup>®</sup> Flash<sup>®</sup> Player or Adobe<sup>®</sup>
+		AIR<sup>®</sup> and that is not in use. This unused portion of
 		allocated memory (`System.totalMemory`) fluctuates as garbage
 		collection takes place. Use this property to monitor garbage
 		collection.
@@ -210,7 +210,7 @@ import cpp.vm.Gc;
 	**/
 	public static function pause():Void
 	{
-		openfl._internal.Lib.notImplemented();
+		openfl.utils._internal.Lib.notImplemented();
 	}
 	#end
 
@@ -226,7 +226,7 @@ import cpp.vm.Gc;
 	**/
 	public static function resume():Void
 	{
-		openfl._internal.Lib.notImplemented();
+		openfl.utils._internal.Lib.notImplemented();
 	}
 	#end
 
@@ -260,7 +260,8 @@ import cpp.vm.Gc;
 		#elseif cpp
 		return untyped __global__.__hxcpp_gc_used_bytes();
 		#elseif (js && html5)
-		return untyped __js__("(window.performance && window.performance.memory) ? window.performance.memory.usedJSHeapSize : 0");
+		return
+			untyped #if haxe4 js.Syntax.code #else __js__ #end ("(window.performance && window.performance.memory) ? window.performance.memory.usedJSHeapSize : 0");
 		#else
 		return 0;
 		#end

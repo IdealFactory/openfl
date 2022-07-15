@@ -1,8 +1,9 @@
 package openfl.utils;
 
-import openfl._internal.utils.Log;
+import openfl.utils._internal.Log;
 import openfl.display.BitmapData;
 import openfl.display.MovieClip;
+import openfl.display.Sprite;
 import openfl.events.Event;
 import openfl.events.EventDispatcher;
 import openfl.media.Sound;
@@ -11,6 +12,10 @@ import openfl.text.Font;
 import lime.app.Promise;
 import lime.utils.AssetLibrary as LimeAssetLibrary;
 import lime.utils.Assets as LimeAssets;
+#end
+#if lime_vorbis
+import lime.media.AudioBuffer;
+import lime.media.vorbis.VorbisFile;
 #end
 
 /**
@@ -34,12 +39,15 @@ import lime.utils.Assets as LimeAssets;
 @:noDebug
 #end
 @:access(openfl.display.BitmapData)
+@:access(openfl.display.Sprite)
 @:access(openfl.text.Font)
 @:access(openfl.utils.AssetLibrary)
 class Assets
 {
 	public static var cache:IAssetCache = new AssetCache();
+
 	@:noCompletion private static var dispatcher:EventDispatcher #if !macro = new EventDispatcher() #end;
+	private static var libraryBindings:Map<String, AssetLibrary> = new Map();
 
 	public static function addEventListener(type:String, listener:Dynamic, useCapture:Bool = false, priority:Int = 0, useWeakReference:Bool = false):Void
 	{
@@ -192,7 +200,7 @@ class Assets
 
 		if (limeLibrary != null)
 		{
-			if (Std.is(limeLibrary, AssetLibrary))
+			if ((limeLibrary is AssetLibrary))
 			{
 				var library:AssetLibrary = cast limeLibrary;
 
@@ -223,9 +231,16 @@ class Assets
 
 	public static function getMusic(id:String, useCache:Bool = true):Sound
 	{
+		#if (lime_vorbis && lime > "7.9.0")
+		var path = getPath(id);
+		// TODO: What if it is a WAV or non-Vorbis file?
+		var vorbisFile = VorbisFile.fromFile(path);
+		var buffer = AudioBuffer.fromVorbisFile(vorbisFile);
+		return Sound.fromAudioBuffer(buffer);
+		#else
 		// TODO: Streaming sound
-
 		return getSound(id, useCache);
+		#end
 	}
 
 	/**
@@ -312,6 +327,44 @@ class Assets
 		#else
 		return false;
 		#end
+	}
+
+	/**
+		Connects a user-defined class to a related asset class.
+
+		This method call is added to the beginning of user-defined class constructors when
+		the `@:bind` meta-data is used. This allows insertion of related asset resources in
+		compatible super classes, such as `openfl.display.MovieClip`.
+		@param	className 		The registered class name of the asset constructor
+		@param  instance		The current class instance to be bound (default is null)
+		@return		Whether asset binding was successful
+	**/
+	public static function initBinding(className:String, instance:Dynamic = null):Void
+	{
+		if (libraryBindings.exists(className))
+		{
+			var library = libraryBindings.get(className);
+			#if !flash
+			if (instance == null)
+			{
+				Sprite.__constructor = function(instance:Sprite)
+				{
+					instance.__bind(library, className);
+				}
+			}
+			else
+			{
+				instance.__bind(library, className);
+			}
+			#else
+			// TODO: Consolidate behavior
+			library.bind(className);
+			#end
+		}
+		else
+		{
+			Log.warn("No asset is registered as \"" + className + "\"");
+		}
 	}
 
 	/**
@@ -536,7 +589,7 @@ class Assets
 
 			if (library != null)
 			{
-				if (Std.is(library, AssetLibrary))
+				if ((library is AssetLibrary))
 				{
 					_library = cast library;
 				}
@@ -623,7 +676,7 @@ class Assets
 
 		if (limeLibrary != null)
 		{
-			if (Std.is(limeLibrary, AssetLibrary))
+			if ((limeLibrary is AssetLibrary))
 			{
 				var library:AssetLibrary = cast limeLibrary;
 
@@ -710,6 +763,16 @@ class Assets
 	}
 
 	/**
+		Registers an AssetLibrary binding for use with @:bind or Assets.bind
+		@param	className		The class name to use for the binding
+		@param	method		The AssetLibrary responsible for the binding
+	**/
+	public static function registerBinding(className:String, library:AssetLibrary):Void
+	{
+		libraryBindings.set(className, library);
+	}
+
+	/**
 		Registers a new AssetLibrary with the Assets class
 		@param	name		The name (prefix) to use for the library
 		@param	library		An AssetLibrary instance to register
@@ -750,6 +813,19 @@ class Assets
 		#if lime
 		LimeAssets.unloadLibrary(name);
 		#end
+	}
+
+	/**
+		Unregisters an AssetLibrary binding for use with @:bind or Assets.bind
+		@param	className		The class name to use for the binding
+		@param	method		The AssetLibrary responsible for the binding
+	**/
+	public static function unregisterBinding(className:String, library:AssetLibrary):Void
+	{
+		if (libraryBindings.exists(className) && libraryBindings.get(className) == library)
+		{
+			libraryBindings.remove(className);
+		}
 	}
 
 	// Event Handlers

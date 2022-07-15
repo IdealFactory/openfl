@@ -9,6 +9,7 @@ import haxe.macro.Expr;
 @:access(lime.app.Application)
 @:access(lime.system.System)
 @:access(openfl.display.Stage)
+@:access(openfl.events.UncaughtErrorEvents)
 @:dox(hide)
 class ApplicationMain
 {
@@ -30,7 +31,9 @@ class ApplicationMain
 	{
 		var app = new openfl.display.Application();
 
+		#if !disable_preloader_assets
 		ManifestResources.init(config);
+		#end
 
 		app.meta["build"] = "::meta.buildNumber::";
 		app.meta["company"] = "::meta.company::";
@@ -116,8 +119,9 @@ class ApplicationMain
 			@:privateAccess preloader.start();
 		});
 
-		preloader.onComplete.add(start.bind(cast(app.window, openfl.display.Window).stage));
+		preloader.onComplete.add(start.bind((cast app.window:openfl.display.Window).stage));
 
+		#if !disable_preloader_assets
 		for (library in ManifestResources.preloadLibraries)
 		{
 			app.preloader.addLibrary(library);
@@ -127,6 +131,7 @@ class ApplicationMain
 		{
 			app.preloader.addLibraryName(name);
 		}
+		#end
 
 		app.preloader.load();
 
@@ -142,7 +147,28 @@ class ApplicationMain
 		#if flash
 		ApplicationMain.getEntryPoint();
 		#else
-		try {
+		if (stage.__uncaughtErrorEvents.__enabled)
+		{
+			try
+			{
+				ApplicationMain.getEntryPoint();
+
+				stage.dispatchEvent(new openfl.events.Event(openfl.events.Event.RESIZE, false, false));
+
+				if (stage.window.fullscreen)
+				{
+					stage.dispatchEvent(new openfl.events.FullScreenEvent(openfl.events.FullScreenEvent.FULL_SCREEN, false, false, true, true));
+				}
+			}
+			catch (e:Dynamic)
+			{
+				#if !display
+				stage.__handleError(e);
+				#end
+			}
+		}
+		else
+		{
 			ApplicationMain.getEntryPoint();
 
 			stage.dispatchEvent(new openfl.events.Event(openfl.events.Event.RESIZE, false, false));
@@ -151,12 +177,6 @@ class ApplicationMain
 			{
 				stage.dispatchEvent(new openfl.events.FullScreenEvent(openfl.events.FullScreenEvent.FULL_SCREEN, false, false, true, true));
 			}
-		}
-		catch (e:Dynamic)
-		{
-			#if !display
-			stage.__handleError (e);
-			#end
 		}
 		#end
 	}
@@ -190,7 +210,7 @@ class ApplicationMain
 					{
 						var current = stage.getChildAt (0);
 
-						if (current == null || !Std.is(current, openfl.display.DisplayObjectContainer))
+						if (current == null || !(current is openfl.display.DisplayObjectContainer))
 						{
 							current = new openfl.display.MovieClip();
 							stage.addChild(current);
