@@ -29,13 +29,19 @@ class SVGTextField
 		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
 		var graphics = textField.__graphics;
 
+		#if (openfl_disable_hdpi || openfl_disable_hdpi_textfield)
+		var pixelRatio = 1;
+		#else
+		var pixelRatio = renderer.__pixelRatio;
+		#end
+
 		if (textField.__dirty)
 		{
 			textField.__updateLayout();
 
 			var b = textField.getBounds(textField);
-			textField.__svgClipWidth = Std.int(b.width);
-			textField.__svgClipHeight = Std.int(b.height);
+			textField.__svgClipWidth = Std.int(b.width * pixelRatio);
+			textField.__svgClipHeight = Std.int(b.height * pixelRatio);
 
 			graphics.clear();
 
@@ -51,8 +57,8 @@ class SVGTextField
 
 		if (textField.__dirty || graphics.__softwareDirty)
 		{
-			var width = graphics.__width;
-			var height = graphics.__height;
+			var width = graphics.__width * pixelRatio;
+			var height = graphics.__height * pixelRatio;
 
 			var initialScrollX = -999999.0;
 			var initialScrollY = -999999.0;
@@ -75,6 +81,12 @@ class SVGTextField
 			}
 			else
 			{
+				var matrix = Matrix.__pool.get();
+				matrix.scale(pixelRatio, pixelRatio);
+				matrix.concat(graphics.__renderTransform);
+				graphics.__renderTransform.copyFrom(matrix);
+				graphics.__bitmapScale = pixelRatio;
+
 				if (textEngine.border || textEngine.background)
 				{
 					if (textEngine.border)
@@ -87,7 +99,7 @@ class SVGTextField
 						graphics.beginFill(1, textEngine.backgroundColor);
 					}
 
-					graphics.drawRect(0, 0, bounds.width, bounds.height);
+					graphics.drawRect(0, 0, bounds.width * pixelRatio, bounds.height * pixelRatio);
 
 					if (textEngine.background)
 					{
@@ -124,9 +136,9 @@ class SVGTextField
 						var tx = group.offsetX;
 						var ty = group.offsetY + group.ascent;
 
-						SVGFont.renderText(groupText, group.format.font, graphics, tx, ty, group.format.size, group.format.letterSpacing, group.format.color,
-							textField.alpha, group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, group.format.gradient,
-							group.format.strokeGradient);
+						SVGFont.renderText(groupText, group.format.font, graphics, tx * pixelRatio, ty * pixelRatio, group.format.size * pixelRatio,
+							group.format.letterSpacing, group.format.color, textField.alpha, group.format.stroke, group.format.strokeAlpha,
+							group.format.strokeWidth, group.format.gradient, group.format.strokeGradient);
 
 						if (textField.__caretIndex > -1 && textEngine.selectable)
 						{
@@ -152,8 +164,9 @@ class SVGTextField
 									}
 
 									graphics.lineStyle(1, group.format.color & 0xFFFFFF);
-									graphics.moveTo(group.offsetX + advance, scrollY + 2 - bounds.y);
-									graphics.lineTo(group.offsetX + advance, scrollY + TextEngine.getFormatHeight(textField.defaultTextFormat) - 1 - bounds.y);
+									graphics.moveTo((group.offsetX + advance) * pixelRatio, (scrollY + 2 - bounds.y) * pixelRatio);
+									graphics.lineTo((group.offsetX + advance) * pixelRatio,
+										(scrollY + TextEngine.getFormatHeight(textField.defaultTextFormat) - 1 - bounds.y) * pixelRatio);
 
 									graphics.lineStyle();
 								}
@@ -193,14 +206,15 @@ class SVGTextField
 								if (start != null && end != null)
 								{
 									graphics.beginFill(0);
-									graphics.drawRect(start.x + scrollX, start.y + scrollY, end.x - start.x, group.height);
+									graphics.drawRect((start.x + scrollX) * pixelRatio, (start.y + scrollY) * pixelRatio, (end.x - start.x) * pixelRatio,
+										(group.height) * pixelRatio);
 									graphics.beginFill(0xffffff);
 
 									// TODO: fill only once
-									SVGFont.renderText(text.substring(selectionStart, selectionEnd), group.format.font, textField.__graphics, start.x,
-										group.offsetY + group.ascent, group.format.size, group.format.letterSpacing, 0xffffff, textField.alpha,
-										group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, group.format.gradient,
-										group.format.strokeGradient);
+									SVGFont.renderText(text.substring(selectionStart, selectionEnd), group.format.font, textField.__graphics,
+										start.x * pixelRatio, (group.offsetY + group.ascent) * pixelRatio, group.format.size * pixelRatio,
+										group.format.letterSpacing, 0xffffff, textField.alpha, group.format.stroke, group.format.strokeAlpha,
+										group.format.strokeWidth, group.format.gradient, group.format.strokeGradient);
 								}
 							}
 						}
@@ -208,8 +222,8 @@ class SVGTextField
 						if (group.format.underline)
 						{
 							graphics.lineStyle(1, color);
-							var x = group.offsetX + scrollX - bounds.x;
-							var y = Math.floor(group.offsetY + scrollY + group.ascent - bounds.y) + 0.5;
+							var x = (group.offsetX + scrollX - bounds.x) * pixelRatio;
+							var y = (Math.floor(group.offsetY + scrollY + group.ascent - bounds.y) + 0.5) * pixelRatio;
 							graphics.moveTo(x, y);
 							graphics.lineTo(x + group.width, y);
 						}
@@ -231,8 +245,9 @@ class SVGTextField
 						initialScrollY = scrollY;
 
 						graphics.lineStyle(1, textField.defaultTextFormat.color & 0xFFFFFF);
-						graphics.moveTo(scrollX + 2, scrollY + 2 - bounds.y);
-						graphics.lineTo(scrollX + 2, scrollY + TextEngine.getFormatHeight(textField.defaultTextFormat) - 1 - bounds.y);
+						graphics.moveTo((scrollX + 2) * pixelRatio, (scrollY + 2 - bounds.y) * pixelRatio);
+						graphics.lineTo((scrollX + 2) * pixelRatio,
+							(scrollY + TextEngine.getFormatHeight(textField.defaultTextFormat) - 1 - bounds.y) * pixelRatio);
 						graphics.lineStyle();
 					}
 				}
