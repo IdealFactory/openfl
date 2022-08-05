@@ -792,7 +792,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(EPush, __mousePoint.x, __mousePoint.y);
+			@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+			@:privateAccess var e = new Event(EPush, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 			appInstance.sevents.onEvent(e);
 		}
 	}
@@ -805,12 +806,13 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
 			#if (js || flash)
-			@:privateAccess __window.openFLMouseX = __mousePoint.x;
-			@:privateAccess __window.openFLMouseY = __mousePoint.y;
+			__window.openFLMouseX = __mousePoint.x;
+			__window.openFLMouseY = __mousePoint.y;
 			#else
 			appInstance.sevents.setMousePos(__mousePoint.x, __mousePoint.y);
 			#end
-			appInstance.sevents.onEvent(new Event(EMove, __mousePoint.x, __mousePoint.y));
+			@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+			appInstance.sevents.onEvent(new Event(EMove, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio));
 			__heapsDirty = true;
 		}
 	}
@@ -822,7 +824,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(ERelease, __mousePoint.x, __mousePoint.y);
+			@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+			@:privateAccess var e = new Event(ERelease, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 			appInstance.sevents.onEvent(e);
 		}
 	}
@@ -833,7 +836,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 		{
 			if (me.delta != 0)
 			{
-				var e = new Event(EWheel, __mousePoint.x, __mousePoint.y);
+				@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+				@:privateAccess var e = new Event(EWheel, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 				e.wheelDelta = -me.delta #if js / 120 #end; // Similar division as in Heaps hxd.Window.js.hx onMouseWheel method.
 				appInstance.sevents.onEvent(e);
 			}
@@ -847,7 +851,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(EPush, __mousePoint.x, __mousePoint.y);
+			@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+			var e = new Event(EPush, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 			e.touchId = te.touchPointID;
 
 			if (isGestureTouchPoints.indexOf(te.touchPointID) == -1) isGestureTouchPoints.push(te.touchPointID);
@@ -876,7 +881,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 			if (d > __touchMoveDistance)
 			{
-				var e = new Event(EMove, __mousePoint.x, __mousePoint.y);
+				@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+				var e = new Event(EMove, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 				e.touchId = te.touchPointID;
 				appInstance.sevents.onEvent(e);
 			}
@@ -890,7 +896,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 		if (__mousePoint.x > 0 && __mousePoint.x < __width && __mousePoint.y > 0 && __mousePoint.y < __height)
 		{
-			var e = new Event(ERelease, __mousePoint.x, __mousePoint.y);
+			@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+			var e = new Event(ERelease, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 			e.touchId = te.touchPointID;
 			if (isGestureTouchPoints.indexOf(te.touchPointID) != -1) isGestureTouchPoints.remove(te.touchPointID);
 			appInstance.sevents.onEvent(e);
@@ -899,14 +906,16 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 	@:keep @:noCompletion private function __onKeyDown(ke:KeyboardEvent)
 	{
-		var e = new Event(EKeyDown, __mousePoint.x, __mousePoint.y);
+		@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+		var e = new Event(EKeyDown, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 		e.keyCode = ke.keyCode;
 		hxd.Window.getInstance().event(e);
 	}
 
 	@:keep @:noCompletion private function __onKeyUp(ke:KeyboardEvent):Void
 	{
-		var e = new Event(EKeyUp, __mousePoint.x, __mousePoint.y);
+		@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
+		var e = new Event(EKeyUp, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 		e.keyCode = ke.keyCode;
 		hxd.Window.getInstance().event(e);
 	}
