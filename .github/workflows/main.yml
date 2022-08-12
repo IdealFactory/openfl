@@ -37,10 +37,14 @@ jobs:
         run: |
           haxelib run openfl setup -alias -y
 
-      - name: Run tests
+      - name: Run tests on Neko
         run: |
-          haxelib run hxp --install-hxp-alias
-          hxp test
+          haxelib run hxp test -Dtarget=neko --install-hxp-alias
+
+      - name: Run tests on HashLink
+        if: ${{ matrix.haxe-version != '3.4.7' }}
+        run: |
+          haxelib run hxp test -Dtarget=hl --install-hxp-alias
 
   package-haxelib:
     runs-on: macos-10.15
