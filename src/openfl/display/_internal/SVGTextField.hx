@@ -23,6 +23,8 @@ import js.Browser;
 @SuppressWarnings("checkstyle:FieldDocComment")
 class SVGTextField
 {
+	static var lastPixelRatio:Int = 0;
+
 	public static function render(textField:TextField, renderer:Dynamic, transform:Matrix):Void
 	{
 		var textEngine = textField.__textEngine;
@@ -34,6 +36,9 @@ class SVGTextField
 		#else
 		var pixelRatio = renderer.__pixelRatio;
 		#end
+
+		if (lastPixelRatio != pixelRatio) textField.__dirty = true;
+		lastPixelRatio = pixelRatio;
 
 		if (textField.__dirty)
 		{
