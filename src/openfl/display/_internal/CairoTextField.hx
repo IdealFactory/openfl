@@ -743,7 +743,6 @@ class CairoTextField
 			{
 				renderer.__pushMaskRect(new openfl.geom.Rectangle(0, 0, textField.__svgClipWidth, textField.__svgClipHeight), textField.__renderTransform);
 			}
-			CairoTextField.render(textField, renderer, textField.__worldTransform);
 			CairoDisplayObject.render(textField, renderer);
 			if (textField.defaultTextFormat.useSVGFont)
 			{
