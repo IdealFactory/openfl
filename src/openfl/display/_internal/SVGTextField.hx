@@ -58,7 +58,7 @@ class SVGTextField
 			graphics.__bounds.copyFrom(bounds);
 		}
 
-		graphics.__update(renderer.__worldTransform);
+		graphics.__update(renderer.__worldTransform, pixelRatio);
 
 		if (textField.__dirty || graphics.__softwareDirty)
 		{

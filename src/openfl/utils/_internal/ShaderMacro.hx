@@ -245,7 +245,7 @@ class ShaderMacro
 					name: name,
 					meta: [],
 					access: [fieldAccess],
-					kind: FVar(macro:openfl.display.ShaderInput<openfl.display.BitmapData>),
+					kind: FVar(macro :openfl.display.ShaderInput<openfl.display.BitmapData>),
 					pos: pos
 				};
 			}
@@ -284,7 +284,7 @@ class ShaderMacro
 							name: name,
 							meta: [{name: ":keep", pos: pos}],
 							access: [fieldAccess],
-							kind: FVar(macro:openfl.display.ShaderParameter<Bool>),
+							kind: FVar(macro :openfl.display.ShaderParameter<Bool>),
 							pos: pos
 						};
 
@@ -293,7 +293,7 @@ class ShaderMacro
 							name: name,
 							meta: [{name: ":keep", pos: pos}],
 							access: [fieldAccess],
-							kind: FVar(macro:openfl.display.ShaderParameter<Int>),
+							kind: FVar(macro :openfl.display.ShaderParameter<Int>),
 							pos: pos
 						};
 
@@ -302,7 +302,7 @@ class ShaderMacro
 							name: name,
 							meta: [{name: ":keep", pos: pos}],
 							access: [fieldAccess],
-							kind: FVar(macro:openfl.display.ShaderParameter<Float>),
+							kind: FVar(macro :openfl.display.ShaderParameter<Float>),
 							pos: pos
 						};
 				}

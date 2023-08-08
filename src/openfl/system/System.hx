@@ -9,6 +9,8 @@ import lime.system.System as LimeSystem;
 import neko.vm.Gc;
 #elseif cpp
 import cpp.vm.Gc;
+#elseif hl
+import hl.Gc;
 #end
 
 /**
@@ -188,13 +190,15 @@ import cpp.vm.Gc;
 		_For the Flash Player debugger version and AIR applications only._
 		In an AIR application, the `System.gc()` method is only enabled
 		in content running in the AIR Debug Launcher(ADL) or, in an installed
-		applcation, in content in the application security sandbox.
+		application, in content in the application security sandbox.
 
 	**/
 	public static function gc():Void
 	{
 		#if (cpp || neko)
 		return Gc.run(true);
+		#elseif hl
+		return Gc.major();
 		#end
 	}
 
@@ -262,6 +266,8 @@ import cpp.vm.Gc;
 		#elseif (js && html5)
 		return
 			untyped #if haxe4 js.Syntax.code #else __js__ #end ("(window.performance && window.performance.memory) ? window.performance.memory.usedJSHeapSize : 0");
+		#elseif hl
+		return Std.int(Gc.stats().currentMemory);
 		#else
 		return 0;
 		#end

@@ -879,6 +879,18 @@ class BitmapData implements IBitmapDrawable
 	{
 		if (source == null) return;
 
+		var wasVisible = true;
+		var sourceAsDisplayObject:DisplayObject = null;
+		if (#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end (source, DisplayObject))
+		{
+			sourceAsDisplayObject = cast(source, DisplayObject);
+			if (!sourceAsDisplayObject.visible)
+			{
+				wasVisible = false;
+				sourceAsDisplayObject.visible = true;
+			}
+		}
+
 		source.__update(false, true);
 
 		var transform = Matrix.__pool.get();
@@ -1006,6 +1018,11 @@ class BitmapData implements IBitmapDrawable
 		}
 
 		Matrix.__pool.release(transform);
+
+		if (sourceAsDisplayObject != null && !wasVisible)
+		{
+			sourceAsDisplayObject.visible = false;
+		}
 	}
 
 	/**
