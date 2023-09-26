@@ -41,7 +41,13 @@ class CairoTextField
 		var graphics = textField.__graphics;
 		var cairo = graphics.__cairo;
 
-		graphics.__update(renderer.__worldTransform);
+		#if (openfl_disable_hdpi || openfl_disable_hdpi_textfield)
+		var pixelRatio = 1;
+		#else
+		var pixelRatio = renderer.__pixelRatio;
+		#end
+
+		graphics.__update(renderer.__worldTransform, pixelRatio);
 
 		var width = 1; // graphics.__width;
 		var height = 1; // graphics.__height;
