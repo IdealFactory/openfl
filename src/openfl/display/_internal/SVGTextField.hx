@@ -23,12 +23,12 @@ import js.Browser;
 @SuppressWarnings("checkstyle:FieldDocComment")
 class SVGTextField
 {
-	static var lastPixelRatio:Int = 0;
 
 	public static function render(textField:TextField, renderer:Dynamic, transform:Matrix):Void
 	{
 		var textEngine = textField.__textEngine;
-		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
+//		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
+		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.bounds;
 		var graphics = textField.__graphics;
 
 		#if (openfl_disable_hdpi || openfl_disable_hdpi_textfield)
@@ -37,8 +37,10 @@ class SVGTextField
 		var pixelRatio = renderer.__pixelRatio;
 		#end
 
-		if (lastPixelRatio != pixelRatio) textField.__dirty = true;
-		lastPixelRatio = pixelRatio;
+		if (textField.__lastPixelRatio != pixelRatio) {
+            textField.__dirty = true;
+		    textField.__lastPixelRatio = pixelRatio;
+        }
 
 		if (textField.__dirty)
 		{
@@ -273,7 +275,8 @@ class SVGTextField
 	public static inline function renderSVGGroup(textField:TextField, transform:Matrix, splitStrokeFill:Bool = false):String
 	{
 		var textEngine = textField.__textEngine;
-		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
+//		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.textBounds;
+		var bounds = (textEngine.background || textEngine.border) ? textEngine.bounds : textEngine.bounds;
 		var graphics = textField.__graphics;
 
 		if (textField.__dirty)

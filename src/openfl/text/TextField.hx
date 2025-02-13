@@ -695,6 +695,7 @@ class TextField extends InteractiveObject
 	@:noCompletion private var __inputEnabled:Bool;
 	@:noCompletion private var __isHTML:Bool;
 	@:noCompletion private var __layoutDirty:Bool;
+	@:noCompletion private var __lastPixelRatio:Float = 0;
 	@:noCompletion private var __mouseScrollVCounter:Int = 0;
 	@:noCompletion private var __mouseWheelEnabled:Bool;
 	@:noCompletion private var __offsetX:Float;

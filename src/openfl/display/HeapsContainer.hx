@@ -877,6 +877,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			appInstance.sevents.setMousePos(__mousePoint.x, __mousePoint.y);
 			#end
 
+            if(__mousePoint == null || __touchMoveInitialPoints[te.touchPointID] == null) return;
 			var d = Point.distance(__mousePoint, __touchMoveInitialPoints[te.touchPointID]);
 
 			if (d > __touchMoveDistance)

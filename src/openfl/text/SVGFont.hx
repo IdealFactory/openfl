@@ -58,7 +58,7 @@ class SVGFont
 		return svgFont.getSupportedFontChars();
 	}
 
-	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0, alpha:Float = 1,
+	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Float, spacing:Float = 0, color:UInt = 0, alpha:Float = 1,
 			stroke:Null<UInt> = null, strokeAlpha:Null<Float> = null, strokeWidth:Null<Float> = null, splitStrokeFill:Bool = false,
 			gradient:Null<String> = null, strokeGradient:Null<String> = null):String
 	{
@@ -99,7 +99,7 @@ class SVGFont
 		return content;
 	}
 
-	public static function renderText(text:String, font:String, g:Graphics, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt = 0, alpha:Float = 1,
+	public static function renderText(text:String, font:String, g:Graphics, x:Float, y:Float, size:Float, spacing:Float = 0, color:UInt = 0, alpha:Float = 1,
 			stroke:Null<UInt> = null, strokeAlpha:Null<Float> = null, strokeWidth:Null<Float> = null, gradient:Null<String>, strokeGradient:Null<String>)
 	{
 		if (text == null || text == "" || font == null || !fontCache.exists(font) || g == null) return;
@@ -144,7 +144,7 @@ class SVGFont
 		renderer.render(g);
 	}
 
-	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Int, spacing:Float = 0, color:UInt, alpha:Float, stroke:Null<UInt>,
+	static function svgGroup(svgFont:Font, text:String, x:Float, y:Float, size:Float, spacing:Float = 0, color:UInt, alpha:Float, stroke:Null<UInt>,
 			strokeAlpha:Null<Float>, strokeWidth:Null<Float>, splitStrokeFill:Bool = false, gradientID:Null<String>, strokeGradientID:Null<String>):String
 	{
 		var xOffset = 0.;
