@@ -35,6 +35,7 @@ import format.png.Writer;
 import lime._internal.format.Zlib;
 import haxe.io.Bytes;
 import haxe.io.BytesOutput;
+import h3d.pass.FXAA.TunedFXAA;
 
 @:access(openfl.display3D.Context3D)
 @:access(openfl.geom.Matrix)
@@ -362,7 +363,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 
 				if (ctx.__state != null) __stateStore = ctx.__state.clone();
 
-				if (!__engine.driver.hasFeature(ShaderModel3))
+				if (true)
+				//if (!__engine.driver.hasFeature(ShaderModel3))
 				{
 					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
 
@@ -401,9 +403,9 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 						appInstance.s3d.renderer.enableFXAA = false;
 					}
 
-					var fxaa = new h3d.pass.FXAA();
-					__engine.pushTarget(destTarget);
-					fxaa.apply(captureTarget);
+                    var tunedFxaa = new TunedFXAA(0.3);  // Low strength = cheap edge smoothing (tune 0.2-0.5 for sharpness)
+                    __engine.pushTarget(destTarget);
+                    tunedFxaa.apply(captureTarget);
 				}
 				else
 				{
