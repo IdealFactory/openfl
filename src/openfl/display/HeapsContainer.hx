@@ -900,9 +900,19 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 			@:privateAccess var pixelRatio = Lib.current.stage.context3D.__stage.__renderer.__pixelRatio;
 			var e = new Event(ERelease, __mousePoint.x * pixelRatio, __mousePoint.y * pixelRatio);
 			e.touchId = te.touchPointID;
-			if (isGestureTouchPoints.indexOf(te.touchPointID) != -1) isGestureTouchPoints.remove(te.touchPointID);
 			appInstance.sevents.onEvent(e);
-		}
+		} else {
+			// Early-return if outside bounds—no need to forward the event
+			return;
+        }
+
+        // Clean up gesture/touch tracking
+        if (isGestureTouchPoints.indexOf(te.touchPointID) != -1) {
+            isGestureTouchPoints.remove(te.touchPointID);
+        }
+        if (__touchMoveInitialPoints.exists(te.touchPointID)) {
+            __touchMoveInitialPoints.remove(te.touchPointID);
+        }
 	}
 
 	@:keep @:noCompletion private function __onKeyDown(ke:KeyboardEvent)
