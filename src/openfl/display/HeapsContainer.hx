@@ -359,6 +359,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				appInstance.s2d.render(__engine);
 				#else
 				var destTarget:Texture;
+                var captureTarget:Texture = null;
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
 
 				if (ctx.__state != null) __stateStore = ctx.__state.clone();
@@ -368,7 +369,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				{
 					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
 
-					var captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
+					captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
 					captureTarget.depthBuffer = new DepthBuffer(w, h);
 
 					// destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
@@ -411,7 +412,6 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				{
 					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
 
-					var captureTarget:Texture;
 					captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
 					captureTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
 					captureTarget.customFBO = __engine.driver.createFrameBuffer(w, h, msaaLevel);
@@ -452,6 +452,12 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				bmd.setPixels(pixels);
 
 				__engine.popTarget();
+				__engine.popTarget();
+
+                // Clean up GPU resources
+                captureTarget.depthBuffer.dispose();
+                captureTarget.dispose();
+                destTarget.dispose();
 
 				__engine.width = oldW;
 				__engine.height = oldH;
