@@ -24,6 +24,37 @@ import js.Browser;
 class SVGTextField
 {
 
+	// Ink bounds (field-local px) of the rendered SVG-font glyphs, stroke included.
+	// Walks the same layout groups render() draws, so line breaks, word-wrap and
+	// per-run format/size/spacing are whatever the layout produced, not re-derived.
+	public static function measureInkBounds(textField:TextField):Rectangle
+	{
+		textField.__updateLayout();
+		var textEngine = textField.__textEngine;
+		if (textEngine.text == null || textEngine.text == "") return null;
+		var minX = 1e9; var minY = 1e9; var maxX = -1e9; var maxY = -1e9;
+		var any = false;
+		for (group in textEngine.layoutGroups)
+		{
+			if (group.format.useSVGFont != true) continue;
+			var groupText = textEngine.text.substring(group.startIndex, group.endIndex);
+			var size:Float = group.format.size != null ? group.format.size : 12.0;
+			var spacing:Float = group.format.letterSpacing != null ? group.format.letterSpacing : 0.0;
+			var ink = SVGFont.measureInk(groupText, group.format.font, size, spacing);
+			if (ink.width <= 0 || ink.height <= 0) continue;
+			var strokeW:Float = group.format.strokeWidth != null ? group.format.strokeWidth : 0.0;
+			var left = group.offsetX + ink.x - strokeW / 2;
+			var top = group.offsetY + group.ascent + ink.y - strokeW / 2;
+			if (left < minX) minX = left;
+			if (top < minY) minY = top;
+			if (left + ink.width + strokeW > maxX) maxX = left + ink.width + strokeW;
+			if (top + ink.height + strokeW > maxY) maxY = top + ink.height + strokeW;
+			any = true;
+		}
+		if (!any) return null;
+		return new Rectangle(minX, minY, maxX - minX, maxY - minY);
+	}
+
 	public static function render(textField:TextField, renderer:Dynamic, transform:Matrix):Void
 	{
 		var textEngine = textField.__textEngine;
@@ -144,8 +175,8 @@ class SVGTextField
 						var ty = group.offsetY + group.ascent;
 
 						SVGFont.renderText(groupText, group.format.font, graphics, tx * pixelRatio, ty * pixelRatio, group.format.size * pixelRatio,
-							group.format.letterSpacing, group.format.color, textField.alpha, group.format.stroke, group.format.strokeAlpha,
-							group.format.strokeWidth, group.format.gradient, group.format.strokeGradient);
+							group.format.letterSpacing * pixelRatio, group.format.color, textField.alpha, group.format.stroke, group.format.strokeAlpha,
+							group.format.strokeWidth * pixelRatio, group.format.gradient, group.format.strokeGradient);
 
 						if (textField.__caretIndex > -1 && textEngine.selectable)
 						{
@@ -220,8 +251,8 @@ class SVGTextField
 									// TODO: fill only once
 									SVGFont.renderText(text.substring(selectionStart, selectionEnd), group.format.font, textField.__graphics,
 										start.x * pixelRatio, (group.offsetY + group.ascent) * pixelRatio, group.format.size * pixelRatio,
-										group.format.letterSpacing, 0xffffff, textField.alpha, group.format.stroke, group.format.strokeAlpha,
-										group.format.strokeWidth, group.format.gradient, group.format.strokeGradient);
+										group.format.letterSpacing * pixelRatio, 0xffffff, textField.alpha, group.format.stroke, group.format.strokeAlpha,
+										group.format.strokeWidth * pixelRatio, group.format.gradient, group.format.strokeGradient);
 								}
 							}
 						}

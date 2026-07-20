@@ -855,18 +855,16 @@ class TextEngine
 				letterSpacing = formatRange.format.letterSpacing;
 			}
 
-			var f = cast font;
-			var fName:String = f == null ? "" : f.name;
 			var svgFont;
 
 			#if svg
-			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(fName)) != null)
+			if (formatRange.format.useSVGFont && (svgFont = SVGFont.getSVGFont(formatRange.format.font)) != null)
 			{
 				var fScale = 1 / svgFont.fontFace.unitsPerEm * formatRange.format.size;
 
 				for (i in startIndex...endIndex)
 				{
-					var g = SVGFont.getGlyph(text.substring(i, i + 1), fName);
+					var g = SVGFont.getGlyph(text.substring(i, i + 1), formatRange.format.font);
 					var advance = 0.;
 					if (g != null)
 					{

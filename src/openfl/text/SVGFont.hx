@@ -6,6 +6,7 @@ import format.SVG;
 import format.svg.Font;
 import format.svg.SVGData;
 import format.svg.SVGRenderer;
+import format.svg.PathSegment;
 import openfl.display.Graphics;
 import openfl.geom.Rectangle;
 
@@ -56,6 +57,45 @@ class SVGFont
 	{
 		var svgFont = fontCache[font];
 		return svgFont.getSupportedFontChars();
+	}
+
+	// Ink bounds (px) of the rendered string relative to the pen origin (x=0 at the
+	// start, y=0 at the baseline). Backend-agnostic: derived from glyph geometry, not
+	// from font ascent/descent (which some SVG fonts declare inconsistently).
+	public static function measureInk(text:String, font:String, size:Float, spacing:Float = 0):Rectangle
+	{
+		if (text == null || text == "" || font == null || !fontCache.exists(font)) return new Rectangle();
+		var svgFont = fontCache[font];
+		if (svgFont == null) return new Rectangle();
+		var upm = svgFont.fontFace.unitsPerEm != 0 ? svgFont.fontFace.unitsPerEm : 1000;
+		var fScale = 1 / upm * size;
+		var fallbackFScale = 1.;
+		if (fallbackFont != null && fallbackFont.fontFace.unitsPerEm != 0) fallbackFScale = svgFont.fontFace.unitsPerEm / fallbackFont.fontFace.unitsPerEm;
+		var xOffset = 0.;
+		var minX = 1e9; var minY = 1e9; var maxX = -1e9; var maxY = -1e9; var any = false;
+		for (cIdx in 0...text.length)
+		{
+			var c = text.substr(cIdx, 1);
+			var glyph:Glyph = null;
+			var scale = 1.;
+			if (svgFont.glyphs.exists(c)) glyph = svgFont.glyphs[c];
+			else if (fallbackFont != null) { glyph = fallbackFont.glyphs.exists(c) ? fallbackFont.glyphs[c] : fallbackFont.missingGlyph; scale = fallbackFScale; }
+			else glyph = svgFont.missingGlyph;
+			if (glyph != null)
+			{
+				for (seg in glyph.segments)
+				{
+					var sx = xOffset + seg.x * scale; var sy = seg.y * scale;
+					if (sx < minX) minX = sx; if (sx > maxX) maxX = sx; if (sy < minY) minY = sy; if (sy > maxY) maxY = sy; any = true;
+					if (Std.isOfType(seg, QuadraticSegment)) { var q:QuadraticSegment = cast seg; var qx = xOffset + q.cx * scale; var qy = q.cy * scale; if (qx < minX) minX = qx; if (qx > maxX) maxX = qx; if (qy < minY) minY = qy; if (qy > maxY) maxY = qy; }
+					else if (Std.isOfType(seg, CubicSegment)) { var cu:CubicSegment = cast seg; var ax = xOffset + cu.cx1 * scale; var ay = cu.cy1 * scale; var bx = xOffset + cu.cx2 * scale; var by = cu.cy2 * scale; if (ax < minX) minX = ax; if (ax > maxX) maxX = ax; if (ay < minY) minY = ay; if (ay > maxY) maxY = ay; if (bx < minX) minX = bx; if (bx > maxX) maxX = bx; if (by < minY) minY = by; if (by > maxY) maxY = by; }
+				}
+				xOffset += glyph.horizAdvX * scale;
+				xOffset += spacing / fScale;
+			}
+		}
+		if (!any) return new Rectangle();
+		return new Rectangle(minX * fScale, -maxY * fScale, (maxX - minX) * fScale, (maxY - minY) * fScale);
 	}
 
 	public static function renderSVGGroup(text:String, font:String, x:Float, y:Float, size:Float, spacing:Float = 0, color:UInt = 0, alpha:Float = 1,
