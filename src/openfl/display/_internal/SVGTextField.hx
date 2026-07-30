@@ -68,7 +68,7 @@ class SVGTextField
 		var pixelRatio = renderer.__pixelRatio;
 		#end
 
-		if (textField.__lastPixelRatio != pixelRatio) {
+		if (pixelRatio > textField.__lastPixelRatio) {
             textField.__dirty = true;
 		    textField.__lastPixelRatio = pixelRatio;
         }
