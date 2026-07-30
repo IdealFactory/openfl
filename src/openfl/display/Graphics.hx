@@ -52,7 +52,11 @@ import js.html.CanvasRenderingContext2D;
 @:access(openfl.geom.Rectangle)
 @:final class Graphics
 {
+	@:noCompletion private static inline var RASTER_REUSE_LIMIT:Float = 8;
+
+	public static var rasterReuse:Bool = true;
 	public static var bitmapReuse:Bool = true;
+	public static var maxRasterSize:Float = 0;
 
 	@:noCompletion private static var maxTextureHeight:Null<Int> = null;
 	@:noCompletion private static var maxTextureWidth:Null<Int> = null;
@@ -1936,6 +1940,35 @@ import js.html.CanvasRenderingContext2D;
 			height = maxTextureHeight;
 			scaleY = maxTextureHeight / __bounds.height;
 		}
+
+		if (maxRasterSize > 0)
+		{
+			var largest = width > height ? width : height;
+
+			if (largest > maxRasterSize)
+			{
+				var scale = maxRasterSize / largest;
+				width *= scale;
+				height *= scale;
+			}
+		}
+
+		#if !openfl_disable_graphics_raster_reuse
+		if (rasterReuse && !__dirty && __width > 1 && __height > 1)
+		{
+			var rasterWidth = __width - 1.0;
+			var rasterHeight = __height - 1.0;
+
+			if (width <= rasterWidth
+				&& height <= rasterHeight
+				&& width * RASTER_REUSE_LIMIT >= rasterWidth
+				&& height * RASTER_REUSE_LIMIT >= rasterHeight)
+			{
+				width = rasterWidth;
+				height = rasterHeight;
+			}
+		}
+		#end
 
 		var inverseA, inverseD;
 
