@@ -209,6 +209,13 @@ class DisplayObjectRenderer extends EventDispatcher
 		return null;
 	}
 
+	@:noCompletion private function __disposeCacheBitmapData(displayObject:DisplayObject):Void
+	{
+		if (displayObject.__cacheBitmapData != null) displayObject.__cacheBitmapData.dispose();
+		if (displayObject.__cacheBitmapData2 != null) displayObject.__cacheBitmapData2.dispose();
+		if (displayObject.__cacheBitmapData3 != null) displayObject.__cacheBitmapData3.dispose();
+	}
+
 	@:noCompletion private function __updateCacheBitmap(displayObject:DisplayObject, force:Bool):Bool
 	{
 		if (displayObject == null) return false;
@@ -414,6 +421,8 @@ class DisplayObjectRenderer extends EventDispatcher
 						|| bitmapWidth > displayObject.__cacheBitmapData.width
 						|| bitmapHeight > displayObject.__cacheBitmapData.height)
 					{
+						if (displayObject.__cacheBitmapData != null) displayObject.__cacheBitmapData.dispose();
+
 						displayObject.__cacheBitmapData = new BitmapData(bitmapWidth, bitmapHeight, true, bitmapColor);
 
 						if (displayObject.__cacheBitmap == null) displayObject.__cacheBitmap = new Bitmap();
@@ -434,6 +443,8 @@ class DisplayObjectRenderer extends EventDispatcher
 				else
 				{
 					ColorTransform.__pool.release(colorTransform);
+
+					__disposeCacheBitmapData(displayObject);
 
 					displayObject.__cacheBitmap = null;
 					displayObject.__cacheBitmapData = null;
@@ -830,6 +841,8 @@ class DisplayObjectRenderer extends EventDispatcher
 				var domRenderer:DOMRenderer = cast renderer;
 				domRenderer.__renderDrawableClear(displayObject.__cacheBitmap);
 			}
+
+			__disposeCacheBitmapData(displayObject);
 
 			displayObject.__cacheBitmap = null;
 			displayObject.__cacheBitmapData = null;
