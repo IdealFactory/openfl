@@ -24,6 +24,13 @@ import js.Browser;
 @SuppressWarnings("checkstyle:FieldDocComment")
 class SVGTextField
 {
+#if debug
+	public static var rasterCount = 0;
+	public static var rasterMs = 0.0;
+	public static var drawMs = 0.0;
+	public static var lastRasterW = 0;
+	public static var lastRasterH = 0;
+#end
 
 	// Ink bounds (field-local px) of the rendered SVG-font glyphs, stroke included.
 	// Walks the same layout groups render() draws, so line breaks, word-wrap and
@@ -94,10 +101,16 @@ class SVGTextField
 
 		graphics.__update(renderer.__worldTransform, pixelRatio);
 
+		#if debug var __rasterT0 = openfl.Lib.getTimer(); #end
 		if (textField.__dirty || graphics.__softwareDirty)
 		{
 			var width = graphics.__width * pixelRatio;
 			var height = graphics.__height * pixelRatio;
+			#if debug
+			rasterCount++;
+			lastRasterW = Std.int(width);
+			lastRasterH = Std.int(height);
+			#end
 
 			var initialScrollX = -999999.0;
 			var initialScrollY = -999999.0;
@@ -304,6 +317,7 @@ class SVGTextField
 				graphics.__svgOffsetY = dtXY.y;
 			}
 		}
+		#if debug rasterMs += openfl.Lib.getTimer() - __rasterT0; #end
 	}
 
 	public static inline function renderSVGGroup(textField:TextField, transform:Matrix, splitStrokeFill:Bool = false):String

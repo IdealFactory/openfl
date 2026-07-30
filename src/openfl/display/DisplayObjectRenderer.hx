@@ -424,6 +424,7 @@ class DisplayObjectRenderer extends EventDispatcher
 						if (displayObject.__cacheBitmapData != null) displayObject.__cacheBitmapData.dispose();
 
 						displayObject.__cacheBitmapData = new BitmapData(bitmapWidth, bitmapHeight, true, bitmapColor);
+						#if debug displayObject.__cacheBitmapData.__debugOwner = "cache:" + BitmapData.__ownerName(displayObject); #end
 
 						if (displayObject.__cacheBitmap == null) displayObject.__cacheBitmap = new Bitmap();
 						displayObject.__cacheBitmap.__bitmapData = displayObject.__cacheBitmapData;

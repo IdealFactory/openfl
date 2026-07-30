@@ -382,6 +382,7 @@ class CanvasTextField
 				{
 					if (graphics.__bitmap != null) graphics.__bitmap.__disposeTexture();
 					graphics.__bitmap = BitmapData.fromCanvas(textField.__graphics.__canvas);
+					#if debug graphics.__bitmap.__debugOwner = BitmapData.__ownerName(graphics.__owner); #end
 				}
 				graphics.__bitmapScale = pixelRatio;
 				graphics.__visible = true;
@@ -453,7 +454,9 @@ class CanvasTextField
 				{
 					renderer.__pushMaskRect(new openfl.geom.Rectangle(0, 0, textField.__svgClipWidth, textField.__svgClipHeight), textField.__renderTransform);
 				}
+				#if debug var __drawT0 = openfl.Lib.getTimer(); #end
 				CanvasDisplayObject.render(textField, renderer);
+				#if debug if (textField.defaultTextFormat.useSVGFont) SVGTextField.drawMs += openfl.Lib.getTimer() - __drawT0; #end
 				if (textField.defaultTextFormat.useSVGFont)
 				{
 					renderer.__popMaskRect();

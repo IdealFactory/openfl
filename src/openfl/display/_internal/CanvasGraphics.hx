@@ -1471,6 +1471,7 @@ class CanvasGraphics
 				{
 					if (graphics.__bitmap != null) graphics.__bitmap.__disposeTexture();
 					graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
+					#if debug graphics.__bitmap.__debugOwner = BitmapData.__ownerName(graphics.__owner); #end
 				}
 			}
 

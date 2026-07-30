@@ -60,6 +60,54 @@ class TextureBase extends EventDispatcher
 	@:noCompletion private var __textureTarget:Int;
 	@:noCompletion private var __width:Int;
 
+	#if debug
+	public static var __glTexturesLive:Int = 0;
+	public static var __glTexturesCreated:Int = 0;
+	public static var __glTexturesDeleted:Int = 0;
+	public static var __logCreate:Bool = false;
+	public static var __createTraces:Int = 0;
+
+	// Leak report: record the creation stack of every live texture, drop it on delete.
+	// Whatever remains after a repeated action is, by definition, leaked.
+	public var __debugOwner:String = "";
+	public static var __trackLeaks:Bool = false;
+	public static var __liveStacks:Map<Int, String> = new Map();
+	public static var __liveTextures:Map<Int, TextureBase> = new Map();
+	static var __nextTexId:Int = 0;
+	var __texId:Int = -1;
+
+	public static function __dumpLeaks():Void
+	{
+		var counts = new Map<String, Int>();
+		var sizes = new Map<String, String>();
+
+		for (id in __liveStacks.keys())
+		{
+			var tex = __liveTextures.get(id);
+			var owner = (tex != null && tex.__debugOwner != "") ? tex.__debugOwner : "(unknown owner)";
+			var key = owner + "\n" + __liveStacks.get(id).split("\n").slice(1, 8).join("\n");
+			counts.set(key, (counts.exists(key) ? counts.get(key) : 0) + 1);
+
+			if (tex != null)
+			{
+				var size = tex.__width + "x" + tex.__height;
+				var seen = sizes.exists(key) ? sizes.get(key) : "";
+				if (seen.indexOf(size) == -1) sizes.set(key, seen == "" ? size : seen + " " + size);
+			}
+		}
+
+		var rows = [];
+		for (key in counts.keys()) rows.push({key: key, n: counts.get(key)});
+		rows.sort(function(a, b) return b.n - a.n);
+
+		trace("=== LEAK REPORT: " + Lambda.count(__liveStacks) + " live tracked textures ===");
+		for (i in 0...(rows.length < 4 ? rows.length : 4))
+		{
+			trace("--- " + rows[i].n + " live | sizes: " + sizes.get(rows[i].key) + "\n" + rows[i].key);
+		}
+	}
+	#end
+
 	@:noCompletion private function new(context:Context3D)
 	{
 		super();
@@ -70,6 +118,26 @@ class TextureBase extends EventDispatcher
 
 		__textureID = gl.createTexture();
 		__textureContext = __context.__context;
+
+		#if debug
+		__glTexturesLive++;
+		__glTexturesCreated++;
+		#if (js && html5)
+		if (__trackLeaks)
+		{
+			__texId = ++__nextTexId;
+			__liveStacks.set(__texId, new js.lib.Error().stack);
+			__liveTextures.set(__texId, this);
+		}
+
+		if (__logCreate && __createTraces < 10)
+		{
+			__createTraces++;
+			trace("GL TEX CREATE #" + __createTraces + " live=" + __glTexturesLive + "\n" + new js.lib.Error().stack);
+			if (__createTraces >= 10) __logCreate = false;
+		}
+		#end
+		#end
 
 		if (__supportsBGRA == null)
 		{
@@ -168,6 +236,16 @@ class TextureBase extends EventDispatcher
 		{
 			gl.deleteTexture(__textureID);
 			__textureID = null;
+			#if debug
+			__glTexturesLive--;
+			__glTexturesDeleted++;
+			if (__texId != -1)
+			{
+				__liveStacks.remove(__texId);
+				__liveTextures.remove(__texId);
+				__texId = -1;
+			}
+			#end
 		}
 
 		if (__glFramebuffer != null)

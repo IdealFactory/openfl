@@ -2187,6 +2187,35 @@ class BitmapData implements IBitmapDrawable
 		}
 	}
 
+	#if debug
+	public var __debugOwner:String = "";
+
+	// The immediate owner is usually an openfl class (TextField/Shape), which says nothing
+	// about where it lives - so also report the nearest ancestor outside the openfl package.
+	public static function __ownerName(owner:Dynamic):String
+	{
+		if (owner == null) return "";
+
+		var name = Type.getClassName(Type.getClass(owner));
+		var current:DisplayObject = cast owner;
+		var depth = 0;
+
+		while (current != null && depth++ < 16)
+		{
+			var ancestor = Type.getClassName(Type.getClass(current));
+			if (ancestor != null && ancestor.indexOf("openfl.") != 0) return name + "  in  " + ancestor;
+			current = current.parent;
+		}
+
+		return name;
+	}
+
+	public static var __uploadCount:Int = 0;
+	public static var __uploadBytes:Float = 0;
+	public static var __lastUploadW:Int = 0;
+	public static var __lastUploadH:Int = 0;
+	#end
+
 	/**
 		**BETA**
 
@@ -2203,6 +2232,7 @@ class BitmapData implements IBitmapDrawable
 		{
 			__textureContext = context.__context;
 			__texture = context.createRectangleTexture(width, height, BGRA, false);
+			#if debug __texture.__debugOwner = __debugOwner; #end
 
 			// context.__bindGLTexture2D (__texture);
 			// gl.texParameteri (gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -2244,6 +2274,16 @@ class BitmapData implements IBitmapDrawable
 				#if openfl_power_of_two
 				textureImage.powerOfTwo = true;
 				#end
+			}
+			#end
+
+			#if debug
+			__uploadCount++;
+			__uploadBytes += width * height * 4;
+			if (width * height > __lastUploadW * __lastUploadH)
+			{
+				__lastUploadW = width;
+				__lastUploadH = height;
 			}
 			#end
 
