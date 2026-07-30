@@ -2276,7 +2276,7 @@ import lime.math.Vector2;
 			var scissorWidth = Std.int(__state.scissorRectangle.width);
 			var scissorHeight = Std.int(__state.scissorRectangle.height);
 			#if !openfl_dpi_aware
-			if (__backBufferWantsBestResolution)
+			if (__backBufferWantsBestResolution && __state.renderToTexture == null)
 			{
 				scissorX = Std.int(__state.scissorRectangle.x * __stage.window.scale);
 				scissorY = Std.int(__state.scissorRectangle.y * __stage.window.scale);
