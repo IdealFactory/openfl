@@ -675,7 +675,7 @@ class DisplayObjectContainer extends InteractiveObject
 	{
 		for (orphan in __removedChildren)
 		{
-			if (orphan.stage == null)
+			if (orphan.stage == null && orphan.parent == null)
 			{
 				orphan.__cleanup();
 			}
