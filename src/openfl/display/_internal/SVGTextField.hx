@@ -16,6 +16,7 @@ import js.Browser;
 #end
 
 @:access(openfl.text._internal.TextEngine)
+@:access(openfl.display.BitmapData)
 @:access(openfl.display.Graphics)
 @:access(openfl.geom.Matrix)
 @:access(openfl.text.TextField)
@@ -112,6 +113,8 @@ class SVGTextField
 				if (textField.__graphics.__canvas != null) textField.__graphics.__canvas.width = textField.__graphics.__canvas.height = 1;
 				textField.__graphics.__canvas = null;
 				textField.__graphics.__context = null;
+				if (textField.__graphics.__bitmap != null) textField.__graphics.__bitmap.__disposeTexture();
+				textField.__graphics.__bitmap = null;
 				#else
 				textField.__graphics.__cairo = null;
 				#end

@@ -15,6 +15,7 @@ import js.Browser;
 #end
 
 @:access(openfl.text._internal.TextEngine)
+@:access(openfl.display.BitmapData)
 @:access(openfl.display.Graphics)
 @:access(openfl.geom.Matrix)
 @:access(openfl.text.TextField)
@@ -110,6 +111,7 @@ class CanvasTextField
 			{
 				textField.__graphics.__canvas = null;
 				textField.__graphics.__context = null;
+				if (textField.__graphics.__bitmap != null) textField.__graphics.__bitmap.__disposeTexture();
 				textField.__graphics.__bitmap = null;
 				textField.__graphics.__softwareDirty = false;
 				textField.__graphics.__dirty = false;
@@ -368,7 +370,19 @@ class CanvasTextField
 					}
 				}
 
-				graphics.__bitmap = BitmapData.fromCanvas(textField.__graphics.__canvas);
+				if (Graphics.bitmapReuse
+					&& graphics.__bitmap != null
+					&& graphics.__bitmap.image != null
+					&& graphics.__bitmap.width == textField.__graphics.__canvas.width
+					&& graphics.__bitmap.height == textField.__graphics.__canvas.height)
+				{
+					graphics.__bitmap.image.version++;
+				}
+				else
+				{
+					if (graphics.__bitmap != null) graphics.__bitmap.__disposeTexture();
+					graphics.__bitmap = BitmapData.fromCanvas(textField.__graphics.__canvas);
+				}
 				graphics.__bitmapScale = pixelRatio;
 				graphics.__visible = true;
 				textField.__dirty = false;

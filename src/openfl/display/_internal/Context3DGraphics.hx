@@ -24,6 +24,7 @@ import openfl.display._internal.stats.DrawCallContext;
 @:noDebug
 #end
 @:access(openfl.display3D.Context3D)
+@:access(openfl.display.BitmapData)
 @:access(openfl.display.DisplayObject)
 @:access(openfl.display.Graphics)
 @:access(openfl.display.Shader)
@@ -504,6 +505,7 @@ class Context3DGraphics
 		}
 		else
 		{
+			if (graphics.__bitmap != null) graphics.__bitmap.__disposeTexture();
 			graphics.__bitmap = null;
 
 			#if (openfl_disable_hdpi || openfl_disable_hdpi_graphics)

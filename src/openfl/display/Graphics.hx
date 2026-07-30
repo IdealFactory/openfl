@@ -42,6 +42,7 @@ import js.html.CanvasRenderingContext2D;
 @:fileXml('tags="haxe,release"')
 @:noDebug
 #end
+@:access(openfl.display.BitmapData)
 @:access(openfl.display.DisplayObject)
 @:access(openfl.display.GraphicsPath)
 @:access(openfl.display.IGraphicsData)
@@ -51,6 +52,8 @@ import js.html.CanvasRenderingContext2D;
 @:access(openfl.geom.Rectangle)
 @:final class Graphics
 {
+	public static var bitmapReuse:Bool = true;
+
 	@:noCompletion private static var maxTextureHeight:Null<Int> = null;
 	@:noCompletion private static var maxTextureWidth:Null<Int> = null;
 
@@ -1614,6 +1617,7 @@ import js.html.CanvasRenderingContext2D;
 		}
 		#end
 
+		if (__bitmap != null) __bitmap.__disposeTexture();
 		__bitmap = null;
 
 		#if (js && html5)

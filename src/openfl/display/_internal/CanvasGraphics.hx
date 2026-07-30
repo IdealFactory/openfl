@@ -1166,6 +1166,7 @@ class CanvasGraphics
 			{
 				graphics.__canvas = null;
 				graphics.__context = null;
+				if (graphics.__bitmap != null) graphics.__bitmap.__disposeTexture();
 				graphics.__bitmap = null;
 			}
 			else
@@ -1457,7 +1458,20 @@ class CanvasGraphics
 				}
 
 				data.destroy();
-				graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
+
+				if (Graphics.bitmapReuse
+					&& graphics.__bitmap != null
+					&& graphics.__bitmap.width == graphics.__canvas.width
+					&& graphics.__bitmap.height == graphics.__canvas.height
+					&& graphics.__bitmap.image != null)
+				{
+					graphics.__bitmap.image.version++;
+				}
+				else
+				{
+					if (graphics.__bitmap != null) graphics.__bitmap.__disposeTexture();
+					graphics.__bitmap = BitmapData.fromCanvas(graphics.__canvas);
+				}
 			}
 
 			graphics.__softwareDirty = false;
