@@ -756,31 +756,14 @@ class BitmapData implements IBitmapDrawable
 
 		__surface = null;
 
+		__disposeTexture();
+
 		__vertexBuffer = null;
 		__framebuffer = null;
 		__framebufferContext = null;
 		__texture = null;
 		__textureContext = null;
 
-		// if (__texture != null) {
-		//
-		// var renderer = @:privateAccess Lib.current.stage.__renderer;
-		//
-		// if(renderer != null) {
-		//
-		// var renderer = @:privateAccess renderer.renderer;
-		// var gl = renderer.__gl;
-		//
-		// if (gl != null) {
-		//
-		// gl.deleteTexture (__texture);
-		// __texture = null;
-		//
-		// }
-		//
-		// }
-		//
-		// }
 	}
 
 	/**
@@ -2190,6 +2173,18 @@ class BitmapData implements IBitmapDrawable
 		#else
 		return null;
 		#end
+	}
+
+	@:noCompletion private function __disposeTexture():Void
+	{
+		if (__texture != null)
+		{
+			if (__texture.__context != null && __texture.__context.gl != null) __texture.dispose();
+
+			__texture = null;
+			__textureContext = null;
+			__textureVersion = -1;
+		}
 	}
 
 	/**
