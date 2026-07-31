@@ -696,6 +696,8 @@ class TextField extends InteractiveObject
 	@:noCompletion private var __isHTML:Bool;
 	@:noCompletion private var __layoutDirty:Bool;
 	@:noCompletion private var __lastPixelRatio:Float = 0;
+	@:noCompletion private var __svgInkBounds:Rectangle = null;
+	@:noCompletion private var __svgInkDirty:Bool = true;
 	@:noCompletion private var __mouseScrollVCounter:Int = 0;
 	@:noCompletion private var __mouseWheelEnabled:Bool;
 	@:noCompletion private var __offsetX:Float;
@@ -1996,6 +1998,24 @@ class TextField extends InteractiveObject
 		return group.endIndex;
 	}
 
+	// Glyph ink box in field-local px, cached until the field is next laid out.
+	@:noCompletion private function __svgInkContains(px:Float, py:Float):Bool
+	{
+		#if svg
+		if (__svgInkBounds == null || __svgInkDirty)
+		{
+			__svgInkBounds = SVGTextField.measureInkBounds(this);
+			__svgInkDirty = false;
+		}
+
+		if (__svgInkBounds == null) return true;
+
+		return __svgInkBounds.contains(px, py);
+		#else
+		return true;
+		#end
+	}
+
 	@:noCompletion private override function __hitTest(x:Float, y:Float, shapeFlag:Bool, stack:Array<DisplayObject>, interactiveOnly:Bool,
 			hitObject:DisplayObject):Bool
 	{
@@ -2011,7 +2031,11 @@ class TextField extends InteractiveObject
 		if (defaultTextFormat.useSVGFont)
 		{
 			#if svg
-			if (__textEngine.bounds.contains(px, py))
+			// bounds is the em line box, which is taller than the glyphs and offset from
+			// them, so hit testing it catches clicks well outside the visible text. Reject
+			// on the cheap box first, then refine against the glyph ink - the same measure
+			// callers use to draw a box around the text.
+			if (__textEngine.bounds.contains(px, py) && __svgInkContains(px, py))
 			{
 				if (stack != null && !transparentHitTest)
 				{
@@ -2316,6 +2340,8 @@ class TextField extends InteractiveObject
 	{
 		if (__layoutDirty)
 		{
+			__svgInkDirty = true;
+
 			var cacheWidth = __textEngine.width;
 			__textEngine.update();
 
