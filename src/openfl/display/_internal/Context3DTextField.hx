@@ -44,14 +44,12 @@ class Context3DTextField
 		}
 		else
 		{
-			if (textField.defaultTextFormat.useSVGFont)
-			{
-				SVGTextField.render(textField, renderer, textField.__worldTransform);
-			}
-			else
-			{
-				Context3DTextField.render(textField, renderer);
-			}
+			// render() rasterises through the software renderer, whose transform carries no
+			// device pixel ratio, so __update applies the ratio once. Passing the GL renderer
+			// here applied it twice - once as pixelRatio and again from a transform that
+			// already held it - so the graphics render below, which does go through the
+			// software renderer, resized the raster back on every frame.
+			Context3DTextField.render(textField, renderer);
 
 			if (textField.defaultTextFormat.useSVGFont)
 			{
