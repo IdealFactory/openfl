@@ -1555,9 +1555,15 @@ class CanvasGraphics
 
 					case DRAW_RECT:
 						var c = data.readDrawRect();
-						context.beginPath();
+						// No beginPath()/closePath() here: __pushMask opens ONE path for
+						// the whole mask and clips it once at the end, so resetting the
+						// path per command discards every rect but the last — a
+						// multi-rect mask clipped to its final rect alone. rect() adds
+						// its own closed subpath, exactly as CairoGraphics has always
+						// accumulated it. Reverts the 2018 canvas workaround (7347e140);
+						// browsers handle multi-subpath clipping now, as the TODO at the
+						// top of this method already records.
 						context.rect(c.x - offsetX, c.y - offsetY, c.width, c.height);
-						context.closePath();
 
 					case DRAW_ROUND_RECT:
 						var c = data.readDrawRoundRect();
