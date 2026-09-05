@@ -1157,6 +1157,13 @@ class BitmapData implements IBitmapDrawable
 			byteArray.writeBytes(ByteArray.fromBytes(image.encode(JPEG, cast(compressor, JPEGEncoderOptions).quality)));
 			return byteArray;
 		}
+		else if ((compressor is WebPEncoderOptions))
+		{
+			var bytes = image.encode(WEBP, cast(compressor, WebPEncoderOptions).quality);
+			if (bytes == null) return byteArray = null;
+			byteArray.writeBytes(ByteArray.fromBytes(bytes));
+			return byteArray;
+		}
 		#end
 
 		return byteArray = null;
