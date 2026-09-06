@@ -360,12 +360,13 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				#else
 				var destTarget:Texture;
                 var captureTarget:Texture = null;
+				var msaaTarget:Texture = null;
 				var driver:h3d.impl.GlDriver = cast __engine.driver;
 
 				if (ctx.__state != null) __stateStore = ctx.__state.clone();
 
-				if (true)
-				//if (!__engine.driver.hasFeature(ShaderModel3))
+				// Multisampled capture needs WebGL2; everything else takes the FXAA route.
+				if (!__engine.driver.hasFeature(ShaderModel3))
 				{
 					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.RGBA);
 
@@ -412,11 +413,12 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				{
 					destTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
 
+					// The resolve target is single-sample colour only. A multisampled
+					// depth attachment beside a single-sample colour texture makes the
+					// draw framebuffer incomplete on strict drivers.
 					captureTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
-					captureTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
-					captureTarget.customFBO = __engine.driver.createFrameBuffer(w, h, msaaLevel);
+					captureTarget.customFBO = __engine.driver.createFrameBuffer(w, h);
 
-					var msaaTarget:Texture;
 					msaaTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
 					msaaTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
 					msaaTarget.msaaBuffer = __engine.driver.createFrameBuffer(w, h, msaaLevel);
@@ -451,13 +453,20 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				var bmd = new hxd.BitmapData(pixels.width, pixels.height);
 				bmd.setPixels(pixels);
 
+				// The FXAA route pushed the capture and the destination targets, the
+				// multisample route only its own.
 				__engine.popTarget();
-				__engine.popTarget();
+				if (msaaTarget == null) __engine.popTarget();
 
                 // Clean up GPU resources
-                captureTarget.depthBuffer.dispose();
+                if (captureTarget.depthBuffer != null) captureTarget.depthBuffer.dispose();
                 captureTarget.dispose();
                 destTarget.dispose();
+                if (msaaTarget != null)
+                {
+                    msaaTarget.depthBuffer.dispose();
+                    msaaTarget.dispose();
+                }
 
 				__engine.width = oldW;
 				__engine.height = oldH;
