@@ -420,7 +420,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 					captureTarget.customFBO = __engine.driver.createFrameBuffer(w, h);
 
 					msaaTarget = new Texture(w, h, [TextureFlags.Target], hxd.PixelFormat.BGRA);
-					msaaTarget.depthBuffer = new DepthBuffer(w, h, Depth16, msaaLevel);
+					msaaTarget.depthBuffer = new DepthBuffer(w, h, Depth24Stencil8, msaaLevel);
 					msaaTarget.msaaBuffer = __engine.driver.createFrameBuffer(w, h, msaaLevel);
 
 					__engine.pushTarget(msaaTarget);
