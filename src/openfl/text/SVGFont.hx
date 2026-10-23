@@ -308,13 +308,13 @@ class SVGFont
 			{
 				if (splitStrokeFill)
 				{
-					var p = glyph.path;
+					var p = scalePath(glyph.path, scale);
 					p = offsetPath(p, xOffset, yOffset);
 					textPath += p + " ";
 				}
 				else
 				{
-					var p = glyph.path;
+					var p = scalePath(glyph.path, scale);
 					p = offsetPath(p, xOffset, yOffset);
 					textPath += p + " ";
 				}
@@ -335,6 +335,12 @@ class SVGFont
 		content += '</g>' + "\n";
 
 		return content;
+	}
+
+	static function scalePath(p:String, scale:Float):String
+	{
+		if (scale == 1 || p == null) return p;
+		return ~/-?[0-9]*\.?[0-9]+/g.map(p, function(number) return Std.string(Math.round(Std.parseFloat(number.matched(0)) * scale * 1000) / 1000));
 	}
 
 	static function offsetPath(p:String, xOff:Float, yOff:Float):String
