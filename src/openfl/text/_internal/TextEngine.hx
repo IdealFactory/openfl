@@ -870,6 +870,7 @@ class TextEngine
 					{
 						advance = g.horizAdvX * fScale;
 						if (i != endIndex - 1) advance += (letterSpacing * fScale);
+						if (i + 1 < formatRange.end) advance -= SVGFont.getKerning(text.substring(i, i + 1), text.substring(i + 1, i + 2), formatRange.format.font) * fScale;
 					}
 					#if (js && html5)
 					positions.push(advance);

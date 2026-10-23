@@ -11,6 +11,9 @@ class Tests
 		runner.addCase(new FontTest());
 		runner.addCase(new FontTypeTest());
 		runner.addCase(new GridFitTypeTest());
+		#if svg
+		runner.addCase(new SVGFontKerningTest());
+		#end
 		runner.addCase(new TextFieldAutoSizeTest());
 		#if !flash
 		runner.addCase(new TextFieldRestrictTest());

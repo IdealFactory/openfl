@@ -13,6 +13,7 @@ import openfl.geom.Rectangle;
 class SVGFont
 {
 	static var fontCache:Map<String, Font> = new Map<String, Font>();
+	static var kerningCache:haxe.ds.ObjectMap<Font, Map<String, Int>> = new haxe.ds.ObjectMap<Font, Map<String, Int>>();
 
 	public static var fallbackFont:Font;
 
@@ -29,10 +30,68 @@ class SVGFont
 		svgFont.src = src;
 		if (fontCache.exists(id))
 		{
+			kerningCache.remove(fontCache[id]);
 			fontCache.remove(id);
 		}
 		fontCache[id] = svgFont;
+		kerningCache.set(svgFont, kerningPairs(svgFont));
 		return svgFont;
+	}
+
+	public static function getKerning(left:String, right:String, font:String):Float
+	{
+		return fontCache.exists(font) ? kerning(fontCache[font], left, right) : 0;
+	}
+
+	static function kerning(svgFont:Font, left:String, right:String):Float
+	{
+		var pairs = kerningCache.get(svgFont);
+		if (pairs == null) return 0;
+		var k = pairs[left + right];
+		return k == null ? 0 : k;
+	}
+
+	static function kerningPairs(svgFont:Font):Map<String, Int>
+	{
+		var names = new Map<String, String>();
+		for (unicode => glyph in svgFont.glyphs)
+		{
+			if (glyph.name != null && glyph.name != "") names[glyph.name] = unicode;
+		}
+		var pairs = new Map<String, Int>();
+		if (svgFont.hkern == null) return pairs;
+		for (kern in svgFont.hkern)
+		{
+			for (left in kernCharacters(kern.u1, kern.g1, names))
+			{
+				for (right in kernCharacters(kern.u2, kern.g2, names))
+				{
+					if (!pairs.exists(left + right)) pairs[left + right] = kern.k;
+				}
+			}
+		}
+		return pairs;
+	}
+
+	static function kernCharacters(unicodes:String, glyphNames:String, names:Map<String, String>):Array<String>
+	{
+		var characters = [];
+		if (unicodes != null && unicodes != "")
+		{
+			for (unicode in (unicodes.length == 1 ? [unicodes] : unicodes.split(",")))
+			{
+				if (unicode.length == 1) characters.push(unicode);
+			}
+		}
+		if (glyphNames != null && glyphNames != "")
+		{
+			for (name in glyphNames.split(","))
+			{
+				var unicode = names[StringTools.trim(name)];
+				if (unicode != null && unicode.length == 1) characters.push(unicode);
+			}
+		}
+		return characters;
 	}
 
 	public static function getGlyph(char:String, font:String):Glyph
@@ -92,6 +151,7 @@ class SVGFont
 				}
 				xOffset += glyph.horizAdvX * scale;
 				xOffset += spacing / fScale;
+				if (cIdx + 1 < text.length) xOffset -= kerning(svgFont, c, text.substr(cIdx + 1, 1));
 			}
 		}
 		if (!any) return new Rectangle();
@@ -260,6 +320,7 @@ class SVGFont
 				}
 				xOffset += (glyph.horizAdvX * scale);
 				xOffset += spacing / fScale;
+				if (cIdx + 1 < text.length) xOffset -= kerning(svgFont, c, text.substr(cIdx + 1, 1));
 			}
 		}
 		if (splitStrokeFill)
