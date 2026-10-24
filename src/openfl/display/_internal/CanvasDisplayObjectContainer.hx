@@ -53,6 +53,7 @@ class CanvasDisplayObjectContainer
 
 		for (child in displayObjectContainer.__children)
 		{
+			renderer.setTransform(child.__renderTransform, renderer.context);
 			renderer.__renderDrawableMask(child);
 		}
 	}

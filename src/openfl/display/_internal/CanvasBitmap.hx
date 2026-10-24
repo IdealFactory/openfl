@@ -81,6 +81,8 @@ class CanvasBitmap
 
 	public static function renderDrawableMask(bitmap:Bitmap, renderer:CanvasRenderer):Void
 	{
-		renderer.context.rect(0, 0, bitmap.width, bitmap.height);
+		if (bitmap.__bitmapData == null) return;
+
+		renderer.context.rect(0, 0, bitmap.__bitmapData.width, bitmap.__bitmapData.height);
 	}
 }
