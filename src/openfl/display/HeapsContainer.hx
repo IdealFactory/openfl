@@ -310,6 +310,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				@:privateAccess ctx.__stage.__renderer.__cleared = ctx.__cleared = true;
 
 				#if !flash
+				__resetAttribs(driver);
 				if (__stateStore != null) ctx.__state.fromState(__stateStore);
 				ctx.__contextState.stateDirty = true;
 				#end
@@ -323,8 +324,8 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	}
 
 	#if !flash
-	// Heaps only switches off the attributes it believes are on, so emptying its record must switch them all off:
-	// one left on with its buffer deleted fails every later draw that doesn't use it.
+	// Heaps only switches off the attributes it believes are on, so its record is emptied with them all switched off, before
+	// it draws and after: one left on with its buffer deleted fails every later draw that doesn't use it, Heaps' or OpenFL's.
 	private function __resetAttribs(driver:h3d.impl.GlDriver):Void
 	{
 		var gl = Lib.current.stage.context3D.gl;
@@ -495,6 +496,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				@:privateAccess ctx.__stage.__renderer.__cleared = ctx.__cleared = true;
 				@:privateAccess __engine.doFlushTarget();
 
+				__resetAttribs(driver);
 				driver.resize(oldW, oldH);
 				if (__stateStore != null && ctx.__state != null) ctx.__state.fromState(__stateStore);
 				ctx.__contextState.stateDirty = true;
