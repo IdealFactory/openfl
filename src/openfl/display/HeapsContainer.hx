@@ -112,6 +112,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	public var __renderTarget:Texture;
 
 	static var __rttQueue:Array<Void->Void>;
+	static var __maxVertexAttribs:Int = 0;
 	static var __rttCallbackQueue:Array<Void->Void>;
 
 	public var appInstance:Dynamic;
@@ -291,8 +292,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 				#else
 				var driver:h3d.impl.GlDriver = cast h3d.Engine.getCurrent().driver;
 				driver.curIndexBuffer = null;
-				driver.curAttribs = [];
-				driver.curAttribs = [];
+				__resetAttribs(driver);
 				driver.curStOpBits = -1;
 				driver.curStMaskBits = -1;
 				driver.curMatBits = -1;
@@ -321,6 +321,22 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 	{
 		__heapsDirty = true;
 	}
+
+	#if !flash
+	// Heaps only switches off the attributes it believes are on, so emptying its record must switch them all off:
+	// one left on with its buffer deleted fails every later draw that doesn't use it.
+	private function __resetAttribs(driver:h3d.impl.GlDriver):Void
+	{
+		var gl = Lib.current.stage.context3D.gl;
+		if (__maxVertexAttribs == 0) __maxVertexAttribs = gl.getParameter(lime.graphics.opengl.GL.MAX_VERTEX_ATTRIBS);
+		for (i in 0...__maxVertexAttribs)
+		{
+			gl.disableVertexAttribArray(i);
+		}
+		driver.curAttribs = [];
+		driver.maxIdxCurAttribs = 0;
+	}
+	#end
 
 	public function capture(w:Int, h:Int, msaaLevel:Int = 4)
 	{
@@ -384,8 +400,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 					__engine.pushTarget(captureTarget);
 
 					driver.curIndexBuffer = null;
-					driver.curAttribs = [];
-					driver.curAttribs = [];
+					__resetAttribs(driver);
 					driver.curStOpBits = -1;
 					driver.curStMaskBits = -1;
 					driver.curMatBits = -1;
@@ -428,8 +443,7 @@ class HeapsContainer extends #if !flash Sprite #else Bitmap implements IDisplayO
 					__engine.height = h;
 
 					driver.curIndexBuffer = null;
-					driver.curAttribs = [];
-					driver.curAttribs = [];
+					__resetAttribs(driver);
 					driver.curStOpBits = -1;
 					driver.curStMaskBits = -1;
 					driver.curMatBits = -1;
