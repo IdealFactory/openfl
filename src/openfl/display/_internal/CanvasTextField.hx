@@ -9,6 +9,7 @@ import openfl.geom.Rectangle;
 import openfl.text.TextField;
 import openfl.text.TextFieldAutoSize;
 import openfl.text.TextFieldType;
+import openfl.text.TextFormat;
 #if (js && html5)
 import js.html.CanvasRenderingContext2D;
 import js.Browser;
@@ -203,7 +204,7 @@ class CanvasTextField
 						if (group.lineIndex < textField.scrollV - 1) continue;
 						if (group.lineIndex > textEngine.bottomScrollV - 1) break;
 
-						var color = "#" + StringTools.hex(group.format.color & 0xFFFFFF, 6);
+						var color = fillStyle(group.format);
 
 						context.font = TextEngine.getFont(group.format);
 						context.fillStyle = color;
@@ -478,5 +479,17 @@ class CanvasTextField
 	public static function renderDrawableMask(textField:TextField, renderer:CanvasRenderer):Void
 	{
 		CanvasDisplayObject.renderDrawableMask(textField, renderer);
+	}
+
+	private static function fillStyle(format:TextFormat):String
+	{
+		var color = format.color & 0xFFFFFF;
+
+		if (format.colorAlpha == null || format.colorAlpha >= 1)
+		{
+			return "#" + StringTools.hex(color, 6);
+		}
+
+		return "rgba(" + (color >> 16) + ", " + ((color >> 8) & 0xFF) + ", " + (color & 0xFF) + ", " + format.colorAlpha + ")";
 	}
 }

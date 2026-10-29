@@ -225,6 +225,11 @@ class TextFormat
 	public var strokeAlpha:Null<Float>;
 
 	/**
+	 * Text fill opacity, apart from the stroke's
+	 */
+	public var colorAlpha:Null<Float>;
+
+	/**
 	 * SVG Font stroke width
 	 */
 	public var strokeWidth:Null<Float>;
@@ -330,6 +335,7 @@ class TextFormat
 
 		newFormat.stroke = stroke;
 		newFormat.strokeAlpha = strokeAlpha;
+		newFormat.colorAlpha = colorAlpha;
 		newFormat.strokeWidth = strokeWidth;
 		newFormat.gradient = gradient;
 		newFormat.strokeGradient = strokeGradient;
@@ -375,6 +381,7 @@ class TextFormat
 			strokeGradient = null;
 		}
 		if (format.strokeAlpha != null) strokeAlpha = format.strokeAlpha;
+		if (format.colorAlpha != null) colorAlpha = format.colorAlpha;
 		if (format.strokeWidth != null) strokeWidth = format.strokeWidth;
 		if (format.gradient != null)
 		{

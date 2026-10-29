@@ -279,7 +279,7 @@ class SVGFont
 		var fill = gradientID == null ? 'fill="#' + StringTools.hex(color & 0xFFFFFF, 6) + '" ' : 'fill="url(#' + gradientID + ')" ';
 		if (alpha != 1 && gradientID == null)
 		{
-			fill += 'opacity="' + alpha + '" ';
+			fill += 'fill-opacity="' + alpha + '" ';
 		}
 
 		var content = '<g transform="matrix(' + fScale + ' 0 0 -' + fScale + ' ' + x + ' ' + y + ')">' + "\n";

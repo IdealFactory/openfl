@@ -10,6 +10,7 @@ import openfl.display.Graphics;
 import openfl.geom.Rectangle;
 import openfl.geom.Point;
 import openfl.text.TextFieldAutoSize;
+import openfl.text.TextFormat;
 import openfl.text.SVGFont;
 #if js
 import js.Browser;
@@ -191,7 +192,7 @@ class SVGTextField
 						var ty = group.offsetY + group.ascent;
 
 						SVGFont.renderText(groupText, group.format.font, graphics, tx * pixelRatio, ty * pixelRatio, group.format.size * pixelRatio,
-							group.format.letterSpacing * pixelRatio, group.format.color, textField.alpha, group.format.stroke, group.format.strokeAlpha,
+							group.format.letterSpacing * pixelRatio, group.format.color, fillAlpha(group.format), group.format.stroke, group.format.strokeAlpha,
 							group.format.strokeWidth * pixelRatio, group.format.gradient, group.format.strokeGradient);
 
 						if (textField.__caretIndex > -1 && textEngine.selectable)
@@ -267,7 +268,7 @@ class SVGTextField
 									// TODO: fill only once
 									SVGFont.renderText(text.substring(selectionStart, selectionEnd), group.format.font, textField.__graphics,
 										start.x * pixelRatio, (group.offsetY + group.ascent) * pixelRatio, group.format.size * pixelRatio,
-										group.format.letterSpacing * pixelRatio, 0xffffff, textField.alpha, group.format.stroke, group.format.strokeAlpha,
+										group.format.letterSpacing * pixelRatio, 0xffffff, fillAlpha(group.format), group.format.stroke, group.format.strokeAlpha,
 										group.format.strokeWidth * pixelRatio, group.format.gradient, group.format.strokeGradient);
 								}
 							}
@@ -354,11 +355,16 @@ class SVGTextField
 			var ty = group.offsetY + group.ascent;
 
 			svg += SVGFont.renderSVGGroup(groupText, group.format.font, tx, ty, group.format.size, group.format.letterSpacing, group.format.color,
-				textField.alpha, group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, splitStrokeFill, group.format.gradient,
+				fillAlpha(group.format), group.format.stroke, group.format.strokeAlpha, group.format.strokeWidth, splitStrokeFill, group.format.gradient,
 				group.format.strokeGradient);
 		}
 
 		return svg;
+	}
+
+	static function fillAlpha(format:TextFormat):Float
+	{
+		return format.colorAlpha != null ? format.colorAlpha : 1;
 	}
 }
 #else
